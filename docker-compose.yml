@@ -1,0 +1,86 @@
+services:
+  mongodb:
+    image: mongo:8
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGODB_ROOT_USERNAME}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_ROOT_PASSWORD}
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --quiet -u $$MONGO_INITDB_ROOT_USERNAME -p $$MONGO_INITDB_ROOT_PASSWORD --authenticationDatabase admin --eval 'db.adminCommand(\"ping\").ok' | grep 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    networks: [smart-form-internal]
+
+  chromadb:
+    image: chromadb/chroma
+    ports:
+      - "${CHROMADB_PORT}:8000"
+    volumes:
+      - chromadb_data:/data
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:8000/api/v2/heartbeat >/dev/null 2>&1 || wget -qO- http://localhost:8000/api/v1/heartbeat >/dev/null 2>&1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+    networks: [smart-form-internal]
+
+  backend:
+    build:
+      context: ./backend
+    environment:
+      APP_ENV: ${APP_ENV}
+      APP_NAME: ${APP_NAME}
+      APP_VERSION: ${APP_VERSION}
+      MONGODB_DATABASE: ${MONGODB_DATABASE}
+      MONGODB_URL: mongodb://${MONGODB_ROOT_USERNAME}:${MONGODB_ROOT_PASSWORD}@mongodb:27017/?authSource=admin
+      MONGODB_SERVER_SELECTION_TIMEOUT_MS: ${MONGODB_SERVER_SELECTION_TIMEOUT_MS}
+      CHROMADB_URL: http://chromadb:8000
+      CHROMADB_COLLECTION: ${CHROMADB_COLLECTION}
+      CHROMADB_TIMEOUT_SECONDS: ${CHROMADB_TIMEOUT_SECONDS}
+      CORS_ORIGINS: ${CORS_ORIGINS}
+    ports:
+      - "${BACKEND_PORT}:8000"
+    depends_on:
+      mongodb:
+        condition: service_healthy
+      chromadb:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks: [smart-form-internal]
+
+  frontend:
+    build:
+      context: ./frontend
+    environment:
+      VITE_API_BASE_URL: http://localhost:${BACKEND_PORT}
+    ports:
+      - "${FRONTEND_PORT}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [smart-form-internal]
+
+networks:
+  smart-form-internal:
+    driver: bridge
+
+volumes:
+  mongodb_data:
+  chromadb_data:
+

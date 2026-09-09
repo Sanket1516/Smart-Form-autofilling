@@ -1,0 +1,17 @@
+.env
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+node_modules/
+dist/
+coverage/
+.vite/
+.DS_Store
+*.log
+data/
+mongo_data/
+chroma_data/
+
