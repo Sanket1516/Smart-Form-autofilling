@@ -56,7 +56,9 @@ from app.services.facts import FactService
 from app.services.health import HealthService
 from app.services.profile import ProfileService
 from app.services.retrieval import RAGRetrievalService
+from app.storage.base import DocumentStorage
 from app.storage.local import LocalFileStorage
+from app.storage.cloudinary_storage import CloudinaryStorage
 
 logger = logging.getLogger(__name__)
 
@@ -74,7 +76,14 @@ async def lifespan(app: FastAPI):
     app.state.auth_service = AuthService(
         app.state.users_repository, app.state.revocations, settings
     )
-    app.state.storage = LocalFileStorage(settings.storage_root)
+    if settings.storage_provider == "cloudinary":
+        app.state.storage = CloudinaryStorage(
+            cloud_name=settings.cloudinary_cloud_name,
+            api_key=settings.cloudinary_api_key,
+            api_secret=settings.cloudinary_api_secret,
+        )
+    else:
+        app.state.storage = LocalFileStorage(settings.storage_root)
     app.state.document_service = DocumentService(
         DocumentsRepository(app.state.mongodb.database),
         app.state.storage,

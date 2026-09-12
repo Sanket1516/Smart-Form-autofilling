@@ -11,6 +11,9 @@ class StorageError(Exception):
     """Raised when a stored document cannot be accessed safely."""
 
 
+from contextlib import asynccontextmanager
+import typing
+
 class LocalFileStorage:
     def __init__(self, root: str) -> None:
         self.root = Path(root).resolve()
@@ -69,3 +72,8 @@ class LocalFileStorage:
         if self.root not in target.parents:
             raise StorageError("invalid storage reference")
         return target
+
+    @asynccontextmanager
+    async def get_local_path(self, storage_reference: str) -> typing.AsyncGenerator[str, None]:
+        target = self._resolve(storage_reference)
+        yield str(target)

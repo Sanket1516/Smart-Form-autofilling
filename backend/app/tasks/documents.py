@@ -16,7 +16,9 @@ from app.repositories.collections import (
     ProcessingRecordsRepository,
     StructuredFactsRepository,
 )
+from app.storage.base import DocumentStorage
 from app.storage.local import LocalFileStorage
+from app.storage.cloudinary_storage import CloudinaryStorage
 from app.tasks.celery_app import celery_app
 
 from app.db.chroma_client import ChromaClient
@@ -29,7 +31,14 @@ logger = logging.getLogger(__name__)
 async def _process(document_id: str, user_id: str) -> None:
     settings = get_settings()
     connection = MongoConnection(settings)
-    storage = LocalFileStorage(settings.storage_root)
+    if settings.storage_provider == "cloudinary":
+        storage: DocumentStorage = CloudinaryStorage(
+            cloud_name=settings.cloudinary_cloud_name,
+            api_key=settings.cloudinary_api_key,
+            api_secret=settings.cloudinary_api_secret,
+        )
+    else:
+        storage: DocumentStorage = LocalFileStorage(settings.storage_root)
     documents = DocumentsRepository(connection.database)
     processing = ProcessingRecordsRepository(connection.database)
     try:
@@ -65,13 +74,14 @@ async def _process(document_id: str, user_id: str) -> None:
             embedding_provider=embedding_provider,
             chroma_client=chroma_client,
         )
-        normalized = await pipeline.run(
-            user_id,
-            document_id,
-            str(Path(settings.storage_root) / document["storage_reference"]),
-            on_update,
-            document_name=document["file_name"],
-        )
+        async with storage.get_local_path(document["storage_reference"]) as local_path:
+            normalized = await pipeline.run(
+                user_id,
+                document_id,
+                local_path,
+                on_update,
+                document_name=document["file_name"],
+            )
         normalized_reference = f"{document['storage_reference']}.normalized.json"
         await storage.save_bytes(
             normalized_reference,

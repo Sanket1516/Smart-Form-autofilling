@@ -16,6 +16,7 @@ from app.schemas.facts import FactsData
 from app.schemas.responses import MessageResponse, SuccessResponse
 from app.services.documents import DocumentService
 from app.services.facts import FactService
+from app.core.rate_limit import limiter
 
 router = APIRouter(prefix="/documents", tags=["documents"])
 
@@ -41,8 +42,9 @@ async def document_facts(
 
 
 @router.post("", response_model=SuccessResponse[DocumentData], status_code=status.HTTP_201_CREATED)
+@limiter.limit("20/minute")
 async def upload_document(
-    user: User, service: Service, file: Annotated[UploadFile, File()]
+    request: Request, user: User, service: Service, file: Annotated[UploadFile, File()]
 ) -> SuccessResponse[DocumentData]:
     return SuccessResponse(
         data=await service.upload(user.user_id, file), message="Document uploaded successfully"
@@ -75,8 +77,9 @@ async def get_document(
     response_model=SuccessResponse[ProcessingData],
     status_code=status.HTTP_202_ACCEPTED,
 )
+@limiter.limit("10/minute")
 async def process_document(
-    user: User, service: Service, document_id: str
+    request: Request, user: User, service: Service, document_id: str
 ) -> SuccessResponse[ProcessingData]:
     return SuccessResponse(
         data=await service.start_processing(user.user_id, document_id),
@@ -102,8 +105,9 @@ async def delete_document(user: User, service: Service, document_id: str) -> Mes
     response_model=SuccessResponse[ProcessingData],
     status_code=status.HTTP_202_ACCEPTED,
 )
+@limiter.limit("10/minute")
 async def reprocess_document(
-    user: User, service: Service, document_id: str
+    request: Request, user: User, service: Service, document_id: str
 ) -> SuccessResponse[ProcessingData]:
     return SuccessResponse(
         data=await service.reprocess(user.user_id, document_id),

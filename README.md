@@ -204,6 +204,7 @@ When deploying to production, ensure:
 2. **Secure Cookies**: If utilizing cookie-based auth in the future, ensure `Secure` and `HttpOnly` flags are enabled.
 3. **Rate Limiting**: The system utilizes SlowAPI for rate limiting. Ensure your proxy forwards the `X-Forwarded-For` header correctly so IP-based rate limiting functions properly.
 4. **CORS**: By default, the API only allows requests from the specific Chrome extension origin (`chrome-extension://[a-p]{32}`). Do not use wildcard CORS in production.
+5. **Storage Provider**: Set `STORAGE_PROVIDER` to `cloudinary` in production instead of `local` to ensure robust, externalized secure file storage. You must provide `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET`. Ensure "Strict Deliveries" for PDFs and ZIPs is unchecked in your Cloudinary security settings to allow the worker to download processed documents via signed URLs.
 
 ## Chrome Extension & Autofill Engine
 

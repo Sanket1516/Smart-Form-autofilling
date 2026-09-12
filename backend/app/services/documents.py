@@ -11,7 +11,7 @@ from app.core.api_errors import APIError
 from app.core.config import Settings
 from app.repositories.collections import DocumentsRepository
 from app.schemas.documents import DocumentData, DocumentListData, ProcessingStatusData
-from app.storage.local import LocalFileStorage
+from app.storage.base import DocumentStorage
 from app.tasks.documents import process_document
 
 SUPPORTED_TYPES = {
@@ -39,7 +39,7 @@ class DocumentService:
     def __init__(
         self,
         repository: DocumentsRepository,
-        storage: LocalFileStorage,
+        storage: DocumentStorage,
         settings: Settings,
         chroma_client: ChromaClient | None = None,
     ):

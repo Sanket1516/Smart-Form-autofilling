@@ -35,7 +35,13 @@ class Settings(BaseSettings):
     max_upload_size_mb: int = Field(default=10, gt=0)
     high_confidence_threshold: float = Field(default=0.90, ge=0, le=1)
     medium_confidence_threshold: float = Field(default=0.70, ge=0, le=1)
+    
+    storage_provider: str = "local"
     storage_root: str = "./uploads"
+    cloudinary_cloud_name: str = ""
+    cloudinary_api_key: str = ""
+    cloudinary_api_secret: str = ""
+    
     redis_url: str = "redis://localhost:6379/0"
     celery_task_always_eager: bool = False
     processing_max_retries: int = Field(default=2, ge=0, le=5)
