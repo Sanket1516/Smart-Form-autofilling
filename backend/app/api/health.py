@@ -26,4 +26,3 @@ async def get_health(request: Request) -> JSONResponse:
         status_code=status.HTTP_200_OK if healthy else status.HTTP_503_SERVICE_UNAVAILABLE,
         content=payload,
     )
-

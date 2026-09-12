@@ -13,4 +13,3 @@ async function refreshHealth() {
 
 refreshButton.addEventListener("click", refreshHealth);
 refreshHealth();
-

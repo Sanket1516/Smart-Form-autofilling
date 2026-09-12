@@ -12,6 +12,8 @@ coverage/
 .DS_Store
 *.log
 data/
+uploads/
+backend/uploads/
 mongo_data/
 chroma_data/
 

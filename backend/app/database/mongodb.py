@@ -21,4 +21,3 @@ class MongoDBManager:
 
     def close(self) -> None:
         self._client.close()
-

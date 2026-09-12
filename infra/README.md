@@ -1,4 +1,7 @@
 # Infrastructure Assets
 
-Docker Compose is kept at the repository root for Phase 1. This directory is reserved for future deployment and operational assets.
+The root `docker-compose.yml` is the local development deployment for the backend,
+frontend, MongoDB, and ChromaDB. Continuous integration is defined in
+`.github/workflows/ci.yml`; this directory is reserved for deployment-specific
+overlays and operational assets added in later phases.
 

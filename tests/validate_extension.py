@@ -1,4 +1,5 @@
 """Structural validation for the Phase 1 Chrome extension."""
+
 import json
 from pathlib import Path
 
@@ -11,4 +12,3 @@ def test_extension_manifest_and_required_files() -> None:
     assert set(manifest["permissions"]) == {"storage", "activeTab", "scripting"}
     for filename in ("background.js", "content.js", "popup.html", "popup.js", "backend-client.js"):
         assert (extension / filename).is_file()
-

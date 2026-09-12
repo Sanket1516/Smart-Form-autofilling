@@ -7,9 +7,8 @@ export async function getBackendUrl() {
 
 export async function getBackendHealth() {
   const backendUrl = await getBackendUrl();
-  const response = await fetch(`${backendUrl}/health`);
+  const response = await fetch(`${backendUrl}/api/v1/health`);
   const body = await response.json();
   if (!response.ok) throw new Error(body?.data?.status ?? "Backend unavailable");
   return body.data;
 }
-
