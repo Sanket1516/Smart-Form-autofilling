@@ -1,0 +1,1 @@
+{"root":["./src/background/index.ts","./src/content/autofill.ts","./src/content/detector.test.ts","./src/content/detector.ts","./src/content/index.ts","./src/popup/app.tsx","./src/popup/autofillflow.tsx","./src/popup/index.tsx","./src/types/index.ts","./vite.config.ts"],"version":"5.9.3"}

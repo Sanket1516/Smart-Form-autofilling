@@ -4,8 +4,11 @@ import logging
 import uuid
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
 
+from app.api.v1.auth import get_current_user
+from app.schemas.auth import CurrentUser
 from app.schemas.agent import AgentRunRequest, AgentRunResponse, AgentStatusResponse
 from app.agents.state import AgentState
+from app.core.rate_limit import limiter
 
 logger = logging.getLogger(__name__)
 
@@ -40,18 +43,18 @@ async def execute_agent_background(run_id: str, request: Request) -> None:
     status_code=status.HTTP_202_ACCEPTED,
     summary="Start an agentic workflow run"
 )
+@limiter.limit("20/minute")
 async def start_agent_run(
     payload: AgentRunRequest,
     request: Request,
     background_tasks: BackgroundTasks,
+    user: CurrentUser = Depends(get_current_user),
 ):
     """
     Starts an asynchronous agent run for autofilling form fields.
     """
     run_id = str(uuid.uuid4())
-    # The spec states the user_id must be derived securely or attached to the run.
-    # Assuming user_id can be obtained from auth context or mocked for now.
-    user_id = getattr(request.state, "user_id", "anonymous")
+    user_id = user.user_id
     
     # Initialize the AgentState
     initial_state: AgentState = {
@@ -77,14 +80,18 @@ async def start_agent_run(
     response_model=AgentStatusResponse,
     summary="Get status and state of an agent run"
 )
-async def get_agent_run_status(run_id: str, request: Request):
+async def get_agent_run_status(
+    run_id: str, 
+    request: Request,
+    user: CurrentUser = Depends(get_current_user),
+):
     """
     Retrieves the current status and state of an agent workflow run.
     """
     agent_store = request.app.state.agent_store
     run_doc = await agent_store.get_run(run_id)
     
-    if not run_doc:
+    if not run_doc or run_doc.get("state", {}).get("user_id") != user.user_id:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Run not found"
         )

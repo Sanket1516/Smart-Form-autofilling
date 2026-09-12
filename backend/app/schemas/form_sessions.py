@@ -57,3 +57,29 @@ class FormSessionCompleteRequest(BaseModel):
 class FormSessionCompleteData(BaseModel):
     session_id: str
     status: str
+
+
+class ApprovedValueData(BaseModel):
+    field_id: str
+    concept: str
+    value: str
+    confidence: float
+    requires_confirmation: bool
+
+
+class ApprovedValuesResponseData(BaseModel):
+    session_id: str
+    approved_values: List[ApprovedValueData]
+
+
+class FormSessionVerifyRequest(BaseModel):
+    field_id: str
+    filled_value: str
+    actual_value: str
+    match: bool
+    requires_correction: bool
+
+
+class FormSessionVerifyData(BaseModel):
+    session_id: str
+    status: str

@@ -82,6 +82,37 @@ class MockLLMProvider(LLMProvider):
         return FinalResponseStatus.MISSING_INFORMATION.value
 
 
+class MockE2EProvider(LLMProvider):
+    """Deterministic mock for E2E tests that successfully generates a recommendation
+    if it sees EVIDENCE in the prompt, simulating a real LLM extraction."""
+    
+    def complete(self, prompt: str) -> str:
+        # Check if prompt contains facts or evidence
+        import json
+        
+        has_evidence = "DOCUMENT_EVIDENCE (similarity-ranked):" in prompt or "STRUCTURED_FACTS (verified first):" in prompt
+        is_missing = "none" in prompt.split("DOCUMENT_EVIDENCE:")[0] if "DOCUMENT_EVIDENCE:" in prompt else False # Very rough heuristic
+        
+        # If it seems we passed in structured facts or document chunks, simulate finding it
+        if "DOCUMENT_EVIDENCE" in prompt and "similarity=" in prompt:
+            return json.dumps({
+                "status": FinalResponseStatus.CONFIDENT_RECOMMENDATION.value,
+                "value": "E2E Test Value",
+                "confidence": 0.95,
+                "reason": "Found in document evidence."
+            })
+        
+        if "STRUCTURED_FACTS" in prompt and "value=" in prompt:
+            return json.dumps({
+                "status": FinalResponseStatus.CONFIDENT_RECOMMENDATION.value,
+                "value": "E2E Test Structured Value",
+                "confidence": 0.99,
+                "reason": "Found in structured facts."
+            })
+            
+        return FinalResponseStatus.MISSING_INFORMATION.value
+
+
 # ---------------------------------------------------------------------------
 # OpenAI provider
 # ---------------------------------------------------------------------------
@@ -173,6 +204,10 @@ def get_llm_provider(settings: "Settings") -> LLMProvider:
             raise ValueError("LLM_API_KEY is required when LLM_PROVIDER=anthropic")
         logger.info("llm_provider=anthropic model=%s", model)
         return AnthropicProvider(model=model or "claude-3-haiku-20240307", api_key=api_key, timeout=timeout)
+
+    if provider == "mock-e2e":
+        logger.info("llm_provider=mock-e2e (Simulating successful extraction for tests)")
+        return MockE2EProvider()
 
     logger.info("llm_provider=mock (no API key required)")
     return MockLLMProvider()

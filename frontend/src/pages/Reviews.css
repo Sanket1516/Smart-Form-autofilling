@@ -1,0 +1,29 @@
+.reviews-page {
+  padding: 1rem;
+}
+
+.reviews-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+  max-width: 800px;
+}
+
+.text-success {
+  color: var(--success-color) !important;
+}
+
+.reviews-loading, .reviews-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  gap: 1rem;
+  color: var(--text-secondary);
+}
+
+.reviews-error {
+  color: var(--error-color);
+}

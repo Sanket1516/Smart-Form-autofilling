@@ -42,19 +42,29 @@ export const Login = () => {
       });
       
       if (res.ok) {
-        const data = await res.json();
-        // Assuming API returns { access_token: "...", token_type: "bearer" }
-        // We also need user details, let's fetch /me with the token
-        const meRes = await fetch(`${baseUrl}/api/v1/auth/me`, {
-          headers: { Authorization: `Bearer ${data.access_token}` }
-        });
-        
-        if (meRes.ok) {
-          const user: User = await meRes.json();
-          login(data.access_token, user);
+        const json = await res.json();
+        const authData = json.data || json;
+        const accessToken = authData.access_token;
+        const userObj = authData.user;
+
+        if (accessToken && userObj) {
+          login(accessToken, userObj);
           navigate('/dashboard');
+        } else if (accessToken) {
+          const meRes = await fetch(`${baseUrl}/api/v1/auth/me`, {
+            headers: { Authorization: `Bearer ${accessToken}` }
+          });
+          
+          if (meRes.ok) {
+            const meJson = await meRes.json();
+            const user: User = meJson.data || meJson;
+            login(accessToken, user);
+            navigate('/dashboard');
+          } else {
+            setError('Failed to load user profile.');
+          }
         } else {
-          setError('Failed to load user profile.');
+          setError('Invalid login response from server.');
         }
       } else if (res.status === 401 || res.status === 400) {
         setError('Invalid credentials.');

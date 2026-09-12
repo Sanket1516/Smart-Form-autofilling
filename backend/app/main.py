@@ -4,6 +4,8 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.agents.semantic_classifier import SemanticClassifier
@@ -31,6 +33,7 @@ from app.core.exceptions import (
     validation_exception_handler,
 )
 from app.core.logging import configure_logging, request_logging_middleware
+from app.core.rate_limit import limiter
 from app.db.chroma_client import ChromaClient
 from app.db.mongo import MongoConnection
 from app.db.mongo_database import MongoDatabase
@@ -133,7 +136,9 @@ async def lifespan(app: FastAPI):
 
 settings = get_settings()
 app = FastAPI(title=settings.app_name, version=settings.app_version, lifespan=lifespan)
+app.state.limiter = limiter
 app.middleware("http")(request_logging_middleware)
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 app.add_exception_handler(RequestValidationError, validation_exception_handler)
 app.add_exception_handler(HTTPException, http_exception_handler)
 app.add_exception_handler(StarletteHTTPException, http_exception_handler)

@@ -14,7 +14,9 @@ from app.schemas.auth import (
     RegisterRequest,
 )
 from app.schemas.responses import MessageResponse, SuccessResponse
+from app.schemas.responses import MessageResponse, SuccessResponse
 from app.services.auth import AuthService
+from app.core.rate_limit import limiter
 
 router = APIRouter(prefix="/auth", tags=["authentication"])
 bearer = HTTPBearer(auto_error=False)
@@ -36,15 +38,19 @@ async def get_current_user(
 
 
 @router.post("/register", response_model=SuccessResponse[RegisterData], status_code=201)
+@limiter.limit("10/minute")
 async def register(
-    request: RegisterRequest, auth: Annotated[AuthService, Depends(get_auth_service)]
+    request: Request,
+    body: RegisterRequest,
+    auth: Annotated[AuthService, Depends(get_auth_service)]
 ) -> SuccessResponse[RegisterData]:
     return SuccessResponse(
-        data=await auth.register(request), message="User registered successfully"
+        data=await auth.register(body), message="User registered successfully"
     )
 
 
 @router.post("/login", response_model=SuccessResponse[LoginData])
+@limiter.limit("5/minute")
 async def login(
     request: Request,
     credentials: LoginRequest,

@@ -19,6 +19,10 @@ from app.repositories.collections import (
 from app.storage.local import LocalFileStorage
 from app.tasks.celery_app import celery_app
 
+from app.db.chroma_client import ChromaClient
+from app.processing.chunking import TextChunker
+from app.retrieval.embeddings import DefaultEmbeddingProvider
+
 logger = logging.getLogger(__name__)
 
 
@@ -44,6 +48,10 @@ async def _process(document_id: str, user_id: str) -> None:
         async def on_update(values: dict[str, object]) -> None:
             await documents.update(user_id, document_id, values)
 
+        chunker = TextChunker(chunk_size=settings.rag_chunk_size, chunk_overlap=settings.rag_chunk_overlap)
+        embedding_provider = DefaultEmbeddingProvider(settings)
+        chroma_client = ChromaClient(settings)
+
         pipeline = DocumentPipeline(
             PDFExtractor(
                 PaddleOCRAdapter(language=settings.ocr_language),
@@ -53,6 +61,9 @@ async def _process(document_id: str, user_id: str) -> None:
             settings.processing_max_retries,
             fact_extractor=CandidateFactExtractor(),
             fact_writer=StructuredFactsRepository(connection.database),
+            chunker=chunker,
+            embedding_provider=embedding_provider,
+            chroma_client=chroma_client,
         )
         normalized = await pipeline.run(
             user_id,

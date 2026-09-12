@@ -1,9 +1,12 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 
 export interface User {
-  id: string;
+  id?: string;
+  user_id?: string;
   email: string;
-  name: string;
+  name?: string;
+  full_name?: string;
+  status?: string;
 }
 
 interface AuthContextType {
@@ -35,8 +38,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         });
         
         if (res.ok) {
-          const data = await res.json();
-          setUser(data);
+          const json = await res.json();
+          setUser(json.data || json);
         } else {
           // Token invalid or expired
           setToken(null);

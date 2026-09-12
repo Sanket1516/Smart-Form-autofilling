@@ -48,7 +48,7 @@ export const Register = () => {
       const res = await fetch(`${baseUrl}/api/v1/auth/register`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, full_name: name })
+        body: JSON.stringify({ email, password, confirm_password: confirmPassword, full_name: name })
       });
       
       if (res.ok) {

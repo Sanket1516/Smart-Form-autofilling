@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     llm_model: str = ""
     llm_api_key: str = ""
     embedding_model: str = ""
-    jwt_secret_key: str = "replace_before_enabling_authentication"
+    jwt_secret_key: str
     jwt_algorithm: str = "HS256"
     jwt_access_token_expire_minutes: int = Field(default=30, gt=0)
     auth_login_rate_limit_attempts: int = Field(default=5, gt=0)

@@ -132,6 +132,11 @@ services:
       OCR_LANGUAGE: ${OCR_LANGUAGE:-en}
       OCR_RESOLUTION: ${OCR_RESOLUTION:-150}
       EXTRACTION_MIN_CONFIDENCE: ${EXTRACTION_MIN_CONFIDENCE:-0.50}
+      CHROMADB_URL: http://chromadb:8000
+      CHROMADB_COLLECTION: ${CHROMADB_COLLECTION:-user_document_chunks}
+      CHROMADB_TENANT: ${CHROMADB_TENANT:-default_tenant}
+      CHROMADB_DATABASE: ${CHROMADB_DATABASE:-default_database}
+      CHROMADB_TIMEOUT_SECONDS: ${CHROMADB_TIMEOUT_SECONDS:-2}
       EMBEDDING_MODEL_NAME: ${EMBEDDING_MODEL_NAME:-BAAI/bge-m3}
       RAG_CHUNK_SIZE: ${RAG_CHUNK_SIZE:-500}
       RAG_CHUNK_OVERLAP: ${RAG_CHUNK_OVERLAP:-50}
@@ -139,6 +144,8 @@ services:
       - document_data:/data/uploads
     depends_on:
       mongodb:
+        condition: service_healthy
+      chromadb:
         condition: service_healthy
       redis:
         condition: service_healthy
@@ -162,6 +169,12 @@ services:
       timeout: 5s
       retries: 5
     networks: [smart-form-internal]
+
+  extension-builder:
+    build:
+      context: ./extension
+    volumes:
+      - ./extension/dist:/app/dist
 
 networks:
   smart-form-internal:

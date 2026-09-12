@@ -29,6 +29,10 @@ from app.schemas.form_sessions import (
     FormSessionAnalyzeData,
     FormSessionCompleteRequest,
     FormSessionCompleteData,
+    ApprovedValueData,
+    ApprovedValuesResponseData,
+    FormSessionVerifyRequest,
+    FormSessionVerifyData,
 )
 from app.schemas.responses import SuccessResponse
 
@@ -138,6 +142,12 @@ async def analyze_form(
                 logging.error(f"Error analyzing field {field.field_id}: {e}")
         await asyncio.gather(*[process_field(f) for f in body.fields])
         
+        # Determine final status
+        rec_repo = request.app.state.recommendations_repo
+        pending = await rec_repo.collection.count_documents({"session_id": session_id, "status": "pending_review"})
+        final_status = "review_required" if pending > 0 else "ready"
+        await repo.update_session(user.user_id, session_id, {"status": final_status})
+        
     background_tasks.add_task(process_all_fields)
     
     return SuccessResponse(
@@ -183,8 +193,13 @@ async def recommend_single(
     body: RecommendRequest,
     user: User,
 ) -> SuccessResponse[RecommendResponseData]:
+    repo = request.app.state.form_sessions_repo
+    doc = await repo.get_session(user_id=user.user_id, session_id=body.session_id)
+    if not doc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Form session not found")
+
     # A single field recommendation, essentially running the agent inline.
-    agent = request.app.state.autofill_agent
+    agent = request.app.state.agent_graph
     workflow_id = f"wf-{uuid.uuid4().hex[:8]}"
     state = await agent.run({
         "workflow_id": workflow_id,
@@ -222,7 +237,12 @@ async def recommend_batch(
     body: BatchRecommendRequest,
     user: User,
 ) -> SuccessResponse[BatchRecommendResponseData]:
-    agent = request.app.state.autofill_agent
+    repo = request.app.state.form_sessions_repo
+    doc = await repo.get_session(user_id=user.user_id, session_id=body.session_id)
+    if not doc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Form session not found")
+
+    agent = request.app.state.agent_graph
     
     async def process_field(field):
         workflow_id = f"wf-{uuid.uuid4().hex[:8]}"
@@ -280,3 +300,75 @@ async def get_session_recommendations(
         ))
         
     return SuccessResponse(success=True, data=SessionRecommendationsData(recommendations=recs))
+
+
+@router.get("/forms/sessions/{session_id}/approved-values", response_model=SuccessResponse[ApprovedValuesResponseData])
+async def get_session_approved_values(
+    session_id: str,
+    request: Request,
+    user: User,
+) -> SuccessResponse[ApprovedValuesResponseData]:
+    rec_repo = request.app.state.recommendations_repo
+    
+    # We fetch recommendations where status is one of the fillable statuses.
+    # READY_TO_FILL: The agent confidentially recommended this.
+    # approved/edited: A human explicitly confirmed/edited this during review.
+    valid_statuses = ["READY_TO_FILL", "approved", "edited"]
+    
+    docs = await rec_repo.collection.find({
+        "session_id": session_id,
+        "user_id": user.user_id,
+        "status": {"$in": valid_statuses}
+    }).to_list(None)
+    
+    approved = []
+    for doc in docs:
+        approved.append(ApprovedValueData(
+            field_id=doc["field_id"],
+            concept=doc.get("concept", ""),
+            value=doc.get("recommended_value", ""),
+            confidence=doc.get("confidence", 0.0),
+            requires_confirmation=False # Usually already confirmed if in this list
+        ))
+        
+    return SuccessResponse(
+        success=True, 
+        data=ApprovedValuesResponseData(
+            session_id=session_id,
+            approved_values=approved
+        )
+    )
+
+
+@router.post("/forms/sessions/{session_id}/verify", response_model=SuccessResponse[FormSessionVerifyData])
+async def verify_filled_value(
+    session_id: str,
+    body: FormSessionVerifyRequest,
+    request: Request,
+    user: User,
+) -> SuccessResponse[FormSessionVerifyData]:
+    # This endpoint receives client-side verification outcomes.
+    # In a full production system, we'd persist this in a verifications collection
+    # to measure fill accuracy over time.
+    repo = request.app.state.form_sessions_repo
+    doc = await repo.get_session(user_id=user.user_id, session_id=session_id)
+    if not doc:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Form session not found")
+
+    # For now, we will log it.
+    import logging
+    logger = logging.getLogger(__name__)
+    
+    if body.match:
+        logger.info(f"Session {session_id}: Field {body.field_id} successfully filled and verified.")
+    else:
+        logger.warning(f"Session {session_id}: Field {body.field_id} mismatch! Expected '{body.filled_value}', got '{body.actual_value}'")
+        
+    return SuccessResponse(
+        success=True,
+        data=FormSessionVerifyData(
+            session_id=session_id,
+            status="verified"
+        )
+    )
+

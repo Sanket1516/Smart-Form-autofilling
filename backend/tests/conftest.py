@@ -3,6 +3,9 @@
 from collections.abc import Iterator
 from datetime import datetime
 from typing import Any
+import os
+
+os.environ["JWT_SECRET_KEY"] = "test-secret-key"
 
 import pytest
 from fastapi.testclient import TestClient

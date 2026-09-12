@@ -94,18 +94,31 @@ async def submit_decision(review_id: str, payload: ReviewDecisionRequest, reques
     await repo.update_status(user_id, review_id, rec_status, new_value)
     
     # 4. If confirmed/edited, update profile explicitly (SRS §19.3)
-    if decision in ("confirm", "edit") and hasattr(request.app.state, "profile_service"):
-        # We only update the profile if the concept maps cleanly to a profile field
+    if decision in ("confirm", "edit"):
         value_to_save = new_value if decision == "edit" else rec.get("recommended_value")
         concept = rec.get("concept")
         if value_to_save and concept:
             try:
-                # We could attempt to update the canonical profile here
-                # The ProfileService (Phase 6/8) expects structured updates. 
-                # This explicitly satisfies SRS §19.3 (confirmed decision updates canonical profile).
-                # We will just write a correction to the fact_service to update the underlying fact,
-                # or we can write directly to ProfileService if an endpoint exists.
-                pass
+                fact_service = getattr(request.app.state, "fact_service", None)
+                if fact_service and hasattr(fact_service, "repository"):
+                    from datetime import datetime, UTC
+                    from app.models.documents import StructuredFact
+                    source_ids = rec.get("source_fact_ids", [])
+                    source_doc = str(source_ids[0]) if source_ids else "hitl_override"
+                    fact_doc = StructuredFact(
+                        user_id=user_id,
+                        concept=concept,
+                        value=value_to_save,
+                        value_type=type(value_to_save).__name__,
+                        source_document_id=source_doc,
+                        source_page=1,
+                        confidence=1.0,
+                        provenance={"source": "hitl_review", "decision": decision, "review_id": review_id},
+                        is_user_confirmed=True,
+                        created_at=datetime.now(UTC),
+                        updated_at=datetime.now(UTC),
+                    )
+                    await fact_service.repository.create(user_id, fact_doc)
             except Exception as e:
                 logger.warning(f"Failed to update profile from HITL decision: {e}")
 

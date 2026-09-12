@@ -67,12 +67,26 @@ Copy `.env.example` to `.env` when changing local settings. The compose file als
 
 The template defines application and port settings, `LOG_LEVEL`, MongoDB credentials, URL, and database, ChromaDB URL, tenant, database, collection, and timeout, JWT secret/algorithm/expiry, login rate-limit attempts/window, `STORAGE_ROOT`, `REDIS_URL`, `CELERY_TASK_ALWAYS_EAGER`, `EXTRACTION_MIN_CONFIDENCE`, `CLASSIFIER_CONFIDENCE_THRESHOLD`, `EMBEDDING_MODEL_NAME`, `RAG_CHUNK_SIZE`, `RAG_CHUNK_OVERLAP`, LLM provider/model/API key, embedding model, CORS origins, upload size, and high/medium confidence thresholds. Do not commit `.env` or real API keys.
 
-## Run the stack
+## To launch the Smart Form Auto-Filling System in development mode, run:
 
-From the repository root:
-
-```powershell
+```bash
 docker compose up --build
+```
+
+### Running Tests (Phase 22 End-to-End)
+
+The project includes a unified test runner managed by `Makefile` that covers the entire stack.
+
+**Available Commands**:
+- `make test-backend`: Runs pytest suite for the FastAPI backend, asserting ownership rules, auth boundaries, and business logic with `pytest-cov` output.
+- `make test-frontend`: Runs the Vitest component tests.
+- `make test-extension`: Runs Playwright test logic against local fixtures.
+- `make test-e2e`: Spins up `docker-compose.test.yml`, seeding a disposable testing environment with MongoDB, ChromaDB, and a mocked LLM (`mock-e2e`). It then runs Playwright in Chromium (with the extension loaded) to walk the full signup -> document upload -> form autofill chain.
+- `make test-all`: Runs all of the above tests sequentially.
+
+To execute the entire regression suite locally, just run:
+```bash
+make test-all
 ```
 
 The dashboard is available at `http://localhost:5173`, the API at `http://localhost:8000`, and the API health endpoint at `http://localhost:8000/api/v1/health`. Service health is available at `/api/v1/health/services`. MongoDB is exposed on `27017` and ChromaDB on `8001`. Stop the stack with `docker compose down`; add `-v` only when local database volumes should be deleted.
@@ -151,11 +165,18 @@ API Endpoints:
 - `GET /api/v1/forms/sessions/{id}/recommendations`: Returns the generated recommendations.
 - `POST /api/v1/forms/sessions/{id}/complete`: Marks the form filling session as complete.
 
-### Core Web Dashboard & Frontend Shell (Phase 16)
+### Core Web Dashboard & Frontend Shell (Phase 16 & 17)
 
 The React frontend (built with Vite and TypeScript) provides the primary user interface for managing documents, reviewing knowledge facts, and tracking form sessions.
 The interface is constructed using a strict Vanilla CSS token system (`4/8/12/16/24/32/48px` scales) and semantic confidence badges (`High`, `Medium`, `Low`, `Conflict`) that ensure accessibility without relying solely on color.
-The application routing (`react-router-dom`) protects all core views (Dashboard, Documents, Profile, Activity) via an `AuthContext` which manages JWT session tokens locally and attaches them to `VITE_API_BASE_URL` API calls.
+The application routing (`react-router-dom`) protects all core views (Dashboard, Documents, Profile, Activity, Reviews, Settings) via an `AuthContext` which manages JWT session tokens locally and attaches them to `VITE_API_BASE_URL` API calls.
+
+**Phase 17 UI Additions:**
+- **Document Management**: Drag-and-drop document upload interface with visual processing timelines and polling mechanisms for extraction status.
+- **Knowledge Profile**: Consolidates extracted facts and user details, visualizing the agent's knowledge base complete with source provenance and confidence indicators.
+- **Field Reviews**: A Human-in-the-Loop conflict resolution UI for reviewing, confirming, editing, or rejecting agentic field autofill suggestions.
+- **Activity History**: A timeline for form sessions, uploaded documents, and resolved reviews.
+- **Settings & Privacy**: Extension preferences and privacy controls, including destructive "Delete Data" and "Delete Account" flows with mandatory user confirmations.
 
 For local development, the frontend runs via `npm run dev`. For production, `docker-compose.yml` mounts a multi-stage Dockerfile that builds the static output and serves it using an Nginx alpine image with client-side routing fallback (`try_files $uri /index.html`).
 
@@ -165,6 +186,48 @@ To use a customized environment:
 Copy-Item .env.example .env
 docker compose up --build
 ```
+
+## Environment Variables and Secrets
+
+All secrets are strictly managed via environment variables. The application will not boot if critical secrets are missing. Do **NOT** commit secrets to version control.
+
+```bash
+# Security configurations
+JWT_SECRET_KEY="your-secure-random-secret"
+APP_ENV="production"
+```
+
+## Production Security Requirements
+
+When deploying to production, ensure:
+1. **HTTPS**: The backend must run behind an HTTPS proxy (e.g., Nginx, Traefik).
+2. **Secure Cookies**: If utilizing cookie-based auth in the future, ensure `Secure` and `HttpOnly` flags are enabled.
+3. **Rate Limiting**: The system utilizes SlowAPI for rate limiting. Ensure your proxy forwards the `X-Forwarded-For` header correctly so IP-based rate limiting functions properly.
+4. **CORS**: By default, the API only allows requests from the specific Chrome extension origin (`chrome-extension://[a-p]{32}`). Do not use wildcard CORS in production.
+
+## Chrome Extension & Autofill Engine
+
+The Chrome Extension is a Manifest V3 implementation that connects your browser sessions with the backend autofill engine.
+
+**Features added:**
+- **Dynamic Field Detection**: Employs a robust `MutationObserver` on `document.body` (SRS §11.5) to catch dynamically inserted single-page-app fields.
+- **Semantic Field Extraction**: Parses deeply nested inputs and constructs a structured `FieldObject` strictly conforming to SRS §11.2 (including ARIA labels, sections, layouts, and neighboring text).
+- **Session Auth Handshake**: The extension background worker securely manages backend API tokens and initiates tracking sessions via `POST /api/v1/forms/sessions`.
+- **Minimal Permissions**: Requests only what is absolutely necessary (`storage` for JWT auth state, `activeTab` for ad-hoc popup actions, and `*://*/*` for dynamic autofill detection globally).
+
+### Building & Loading the Extension
+The extension is built automatically when you run `docker compose up --build` via the `extension-builder` service. You can also build it manually:
+```powershell
+cd extension
+npm install
+npm run build
+```
+
+To load it into Chrome:
+1. Navigate to `chrome://extensions/`
+2. Enable **Developer mode** in the top right.
+3. Click **Load unpacked** and select the `extension/dist` directory from this repository.
+4. Click the extension icon to sign in to your Smart Form account!
 
 ## ChromaDB Backup & Re-Embedding Recovery Procedure (DATABASE_DESIGN §29)
 
@@ -193,13 +256,22 @@ Document processing uses Celery with Redis as the broker/backend. Redis provides
 
 Frontend setup:
 
-```powershell
-cd frontend
-npm install
-npm run dev
-```
+- Build the extension:
+  ```bash
+  cd extension
+  npm run build
+  ```
+  The extension output will be available in `extension/dist`. Load this folder into Chrome by opening `chrome://extensions`, enabling Developer mode, selecting **Load unpacked**, and choosing `extension/`.
 
-Load the extension by opening `chrome://extensions`, enabling Developer mode, selecting **Load unpacked**, and choosing `extension/`.
+## Testing
+- **Backend**: `pytest`
+- **Frontend**: `npm test`
+- **Extension (E2E Autofill)**: `npx playwright test`
+  ```bash
+  cd extension
+  npx playwright install
+  npx playwright test
+  ```
 
 ## Test and quality checks
 

@@ -1,0 +1,117 @@
+.review-card {
+  background-color: var(--surface-color);
+  border: 1px solid var(--border-color);
+  border-left: 4px solid var(--warning-color);
+  border-radius: var(--radius-lg);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.review-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.review-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.review-concept {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+  text-transform: capitalize;
+  margin: 0 0 0.25rem 0;
+}
+
+.review-reason {
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+  margin: 0;
+}
+
+.review-card-body {
+  background-color: var(--background-color);
+  padding: 1rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+}
+
+.review-value {
+  font-size: 1.125rem;
+  font-weight: 500;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+.review-edit-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.review-edit-input {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--primary-color);
+  border-radius: var(--radius-md);
+  font-size: 1rem;
+  outline: none;
+}
+
+.review-edit-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.review-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 1;
+  min-width: 100px;
+}
+
+.action-btn.confirm {
+  background-color: var(--success-color);
+  border-color: var(--success-color);
+  color: white;
+}
+.action-btn.confirm:hover {
+  background-color: #059669; /* slightly darker success */
+}
+
+.review-sources {
+  font-size: 0.75rem;
+  color: var(--text-tertiary);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.source-label {
+  font-weight: 600;
+}
+
+.source-id {
+  background-color: var(--border-color);
+  padding: 0.125rem 0.5rem;
+  border-radius: var(--radius-full);
+}
