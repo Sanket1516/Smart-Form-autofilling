@@ -4,10 +4,13 @@ from collections.abc import Awaitable, Callable
 from pathlib import Path
 from typing import Protocol
 
+from app.db.chroma_client import ChromaClient
 from app.extraction.facts import CandidateFactExtractor, with_user_id
 from app.models.documents import StructuredFact
+from app.processing.chunking import TextChunker
 from app.processing.extractor import OCRUnavailableError, PDFExtractor
 from app.processing.schemas import NormalizedDocument
+from app.retrieval.embeddings import EmbeddingProvider
 
 STAGES = (
     "upload",
@@ -54,12 +57,18 @@ class DocumentPipeline:
         max_retries: int = 2,
         fact_extractor: CandidateFactExtractor | None = None,
         fact_writer: FactWriter | None = None,
+        chunker: TextChunker | None = None,
+        embedding_provider: EmbeddingProvider | None = None,
+        chroma_client: ChromaClient | None = None,
     ) -> None:
         self.extractor = extractor
         self.stage_writer = stage_writer
         self.max_retries = max_retries
-        self.fact_extractor = fact_extractor
+        self.fact_extractor = fact_extractor or CandidateFactExtractor()
         self.fact_writer = fact_writer
+        self.chunker = chunker or TextChunker()
+        self.embedding_provider = embedding_provider
+        self.chroma_client = chroma_client
 
     async def run(
         self,
@@ -105,9 +114,32 @@ class DocumentPipeline:
                 for fact in self.fact_extractor.extract(result, document_id, document_name):
                     await self.fact_writer.create(user_id, with_user_id(fact, user_id))
             await self._stage(user_id, document_id, "extraction", "completed", on_update)
-            await self._stage(user_id, document_id, "embedding", "skipped", on_update)
+
+            await self._stage(user_id, document_id, "embedding", "started", on_update)
+            chunks = []
+            embeddings = []
+            if self.chunker is not None:
+                chunks = self.chunker.chunk_document(
+                    result, user_id, document_id, document_name
+                )
+            if chunks and self.embedding_provider is not None:
+                texts = [c.text for c in chunks]
+                embeddings = self.embedding_provider.embed_texts(texts)
+            await self._stage(user_id, document_id, "embedding", "completed", on_update)
+
             await self._stage(user_id, document_id, "mongodb_storage", "completed", on_update)
-            await self._stage(user_id, document_id, "chromadb_storage", "skipped", on_update)
+
+            await self._stage(user_id, document_id, "chromadb_storage", "started", on_update)
+            if chunks and embeddings and self.chroma_client is not None:
+                await self.chroma_client.add_chunks(chunks, embeddings)
+            await self._stage(
+                user_id,
+                document_id,
+                "chromadb_storage",
+                "completed" if chunks else "skipped",
+                on_update,
+            )
+
             await self._stage(user_id, document_id, "completed", "completed", on_update)
             return result
         except OCRUnavailableError:

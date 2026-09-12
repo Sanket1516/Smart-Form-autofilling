@@ -1,0 +1,30 @@
+.confidence-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--spacing-4);
+  padding: 2px var(--spacing-8);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-label);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.2;
+}
+
+.badge-success {
+  background-color: var(--color-success-bg);
+  color: #166534; /* darker green for contrast */
+}
+
+.badge-warning {
+  background-color: var(--color-warning-bg);
+  color: #92400e; /* darker amber for contrast */
+}
+
+.badge-info {
+  background-color: var(--color-info-bg);
+  color: #1e40af; /* darker blue for contrast */
+}
+
+.badge-error {
+  background-color: var(--color-error-bg);
+  color: #991b1b; /* darker red for contrast */
+}

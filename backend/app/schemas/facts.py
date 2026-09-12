@@ -18,6 +18,7 @@ class FactData(BaseModel):
     is_user_confirmed: bool
     created_at: datetime
     updated_at: datetime
+    source: dict[str, Any] | None = None
 
 
 class FactsData(BaseModel):
@@ -27,3 +28,4 @@ class FactsData(BaseModel):
 class FactUpdateRequest(BaseModel):
     value: Any
     is_user_confirmed: bool = True
+    reason: str | None = "User fact edit"

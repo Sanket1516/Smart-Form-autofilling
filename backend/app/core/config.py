@@ -41,6 +41,19 @@ class Settings(BaseSettings):
     processing_max_retries: int = Field(default=2, ge=0, le=5)
     ocr_language: str = "en"
     ocr_resolution: int = Field(default=150, ge=72, le=300)
+    extraction_min_confidence: float = Field(default=0.50, ge=0, le=1)
+    classifier_confidence_threshold: float = Field(default=0.50, ge=0, le=1)
+    embedding_model_name: str = "BAAI/bge-m3"
+    rag_chunk_size: int = Field(default=500, ge=50, le=2000)
+    rag_chunk_overlap: int = Field(default=50, ge=0, le=500)
+    llm_reasoning_timeout_seconds: int = Field(default=30, ge=5, le=120)
+    llm_max_evidence_chunks: int = Field(default=5, ge=1, le=20)
+    confidence_threshold: float = Field(default=0.85, ge=0.0, le=1.0)
+    sensitive_field_concepts: str = "ssn,credit_card,passport_number,password"
+
+    @property
+    def sensitive_concepts_list(self) -> list[str]:
+        return [c.strip().lower() for c in self.sensitive_field_concepts.split(",") if c.strip()]
 
 
 @lru_cache

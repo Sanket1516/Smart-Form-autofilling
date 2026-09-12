@@ -79,11 +79,11 @@ class Recommendation(MongoDocument):
 
 class Correction(MongoDocument):
     user_id: str = Field(min_length=1)
-    session_id: str = Field(min_length=1)
-    field_id: str = Field(min_length=1)
+    session_id: str | None = None
+    field_id: str | None = None
     concept: str = Field(min_length=1)
-    original_value: Any
-    corrected_value: Any
+    original_value: Any = None
+    corrected_value: Any = None
     reason: str = Field(min_length=1)
     created_at: datetime
 

@@ -1,6 +1,8 @@
 """TC-OCR-01 through TC-OCR-06 pipeline tests."""
 
 import pytest
+from typing import Any
+
 from app.processing.extractor import OCRUnavailableError
 from app.processing.pipeline import DocumentPipeline
 from app.processing.schemas import ExtractedSpan, NormalizedDocument, NormalizedPage

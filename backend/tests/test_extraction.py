@@ -139,6 +139,49 @@ def test_tc_ext_06_provenance_and_confidence_are_preserved() -> None:
 
 
 @pytest.mark.asyncio
+async def test_tc_db_01_store_user() -> None:
+    from app.models.documents import UserDocument
+
+    timestamp = datetime.now(UTC)
+    user = UserDocument(
+        full_name="Ada Lovelace",
+        email="ada@example.com",
+        password_hash="hashed_password",
+        status="active",
+        created_at=timestamp,
+        updated_at=timestamp,
+    )
+    assert user.full_name == "Ada Lovelace"
+    assert user.email == "ada@example.com"
+    assert user.status == "active"
+
+
+@pytest.mark.asyncio
+async def test_tc_db_02_store_document_metadata() -> None:
+    from app.models.documents import DocumentRecord
+
+    timestamp = datetime.now(UTC)
+    doc = DocumentRecord(
+        user_id="user-123",
+        file_name="resume.pdf",
+        file_type="application/pdf",
+        file_size=1024,
+        storage_reference="/data/uploads/resume.pdf",
+        document_type="resume",
+        language="en",
+        status="processed",
+        uploaded_at=timestamp,
+        processed_at=timestamp,
+        page_count=2,
+        checksum="a" * 64,
+    )
+    assert doc.user_id == "user-123"
+    assert doc.file_name == "resume.pdf"
+    assert doc.page_count == 2
+    assert doc.status == "processed"
+
+
+@pytest.mark.asyncio
 async def test_tc_db_03_fact_is_user_and_document_linked() -> None:
     timestamp = datetime.now(UTC)
     repository = FakeFactsRepository(
@@ -162,6 +205,7 @@ async def test_tc_db_03_fact_is_user_and_document_linked() -> None:
     facts = await FactService(repository).list_for_document("user-1", "doc-1")
     assert facts.facts[0].fact_id == "fact-1"
     assert facts.facts[0].source_document_id == "doc-1"
+    assert facts.facts[0].source == {"document_id": "doc-1", "page": 1}
 
 
 @pytest.mark.asyncio

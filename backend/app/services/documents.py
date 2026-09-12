@@ -32,13 +32,21 @@ MAGIC = {
 }
 
 
+from app.db.chroma_client import ChromaClient
+
+
 class DocumentService:
     def __init__(
-        self, repository: DocumentsRepository, storage: LocalFileStorage, settings: Settings
+        self,
+        repository: DocumentsRepository,
+        storage: LocalFileStorage,
+        settings: Settings,
+        chroma_client: ChromaClient | None = None,
     ):
         self.repository = repository
         self.storage = storage
         self.settings = settings
+        self.chroma_client = chroma_client
 
     async def upload(self, user_id: str, file: UploadFile) -> DocumentData:
         filename = Path(file.filename or "").name
@@ -138,6 +146,8 @@ class DocumentService:
         await self.repository.update(
             user_id, document_id, {"status": "deleted", "current_stage": "deleted", "progress": 100}
         )
+        if self.chroma_client is not None:
+            await self.chroma_client.delete_document_chunks(user_id, document_id)
 
     async def reprocess(self, user_id: str, document_id: str) -> dict[str, str]:
         return await self.start_processing(user_id, document_id)

@@ -11,7 +11,7 @@ EMAIL_RE = re.compile(r"\b[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}\b")
 PHONE_RE = re.compile(r"(?<!\d)(?:\+?\d[\d ()-]{8,}\d)(?!\d)")
 DOB_RE = re.compile(
     r"(?i)(?:date\s+of\s+birth|dob|birth\s*date)\s*[:=-]?\s*"
-    r"(\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|\d{4}[/-]\d{1,2}[/-]\d{1,2})"
+    r"(\d{1,2}[/-]\d{1,2}[/-]\d{2,4}|\d{4}[/-]\d{1,2}[/-]\d{1,2}|\d{1,2}\s+[A-Za-z]{3,9}\s+\d{2,4}|[A-Za-z]{3,9}\s+\d{1,2},\s*\d{2,4}|\d{1,2}-[A-Za-z]{3,9}-\d{2,4})"
 )
 PAN_RE = re.compile(r"\b[A-Z]{5}\d{4}[A-Z]\b")
 PASSPORT_RE = re.compile(
@@ -73,8 +73,8 @@ class CandidateFactExtractor:
             )
 
         labelled = re.match(
-            r"(?i)^\s*(full\s*name|name|address|current\s+address|permanent\s+address|"
-            r"university|college|degree|organization|company|employer|skills?)\s*[:=-]\s*(.+?)\s*$",
+            r"(?i)^\s*(full\s*name|first\s*name|last\s*name|name|address|current\s+address|permanent\s+address|"
+            r"university|college|degree|education|organization|company|employer|skills?)\s*[:=-]\s*(.+?)\s*$",
             text,
         )
         if labelled:
@@ -83,12 +83,15 @@ class CandidateFactExtractor:
             concept = {
                 "name": "full_name",
                 "full_name": "full_name",
+                "first_name": "first_name",
+                "last_name": "last_name",
                 "current_address": "current_address",
                 "permanent_address": "permanent_address",
                 "address": "current_address",
                 "university": "university",
                 "college": "university",
                 "degree": "degree",
+                "education": "education",
                 "organization": "organization",
                 "company": "organization",
                 "employer": "organization",
@@ -126,16 +129,38 @@ def with_user_id(fact: StructuredFact, user_id: str) -> StructuredFact:
 
 
 def _normalize_date(value: str) -> str | None:
-    for pattern in ("%d/%m/%Y", "%d-%m-%Y", "%Y/%m/%d", "%Y-%m-%d", "%d/%m/%y", "%d-%m-%y"):
+    cleaned = value.strip()
+    patterns = (
+        "%d/%m/%Y",
+        "%d-%m-%Y",
+        "%Y/%m/%d",
+        "%Y-%m-%d",
+        "%d/%m/%y",
+        "%d-%m-%y",
+        "%d %b %Y",
+        "%d %B %Y",
+        "%b %d, %Y",
+        "%B %d, %Y",
+        "%d-%b-%Y",
+        "%d-%B-%Y",
+        "%Y.%m.%d",
+        "%d.%m.%Y",
+    )
+    for pattern in patterns:
         try:
-            return datetime.strptime(value, pattern).date().isoformat()
+            return datetime.strptime(cleaned, pattern).date().isoformat()
         except ValueError:
             continue
     return None
 
 
 def _normalize_phone(value: str) -> str | None:
-    digits = re.sub(r"\D", "", value)
+    raw = value.strip()
+    digits = re.sub(r"\D", "", raw)
+    if not digits:
+        return None
+    if raw.startswith("+"):
+        return f"+{digits}"
     if len(digits) == 10:
         return f"+91{digits}"
     if 10 <= len(digits) <= 15:

@@ -1,0 +1,250 @@
+version: "1.0.0"
+description: "Universal Field Ontology defining canonical form semantic concepts and synonym lists."
+
+concepts:
+  full_name:
+    canonical_name: "full_name"
+    category: "personal"
+    description: "Full legal name of an individual"
+    value_type: "string"
+    synonyms:
+      - "Full Name"
+      - "Applicant Name"
+      - "Given Name"
+      - "Candidate Name"
+      - "Name of Candidate"
+      - "Complete Name"
+      - "Person Name"
+      - "Name"
+      - "User Name"
+      - "Your Name"
+
+  first_name:
+    canonical_name: "first_name"
+    category: "personal"
+    description: "First or given name"
+    value_type: "string"
+    synonyms:
+      - "First Name"
+      - "Given Name"
+      - "Forename"
+      - "Firstname"
+      - "First"
+
+  last_name:
+    canonical_name: "last_name"
+    category: "personal"
+    description: "Last or family name / surname"
+    value_type: "string"
+    synonyms:
+      - "Last Name"
+      - "Surname"
+      - "Family Name"
+      - "Lastname"
+      - "Last"
+
+  date_of_birth:
+    canonical_name: "date_of_birth"
+    category: "personal"
+    description: "Date of birth in ISO format or standardized date string"
+    value_type: "date"
+    synonyms:
+      - "Date of Birth"
+      - "DOB"
+      - "Birth Date"
+      - "Birthdate"
+      - "Date of birth (DD/MM/YYYY)"
+      - "Birth Date (YYYY-MM-DD)"
+      - "Day of Birth"
+
+  email_address:
+    canonical_name: "email_address"
+    category: "contact"
+    description: "Electronic mail address"
+    value_type: "email"
+    synonyms:
+      - "Email"
+      - "Email Address"
+      - "Contact Email"
+      - "E-mail"
+      - "Email ID"
+      - "Mail Address"
+      - "Primary Email"
+
+  phone_number:
+    canonical_name: "phone_number"
+    category: "contact"
+    description: "Telephone or mobile phone number"
+    value_type: "phone"
+    synonyms:
+      - "Phone"
+      - "Phone Number"
+      - "Mobile"
+      - "Telephone Number"
+      - "Contact Number"
+      - "Mobile Number"
+      - "Cell Phone"
+      - "Phone No"
+      - "Tel"
+
+  address:
+    canonical_name: "address"
+    category: "address"
+    description: "General street or residential address"
+    value_type: "string"
+    synonyms:
+      - "Address"
+      - "Residential Address"
+      - "Current Address"
+      - "Street Address"
+      - "Full Address"
+      - "Mailing Address"
+
+  current_address:
+    canonical_name: "current_address"
+    category: "address"
+    description: "Current or present residential location"
+    value_type: "string"
+    synonyms:
+      - "Current Address"
+      - "Present Address"
+      - "Local Address"
+      - "Current Location"
+      - "Residential Location"
+
+  permanent_address:
+    canonical_name: "permanent_address"
+    category: "address"
+    description: "Permanent or native residence"
+    value_type: "string"
+    synonyms:
+      - "Permanent Address"
+      - "Home Address"
+      - "Native Address"
+      - "Permanent Location"
+
+  city:
+    canonical_name: "city"
+    category: "address"
+    description: "City or town name"
+    value_type: "string"
+    synonyms:
+      - "City"
+      - "Town"
+      - "City/Town"
+      - "Municipality"
+
+  state:
+    canonical_name: "state"
+    category: "address"
+    description: "State, province, or region"
+    value_type: "string"
+    synonyms:
+      - "State"
+      - "Province"
+      - "Region"
+      - "State/Province"
+
+  country:
+    canonical_name: "country"
+    category: "address"
+    description: "Nation or country of residence"
+    value_type: "string"
+    synonyms:
+      - "Country"
+      - "Nation"
+      - "Country of Residence"
+
+  postal_code:
+    canonical_name: "postal_code"
+    category: "address"
+    description: "ZIP, postal, or PIN code"
+    value_type: "string"
+    synonyms:
+      - "Postal Code"
+      - "Zip Code"
+      - "Pincode"
+      - "PIN Code"
+      - "Zip"
+      - "Postcode"
+
+  organization:
+    canonical_name: "organization"
+    category: "employment"
+    description: "Employer, university, or company name"
+    value_type: "string"
+    synonyms:
+      - "Organization"
+      - "Company"
+      - "Employer"
+      - "Institute"
+      - "University"
+      - "Institution"
+      - "School"
+      - "College"
+      - "Workplace"
+
+  education:
+    canonical_name: "education"
+    category: "education"
+    description: "Degree, qualification, or academic history"
+    value_type: "string"
+    synonyms:
+      - "Education"
+      - "Degree"
+      - "Qualification"
+      - "Academic Background"
+      - "Course"
+      - "Major"
+
+  skill:
+    canonical_name: "skill"
+    category: "skills"
+    description: "Technical or professional skill/competency"
+    value_type: "string"
+    synonyms:
+      - "Skill"
+      - "Skills"
+      - "Competencies"
+      - "Technical Skills"
+      - "Expertise"
+
+  linkedin:
+    canonical_name: "linkedin"
+    category: "contact"
+    description: "LinkedIn profile URL or handle"
+    value_type: "url"
+    synonyms:
+      - "LinkedIn"
+      - "LinkedIn Profile"
+      - "LinkedIn URL"
+      - "LinkedIn Link"
+
+  github:
+    canonical_name: "github"
+    category: "contact"
+    description: "GitHub profile URL or handle"
+    value_type: "url"
+    synonyms:
+      - "GitHub"
+      - "GitHub Profile"
+      - "GitHub URL"
+      - "GitHub Link"
+
+  gender:
+    canonical_name: "gender"
+    category: "personal"
+    description: "Gender or sex"
+    value_type: "string"
+    synonyms:
+      - "Gender"
+      - "Sex"
+
+  nationality:
+    canonical_name: "nationality"
+    category: "personal"
+    description: "Citizenship or nationality"
+    value_type: "string"
+    synonyms:
+      - "Nationality"
+      - "Citizenship"
