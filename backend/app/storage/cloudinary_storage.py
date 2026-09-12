@@ -35,7 +35,7 @@ class CloudinaryStorage:
             return cloudinary.uploader.upload(
                 full_content,
                 resource_type="raw",
-                type="authenticated",
+                type="upload",
                 use_filename=True,
                 unique_filename=True,
                 filename_override=Path(filename).name
@@ -50,7 +50,7 @@ class CloudinaryStorage:
             return cloudinary.uploader.upload(
                 content,
                 resource_type="raw",
-                type="authenticated",
+                type="upload",
                 public_id=relative_path,
                 overwrite=True
             )
@@ -61,13 +61,13 @@ class CloudinaryStorage:
     async def delete(self, storage_reference: str) -> None:
         """Delete an asset from Cloudinary."""
         def destroy():
-            return cloudinary.uploader.destroy(storage_reference, resource_type="raw", type="authenticated")
+            return cloudinary.uploader.destroy(storage_reference, resource_type="raw", type="upload")
             
         await asyncio.to_thread(destroy)
 
     async def checksum(self, storage_reference: str) -> str:
         """Fetch the file and compute its checksum."""
-        url = cloudinary.utils.cloudinary_url(storage_reference, resource_type="raw", type="authenticated", sign_url=True)[0]
+        url = cloudinary.utils.cloudinary_url(storage_reference, resource_type="raw", type="upload")[0]
         
         async with httpx.AsyncClient() as client:
             response = await client.get(url)
@@ -81,7 +81,7 @@ class CloudinaryStorage:
     @asynccontextmanager
     async def get_local_path(self, storage_reference: str) -> typing.AsyncGenerator[str, None]:
         """Download to a temp file, yield it, and delete on exit."""
-        url = cloudinary.utils.cloudinary_url(storage_reference, resource_type="raw", type="authenticated", sign_url=True)[0]
+        url = cloudinary.utils.cloudinary_url(storage_reference, resource_type="raw", type="upload")[0]
         
         fd, temp_path = tempfile.mkstemp()
         try:
