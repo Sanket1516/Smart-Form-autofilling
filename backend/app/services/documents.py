@@ -63,8 +63,18 @@ class DocumentService:
         if not chunks or not self._integrity_ok(suffix, b"".join(chunks)):
             raise APIError("INVALID_FILE", "File integrity validation failed", 400)
         checksum = hashlib.sha256(b"".join(chunks)).hexdigest()
-        if await self.repository.find_by_checksum(user_id, checksum):
+        existing = await self.repository.find_by_checksum(user_id, checksum)
+        if existing and existing.get("status") != "deleted":
             raise APIError("DUPLICATE_DOCUMENT", "Document has already been uploaded", 409)
+        if existing:
+            # The old record predates this upload and is already deleted. Give
+            # it a tombstone checksum so the unique (user_id, checksum) index
+            # permits the user to upload the same file again.
+            await self.repository.update(
+                user_id,
+                str(existing["_id"]),
+                {"checksum": self._deleted_checksum(checksum, str(existing["_id"]))},
+            )
         storage_reference, _ = await self.storage.save(filename, chunks)
         from datetime import UTC, datetime
 
@@ -93,10 +103,11 @@ class DocumentService:
     async def list(
         self, user_id: str, status: str | None, document_type: str | None, page: int, limit: int
     ) -> DocumentListData:
+        # Deletion is a soft delete so processing/audit data can be retained.
+        # Do not return those records in the ordinary document library.
         filters = {
-            key: value
-            for key, value in {"status": status, "document_type": document_type}.items()
-            if value
+            "status": status if status else {"$ne": "deleted"},
+            **({"document_type": document_type} if document_type else {}),
         }
         total = await self.repository.count(user_id, filters)
         records = await self.repository.list_page(user_id, filters, (page - 1) * limit, limit)
@@ -144,7 +155,16 @@ class DocumentService:
             raise APIError("RESOURCE_NOT_FOUND", "Document not found", 404)
         await self.storage.delete(record["storage_reference"])
         await self.repository.update(
-            user_id, document_id, {"status": "deleted", "current_stage": "deleted", "progress": 100}
+            user_id,
+            document_id,
+            {
+                "status": "deleted",
+                "current_stage": "deleted",
+                "progress": 100,
+                # Keep the audit record but release the active-file checksum
+                # so deleting a file actually allows a later re-upload.
+                "checksum": self._deleted_checksum(record["checksum"], document_id),
+            },
         )
         if self.chroma_client is not None:
             await self.chroma_client.delete_document_chunks(user_id, document_id)
@@ -160,6 +180,11 @@ class DocumentService:
     def _document_type(filename: str) -> str:
         stem = Path(filename).stem.lower()
         return "resume" if "resume" in stem else "unknown"
+
+    @staticmethod
+    def _deleted_checksum(checksum: str, document_id: str) -> str:
+        """Return a valid, unique checksum value for a soft-deleted record."""
+        return hashlib.sha256(f"deleted:{checksum}:{document_id}".encode()).hexdigest()
 
     @staticmethod
     def _data(record: dict[str, Any]) -> DocumentData:

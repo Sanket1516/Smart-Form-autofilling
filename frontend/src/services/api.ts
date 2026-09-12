@@ -1,6 +1,19 @@
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
 const getBaseUrl = () => API_BASE_URL;
 
+/**
+ * API failures use `{ error: { message } }`.  Preserve that useful message
+ * instead of replacing it with a generic client-side error.
+ */
+async function getErrorMessage(response: Response, fallback: string): Promise<string> {
+  try {
+    const body = await response.json();
+    return body?.error?.message || body?.detail?.message || body?.detail || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 export async function getHealth() {
   const response = await fetch(`${API_BASE_URL}/api/v1/health`);
   const body = await response.json();
@@ -40,7 +53,7 @@ export const documentApi = {
     const res = await fetch(`${getBaseUrl()}/api/v1/documents`, {
       headers: getHeaders(),
     });
-    if (!res.ok) throw new Error('Failed to fetch documents');
+    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to fetch documents'));
     const json = await res.json();
     return json.data.documents || [];
   },
@@ -49,7 +62,7 @@ export const documentApi = {
     const res = await fetch(`${getBaseUrl()}/api/v1/documents/${id}`, {
       headers: getHeaders(),
     });
-    if (!res.ok) throw new Error('Failed to fetch document');
+    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to fetch document'));
     const json = await res.json();
     return json.data;
   },
@@ -63,7 +76,7 @@ export const documentApi = {
       headers: getHeaders(true),
       body: formData,
     });
-    if (!res.ok) throw new Error('Failed to upload document');
+    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to upload document'));
     const json = await res.json();
     return json.data;
   },
@@ -73,7 +86,7 @@ export const documentApi = {
       method: 'POST',
       headers: getHeaders(),
     });
-    if (!res.ok) throw new Error('Failed to process document');
+    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to process document'));
   },
 
   deleteDocument: async (id: string): Promise<void> => {
@@ -81,14 +94,14 @@ export const documentApi = {
       method: 'DELETE',
       headers: getHeaders(),
     });
-    if (!res.ok) throw new Error('Failed to delete document');
+    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to delete document'));
   },
   
   getDocumentStatus: async (id: string): Promise<{status: string; current_stage: string; progress: number; error: string | null}> => {
     const res = await fetch(`${getBaseUrl()}/api/v1/documents/${id}/status`, {
       headers: getHeaders(),
     });
-    if (!res.ok) throw new Error('Failed to fetch document status');
+    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to fetch document status'));
     const json = await res.json();
     return json.data;
   }
@@ -96,18 +109,18 @@ export const documentApi = {
 
 export const profileApi = {
   getProfile: async () => {
-    const res = await fetch(`${getBaseUrl()}/api/v1/profile/me`, { headers: getHeaders() });
-    if (!res.ok) throw new Error('Failed to fetch profile');
+    const res = await fetch(`${getBaseUrl()}/api/v1/profile`, { headers: getHeaders() });
+    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to fetch profile'));
     const json = await res.json();
     return json.data;
   },
   updateProfile: async (data: any) => {
-    const res = await fetch(`${getBaseUrl()}/api/v1/profile/me`, {
+    const res = await fetch(`${getBaseUrl()}/api/v1/profile`, {
       method: 'PUT',
       headers: getHeaders(),
       body: JSON.stringify(data),
     });
-    if (!res.ok) throw new Error('Failed to update profile');
+    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to update profile'));
     const json = await res.json();
     return json.data;
   }
@@ -115,9 +128,10 @@ export const profileApi = {
 
 export const factsApi = {
   getFacts: async (concept?: string) => {
-    const url = concept ? `${getBaseUrl()}/api/v1/facts?concept=${concept}` : `${getBaseUrl()}/api/v1/facts`;
+    const baseUrl = `${getBaseUrl()}/api/v1/profile/facts`;
+    const url = concept ? `${baseUrl}?concept=${encodeURIComponent(concept)}` : baseUrl;
     const res = await fetch(url, { headers: getHeaders() });
-    if (!res.ok) throw new Error('Failed to fetch facts');
+    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to fetch facts'));
     const json = await res.json();
     return json.data.facts || [];
   },
@@ -126,14 +140,14 @@ export const factsApi = {
       method: 'DELETE',
       headers: getHeaders(),
     });
-    if (!res.ok) throw new Error('Failed to delete fact');
+    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to delete fact'));
   }
 };
 
 export const reviewsApi = {
   getPendingReviews: async () => {
     const res = await fetch(`${getBaseUrl()}/api/v1/reviews/pending`, { headers: getHeaders() });
-    if (!res.ok) throw new Error('Failed to fetch pending reviews');
+    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to fetch pending reviews'));
     const json = await res.json();
     return json.data.reviews || [];
   },
@@ -143,7 +157,7 @@ export const reviewsApi = {
       headers: getHeaders(),
       body: JSON.stringify({ decision, value }),
     });
-    if (!res.ok) throw new Error('Failed to submit review decision');
+    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to submit review decision'));
     const json = await res.json();
     return json.data;
   }

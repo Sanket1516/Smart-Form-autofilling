@@ -71,13 +71,19 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
         return;
       }
 
+      const pageUrl = new URL(message.payload.url);
       fetch(`${API_BASE_URL}/forms/sessions`, {
         method: 'POST',
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify({ source_url: message.payload.url })
+        body: JSON.stringify({
+          website_origin: pageUrl.origin,
+          page_url: pageUrl.href,
+          // A stable page-level ID is enough until pages expose a native form ID.
+          form_id: `form:${pageUrl.pathname || '/'}`,
+        })
       })
       .then(async response => {
         if (response.status === 401) {

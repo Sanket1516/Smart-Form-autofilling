@@ -82,22 +82,36 @@ export const App = () => {
 
   const handleStartAutofillFlow = () => {
     setLoading(true);
+    setError(null);
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       const activeTab = tabs[0];
       if (activeTab && activeTab.url) {
         chrome.runtime.sendMessage({ type: 'CREATE_SESSION', payload: { url: activeTab.url } }, (res) => {
           setLoading(false);
           if (res.success) {
-            // Trigger backend analyze endpoint
-            chrome.storage.local.get(['token'], (storageRes) => {
+            chrome.runtime.sendMessage({ type: 'GET_TAB_FIELDS', tabId: activeTab.id }, (fieldsRes) => {
+              const fields = (fieldsRes?.payload || []).map((field: any) => ({
+                field_id: field.field_id,
+                label: field.label || field.aria_label || field.name || field.id || 'Unlabeled field',
+                name: field.name || '',
+                placeholder: field.placeholder || '',
+                input_type: field.type || 'text',
+                section: field.section_context || '',
+                dom_context: field.dom_context || {},
+                accessibility_context: field.accessibility_context || {},
+              }));
               fetch(`http://localhost:8000/api/v1/forms/sessions/${res.session.session_id}/analyze`, {
                 method: 'POST',
                 headers: {
-                  'Authorization': `Bearer ${storageRes.token}`,
+                  'Authorization': `Bearer ${token}`,
                   'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ fields: Array.from({length: fieldCount}) }) // In real app, payload would be the actual detected fields array. Since background has it cached, we could have background trigger analyze, or fetch it here.
-              }).then(() => {
+                body: JSON.stringify({ fields })
+              }).then(async response => {
+                if (!response.ok) {
+                  const body = await response.json().catch(() => null);
+                  throw new Error(body?.error?.message || 'Failed to analyze form');
+                }
                 setActiveSessionId(res.session.session_id);
               }).catch(err => {
                 setError('Failed to start analysis: ' + err.message);

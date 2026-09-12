@@ -53,7 +53,10 @@ class FakeDocuments:
     ) -> list[dict]:
         records = [record for record in self.records.values() if record["user_id"] == user_id]
         for key, value in (filters or {}).items():
-            records = [record for record in records if record.get(key) == value]
+            if isinstance(value, dict) and "$ne" in value:
+                records = [record for record in records if record.get(key) != value["$ne"]]
+            else:
+                records = [record for record in records if record.get(key) == value]
         return records[skip : skip + limit]
 
 
@@ -132,4 +135,37 @@ async def test_status_and_delete_are_user_scoped(
     assert missing.value.code == "RESOURCE_NOT_FOUND"
     await service.delete("user-a", result.document_id)
     assert (await service.status("user-a", result.document_id)).status == "deleted"
+    temporary.cleanup()
+
+
+@pytest.mark.asyncio
+async def test_list_omits_soft_deleted_documents(
+    document_service: tuple[DocumentService, FakeDocuments, TemporaryDirectory[str]],
+) -> None:
+    service, _, temporary = document_service
+    document = await service.upload(
+        "user-a", await make_upload("a.pdf", "application/pdf", b"%PDF-1.7 test")
+    )
+    await service.delete("user-a", document.document_id)
+
+    result = await service.list("user-a", None, None, 1, 20)
+
+    assert result.documents == []
+    assert result.total == 0
+    temporary.cleanup()
+
+
+@pytest.mark.asyncio
+async def test_deleted_document_can_be_uploaded_again(
+    document_service: tuple[DocumentService, FakeDocuments, TemporaryDirectory[str]],
+) -> None:
+    service, _, temporary = document_service
+    content = b"%PDF-1.7 reusable file"
+    document = await service.upload("user-a", await make_upload("a.pdf", "application/pdf", content))
+    await service.delete("user-a", document.document_id)
+
+    replacement = await service.upload("user-a", await make_upload("a.pdf", "application/pdf", content))
+
+    assert replacement.document_id != document.document_id
+    assert replacement.status == "uploaded"
     temporary.cleanup()

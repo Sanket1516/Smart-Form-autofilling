@@ -39,7 +39,14 @@ export const DocumentList: React.FC<DocumentListProps> = ({ onViewDocument, refr
       await documentApi.deleteDocument(id);
       setDocuments(prev => prev.filter(doc => doc.document_id !== id));
     } catch (err) {
-      alert('Failed to delete document');
+      const message = err instanceof Error ? err.message : 'Failed to delete document';
+      // A stale card can be shown if this page was left open while the item
+      // was deleted elsewhere. It is already gone, so remove it locally.
+      if (message === 'Document not found') {
+        setDocuments(prev => prev.filter(doc => doc.document_id !== id));
+        return;
+      }
+      setError(message);
     }
   };
 

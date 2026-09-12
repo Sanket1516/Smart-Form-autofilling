@@ -6,6 +6,9 @@ class AgentState(TypedDict, total=False):
     """LangGraph state schema for form autofilling agent."""
     
     workflow_id: str
+    # Browser form-session ID. It must survive the graph so persisted
+    # recommendations can be retrieved by the extension for that session.
+    session_id: str
     user_id: str
     page_context: dict[str, Any]
     field_objects: list[dict[str, Any]]

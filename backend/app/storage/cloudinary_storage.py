@@ -67,7 +67,7 @@ class CloudinaryStorage:
 
     async def checksum(self, storage_reference: str) -> str:
         """Fetch the file and compute its checksum."""
-        url = cloudinary.utils.cloudinary_url(storage_reference, resource_type="raw", type="upload")[0]
+        url = self._private_download_url(storage_reference)
         
         async with httpx.AsyncClient() as client:
             response = await client.get(url)
@@ -81,9 +81,12 @@ class CloudinaryStorage:
     @asynccontextmanager
     async def get_local_path(self, storage_reference: str) -> typing.AsyncGenerator[str, None]:
         """Download to a temp file, yield it, and delete on exit."""
-        url = cloudinary.utils.cloudinary_url(storage_reference, resource_type="raw", type="upload")[0]
+        url = self._private_download_url(storage_reference)
         
-        fd, temp_path = tempfile.mkstemp()
+        # The processing pipeline selects an extractor from the filename
+        # extension, so retain the original document suffix in the temporary
+        # download rather than using an extensionless mkstemp file.
+        fd, temp_path = tempfile.mkstemp(suffix=Path(storage_reference).suffix)
         try:
             async with httpx.AsyncClient() as client:
                 async with client.stream("GET", url) as response:
@@ -101,3 +104,19 @@ class CloudinaryStorage:
                 os.remove(temp_path)
             except OSError:
                 pass
+
+    @staticmethod
+    def _private_download_url(storage_reference: str) -> str:
+        """Create a short-lived signed API download URL for raw documents.
+
+        Raw resources may be protected by Cloudinary's Strict Deliveries
+        setting, so their ordinary delivery URL can return 401 even though the
+        API account that uploaded the document has access to it.
+        """
+        return cloudinary.utils.private_download_url(
+            storage_reference,
+            "",
+            resource_type="raw",
+            type="upload",
+            attachment=False,
+        )

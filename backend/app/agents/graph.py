@@ -462,7 +462,10 @@ class AutofillAgent:
         }
         
         user_id = state.get("user_id", "anonymous")
-        session_id = state.get("workflow_id", "")
+        # Recommendations must be associated with the browser form session,
+        # not the internal per-field workflow ID, so the extension can fetch
+        # all values approved for that form.
+        session_id = state.get("session_id", "")
         field = state.get("current_field") or {}
         field_id = field.get("field_id", "")
         field_label = field.get("label", "")
@@ -484,7 +487,13 @@ class AutofillAgent:
             FinalResponseStatus.MULTIPLE_CANDIDATES.value,
             FinalResponseStatus.LOW_CONFIDENCE.value,
         )
-        db_status = "pending_review" if is_hitl else "generated"
+        db_status = (
+            "pending_review"
+            if is_hitl
+            else FinalResponseStatus.READY_TO_FILL.value
+            if frs == FinalResponseStatus.READY_TO_FILL.value
+            else "generated"
+        )
         
         # Persist to database
         if self.recommendations_repo:
