@@ -115,12 +115,21 @@ class ChromaClient:
             "documents": [c.text for c in chunks],
             "metadatas": [c.metadata for c in chunks],
         }
-        path = f"/api/v2/tenants/{self._tenant}/databases/{self._database}/collections/{collection_id}/add"
+        path = f"/api/v2/tenants/{self._tenant}/databases/{self._database}/collections/{collection_id}/upsert"
         try:
             await asyncio.to_thread(self._request, "POST", path, payload)
             logger.info("chroma_chunks_added", extra={"count": len(chunks)})
         except Exception as error:
-            logger.info("chroma_add_using_in_memory_fallback", extra={"error": str(error)})
+            logger.warning(
+                "chroma_add_failed_using_in_memory_fallback",
+                extra={"error": str(error), "chunk_count": len(chunks)},
+            )
+            logger.error(
+                "CHROMADB_INSERT_FAILED: %d chunks not persisted to ChromaDB — "
+                "RAG retrieval will NOT work. Check ChromaDB service. Error: %s",
+                len(chunks),
+                error,
+            )
             for c, emb in zip(chunks, embeddings):
                 self._in_memory_fallback.append(
                     {
@@ -213,8 +222,8 @@ class ChromaClient:
                     )
                 return results
         except Exception as error:
-            logger.info(
-                "chroma_query_using_in_memory_fallback", extra={"error": str(error)}
+            logger.warning(
+                "chroma_query_failed_using_in_memory_fallback", extra={"error": str(error)}
             )
 
         return self._query_in_memory_fallback(

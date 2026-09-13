@@ -65,6 +65,7 @@ class ConflictResolver:
                 "score": base_score,
                 "raw_candidate": c,
                 "type": "structured",
+                "is_explicit_conflict": c.get("status") == "CONFLICT",
             })
             
         # 2. Score RAG Candidates (only if value exists, but RAG chunks are text blocks)
@@ -98,6 +99,9 @@ class ConflictResolver:
         if concept.lower() in self.sensitive_concepts:
             requires_confirmation = True
             reason = f"Sensitive field '{concept}' always requires confirmation"
+        elif any(c.get("is_explicit_conflict") for c in all_candidates):
+            requires_confirmation = True
+            reason = "Document extractor explicitly flagged a conflict for this concept"
         elif final_confidence < self.confidence_threshold:
             requires_confirmation = True
             reason = f"Confidence {final_confidence:.2f} is below threshold {self.confidence_threshold}"

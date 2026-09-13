@@ -26,19 +26,21 @@ def test_tc_sec_02_authorization_by_ownership(test_client: TestClient, auth_head
 
 def test_tc_sec_03_rate_limiting(test_client: TestClient):
     """TC-SEC-03: Ensure rate limiting blocks excessive requests."""
-    # Auth login is limited to 5/minute.
-    headers = {"X-Forwarded-For": "192.168.1.100"}
-    for _ in range(5):
-        test_client.post("/api/v1/auth/login", json={"email": "test@example.com", "password": "wrong"}, headers=headers)
-    
-    
-    # 6th request should be rate limited (429 Too Many Requests)
-    response = test_client.post("/api/v1/auth/login", json={"email": "test@example.com", "password": "wrong"}, headers=headers)
-    assert response.status_code == 429
-    
-    # Reset limiter so it doesn't break other tests
-    from app.core.rate_limit import limiter
-    limiter._storage.reset()
+    from app.main import app
+    app.state.limiter.enabled = True
+    try:
+        # Auth login is limited to 5/minute.
+        headers = {"X-Forwarded-For": "192.168.1.100"}
+        for _ in range(5):
+            test_client.post("/api/v1/auth/login", json={"email": "test@example.com", "password": "wrong"}, headers=headers)
+        
+        # 6th request should be rate limited (429 Too Many Requests)
+        response = test_client.post("/api/v1/auth/login", json={"email": "test@example.com", "password": "wrong"}, headers=headers)
+        assert response.status_code == 429
+    finally:
+        app.state.limiter.enabled = False
+        from app.core.rate_limit import limiter
+        limiter._storage.reset()
 
 def test_tc_sec_04_file_upload_size_limit(test_client: TestClient, auth_headers: dict[str, str]):
     """TC-SEC-04: Ensure file upload size limit is enforced."""

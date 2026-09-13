@@ -52,15 +52,25 @@ class DocumentRecord(MongoDocument):
 class StructuredFact(MongoDocument):
     user_id: str = Field(min_length=1)
     concept: str = Field(min_length=1)
-    value: Any
+    value: Any = None
     value_type: str = Field(min_length=1)
     source_document_id: str = Field(min_length=1)
-    source_page: int = Field(ge=1)
+    source_page: int | None = None
     confidence: float = Field(ge=0, le=1)
     provenance: dict[str, Any] = Field(default_factory=dict)
+    status: str = Field(default="EXTRACTED") # EXTRACTED, CONFLICT, RESOLVED
+    candidates: list[dict[str, Any]] = Field(default_factory=list) # Populated if status == CONFLICT
     is_user_confirmed: bool
     created_at: datetime
     updated_at: datetime
+
+
+class UnmappedItem(MongoDocument):
+    user_id: str = Field(min_length=1)
+    source_document_id: str = Field(min_length=1)
+    value: Any
+    reason: str | None = None
+    created_at: datetime
 
 
 class Recommendation(MongoDocument):

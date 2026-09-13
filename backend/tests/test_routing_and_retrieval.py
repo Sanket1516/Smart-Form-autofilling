@@ -54,7 +54,7 @@ async def test_route_structured_retrieval(mock_fact: FactData):
     
     state: AgentState = {
         "user_id": "user1",
-        "semantic_result": {"concept": "first_name"}
+        "semantic_result": {"ontology": "first_name", "field_type": "STRUCTURED"}
     }
     
     route = await agent._route_retrieval(state)
@@ -69,7 +69,7 @@ async def test_route_missing_information():
     
     state: AgentState = {
         "user_id": "user1",
-        "semantic_result": {"concept": "first_name"}
+        "semantic_result": {"ontology": "first_name", "field_type": "CONTEXTUAL"}
     }
     
     route = await agent._route_retrieval(state)
@@ -84,11 +84,11 @@ async def test_route_rag_retrieval():
     
     state: AgentState = {
         "user_id": "user1",
-        "semantic_result": {"concept": "unknown"}
+        "semantic_result": {"ontology": "unknown", "field_type": "MISSING"}
     }
     
     route = await agent._route_retrieval(state)
-    assert route == "rag_retrieval"
+    assert route == "missing_information"
 
 
 @pytest.mark.asyncio
@@ -99,7 +99,7 @@ async def test_node_structured_retrieval(mock_fact: FactData):
     
     state: AgentState = {
         "user_id": "user1",
-        "semantic_result": {"concept": "first_name"}
+        "semantic_result": {"ontology": "first_name", "field_type": "STRUCTURED"}
     }
     
     result = await agent._node_structured_retrieval(state)

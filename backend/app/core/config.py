@@ -7,7 +7,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 class Settings(BaseSettings):
     """Environment-based application configuration."""
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=(".env", "../.env"), extra="ignore")
 
     app_env: str = "development"
     app_name: str = "Smart Form Auto-Filling System"
@@ -20,7 +20,7 @@ class Settings(BaseSettings):
     chromadb_collection: str = "user_document_chunks"
     chromadb_tenant: str = "default_tenant"
     chromadb_database: str = "default_database"
-    chromadb_timeout_seconds: int = 2
+    chromadb_timeout_seconds: int = 30
     llm_provider: str = ""
     llm_model: str = ""
     llm_api_key: str = ""

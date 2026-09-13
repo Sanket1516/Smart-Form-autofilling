@@ -25,3 +25,4 @@ langchain-core>=0.2.0,<1.0.0
 langgraph>=0.2.0,<1.0.0
 slowapi>=0.1.0,<0.2.0
 cloudinary>=1.41.0,<2.0.0
+sentence-transformers>=3.0,<4.0

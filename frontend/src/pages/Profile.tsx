@@ -80,7 +80,7 @@ export const Profile = () => {
                   concept={fact.concept}
                   value={fact.value}
                   confidence={fact.confidence}
-                  sourceDocument={fact.document_id}
+                  sourceDocument={fact.source_document_id}
                   onEdit={() => handleEditFact(fact)}
                 />
               ))}

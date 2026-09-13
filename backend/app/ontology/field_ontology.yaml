@@ -1,250 +1,777 @@
-version: "1.0.0"
-description: "Universal Field Ontology defining canonical form semantic concepts and synonym lists."
-
+version: 2.1.0
 concepts:
-  full_name:
-    canonical_name: "full_name"
-    category: "personal"
-    description: "Full legal name of an individual"
-    value_type: "string"
-    synonyms:
-      - "Full Name"
-      - "Applicant Name"
-      - "Given Name"
-      - "Candidate Name"
-      - "Name of Candidate"
-      - "Complete Name"
-      - "Person Name"
-      - "Name"
-      - "User Name"
-      - "Your Name"
-
-  first_name:
-    canonical_name: "first_name"
-    category: "personal"
-    description: "First or given name"
-    value_type: "string"
-    synonyms:
-      - "First Name"
-      - "Given Name"
-      - "Forename"
-      - "Firstname"
-      - "First"
-
-  last_name:
-    canonical_name: "last_name"
-    category: "personal"
-    description: "Last or family name / surname"
-    value_type: "string"
-    synonyms:
-      - "Last Name"
-      - "Surname"
-      - "Family Name"
-      - "Lastname"
-      - "Last"
-
-  date_of_birth:
-    canonical_name: "date_of_birth"
-    category: "personal"
-    description: "Date of birth in ISO format or standardized date string"
-    value_type: "date"
-    synonyms:
-      - "Date of Birth"
-      - "DOB"
-      - "Birth Date"
-      - "Birthdate"
-      - "Date of birth (DD/MM/YYYY)"
-      - "Birth Date (YYYY-MM-DD)"
-      - "Day of Birth"
-
-  email_address:
-    canonical_name: "email_address"
-    category: "contact"
-    description: "Electronic mail address"
-    value_type: "email"
-    synonyms:
-      - "Email"
-      - "Email Address"
-      - "Contact Email"
-      - "E-mail"
-      - "Email ID"
-      - "Mail Address"
-      - "Primary Email"
-
-  phone_number:
-    canonical_name: "phone_number"
-    category: "contact"
-    description: "Telephone or mobile phone number"
-    value_type: "phone"
-    synonyms:
-      - "Phone"
-      - "Phone Number"
-      - "Mobile"
-      - "Telephone Number"
-      - "Contact Number"
-      - "Mobile Number"
-      - "Cell Phone"
-      - "Phone No"
-      - "Tel"
-
-  address:
-    canonical_name: "address"
-    category: "address"
-    description: "General street or residential address"
-    value_type: "string"
-    synonyms:
-      - "Address"
-      - "Residential Address"
-      - "Current Address"
-      - "Street Address"
-      - "Full Address"
-      - "Mailing Address"
-
-  current_address:
-    canonical_name: "current_address"
-    category: "address"
-    description: "Current or present residential location"
-    value_type: "string"
-    synonyms:
-      - "Current Address"
-      - "Present Address"
-      - "Local Address"
-      - "Current Location"
-      - "Residential Location"
-
-  permanent_address:
-    canonical_name: "permanent_address"
-    category: "address"
-    description: "Permanent or native residence"
-    value_type: "string"
-    synonyms:
-      - "Permanent Address"
-      - "Home Address"
-      - "Native Address"
-      - "Permanent Location"
-
-  city:
-    canonical_name: "city"
-    category: "address"
-    description: "City or town name"
-    value_type: "string"
-    synonyms:
-      - "City"
-      - "Town"
-      - "City/Town"
-      - "Municipality"
-
-  state:
-    canonical_name: "state"
-    category: "address"
-    description: "State, province, or region"
-    value_type: "string"
-    synonyms:
-      - "State"
-      - "Province"
-      - "Region"
-      - "State/Province"
-
-  country:
-    canonical_name: "country"
-    category: "address"
-    description: "Nation or country of residence"
-    value_type: "string"
-    synonyms:
-      - "Country"
-      - "Nation"
-      - "Country of Residence"
-
-  postal_code:
-    canonical_name: "postal_code"
-    category: "address"
-    description: "ZIP, postal, or PIN code"
-    value_type: "string"
-    synonyms:
-      - "Postal Code"
-      - "Zip Code"
-      - "Pincode"
-      - "PIN Code"
-      - "Zip"
-      - "Postcode"
-
-  organization:
-    canonical_name: "organization"
-    category: "employment"
-    description: "Employer, university, or company name"
-    value_type: "string"
-    synonyms:
-      - "Organization"
-      - "Company"
-      - "Employer"
-      - "Institute"
-      - "University"
-      - "Institution"
-      - "School"
-      - "College"
-      - "Workplace"
-
-  education:
-    canonical_name: "education"
-    category: "education"
-    description: "Degree, qualification, or academic history"
-    value_type: "string"
-    synonyms:
-      - "Education"
-      - "Degree"
-      - "Qualification"
-      - "Academic Background"
-      - "Course"
-      - "Major"
-
-  skill:
-    canonical_name: "skill"
-    category: "skills"
-    description: "Technical or professional skill/competency"
-    value_type: "string"
-    synonyms:
-      - "Skill"
-      - "Skills"
-      - "Competencies"
-      - "Technical Skills"
-      - "Expertise"
-
-  linkedin:
-    canonical_name: "linkedin"
-    category: "contact"
-    description: "LinkedIn profile URL or handle"
-    value_type: "url"
-    synonyms:
-      - "LinkedIn"
-      - "LinkedIn Profile"
-      - "LinkedIn URL"
-      - "LinkedIn Link"
-
-  github:
-    canonical_name: "github"
-    category: "contact"
-    description: "GitHub profile URL or handle"
-    value_type: "url"
-    synonyms:
-      - "GitHub"
-      - "GitHub Profile"
-      - "GitHub URL"
-      - "GitHub Link"
-
-  gender:
-    canonical_name: "gender"
-    category: "personal"
-    description: "Gender or sex"
-    value_type: "string"
-    synonyms:
-      - "Gender"
-      - "Sex"
-
-  nationality:
-    canonical_name: "nationality"
-    category: "personal"
-    description: "Citizenship or nationality"
-    value_type: "string"
-    synonyms:
-      - "Nationality"
-      - "Citizenship"
+  personal.full_name:
+    canonical_name: personal.full_name
+    description: Full name of the candidate
+    aliases:
+    - name
+    - full name
+    - applicant name
+    - candidate name
+    - first name
+    - last name
+    - middle name
+    data_type: string
+    cardinality: single
+    is_structured: true
+  personal.date_of_birth:
+    canonical_name: personal.date_of_birth
+    description: Date of birth of the candidate
+    aliases:
+    - dob
+    - birth date
+    - bday
+    data_type: string
+    cardinality: single
+    is_structured: true
+  personal.phone:
+    canonical_name: personal.phone
+    description: Phone number of the candidate
+    aliases:
+    - phone
+    - mobile
+    - contact number
+    - cell
+    - telephone
+    data_type: string
+    cardinality: single
+    is_structured: true
+  personal.email:
+    canonical_name: personal.email
+    description: Email address of the candidate
+    aliases:
+    - email
+    - e-mail
+    - email address
+    data_type: string
+    cardinality: single
+    is_structured: true
+  personal.linkedin:
+    canonical_name: personal.linkedin
+    description: LinkedIn profile URL
+    aliases:
+    - linkedin
+    - linkedin url
+    - linkedin profile
+    data_type: string
+    cardinality: single
+    is_structured: true
+  personal.github:
+    canonical_name: personal.github
+    description: GitHub profile URL
+    aliases:
+    - github
+    - github url
+    - github profile
+    data_type: string
+    cardinality: single
+    is_structured: true
+  education.institution:
+    canonical_name: education.institution
+    description: College, university, institute or school attended by the candidate
+    aliases:
+    - college
+    - university
+    - institute
+    - school
+    - institution
+    data_type: string
+    cardinality: multiple
+    is_structured: true
+  education.degree:
+    canonical_name: education.degree
+    description: Degree obtained (e.g. B.Tech, BSc, MSc)
+    aliases:
+    - degree
+    - qualification
+    - course
+    data_type: string
+    cardinality: multiple
+    is_structured: true
+  education.field_of_study:
+    canonical_name: education.field_of_study
+    description: Major, specialization, branch, or stream
+    aliases:
+    - specialization
+    - major
+    - branch
+    - stream
+    - field of study
+    data_type: string
+    cardinality: multiple
+    is_structured: true
+  education.qualification:
+    canonical_name: education.qualification
+    description: Type of qualification (e.g., Undergrad, Postgrad, SSC, HSC)
+    aliases:
+    - qualification level
+    data_type: string
+    cardinality: multiple
+    is_structured: true
+  education.start_year:
+    canonical_name: education.start_year
+    description: Year the education started
+    aliases:
+    - start year
+    data_type: string
+    cardinality: multiple
+    is_structured: true
+  education.end_year:
+    canonical_name: education.end_year
+    description: Year of graduation or passing out
+    aliases:
+    - graduation year
+    - passing year
+    - year of passing
+    - batch
+    - end year
+    - class of
+    data_type: string
+    cardinality: multiple
+    is_structured: true
+  education.cgpa:
+    canonical_name: education.cgpa
+    description: Grade Point Average
+    aliases:
+    - cgpa
+    - gpa
+    - grade point average
+    data_type: string
+    cardinality: multiple
+    is_structured: true
+  education.percentage:
+    canonical_name: education.percentage
+    description: Percentage marks obtained
+    aliases:
+    - percentage
+    - marks
+    - score
+    data_type: string
+    cardinality: multiple
+    is_structured: true
+  project.name:
+    canonical_name: project.name
+    description: Name or title of a project
+    aliases:
+    - project name
+    - project title
+    data_type: string
+    cardinality: multiple
+    is_structured: true
+  project.description:
+    canonical_name: project.description
+    description: Detailed description of what the project does
+    aliases:
+    - project description
+    - about project
+    - project summary
+    data_type: string
+    cardinality: multiple
+    is_structured: false
+  project.technologies:
+    canonical_name: project.technologies
+    description: Technologies, tools, and languages used in the project
+    aliases:
+    - project tech
+    - project technologies
+    - tools used
+    data_type: string
+    cardinality: multiple
+    is_structured: true
+  project.architecture:
+    canonical_name: project.architecture
+    description: Architectural pattern or design used in the project
+    aliases:
+    - architecture
+    - design pattern
+    data_type: string
+    cardinality: multiple
+    is_structured: false
+  project.role:
+    canonical_name: project.role
+    description: Candidate's role in the project
+    aliases:
+    - project role
+    - responsibility
+    data_type: string
+    cardinality: multiple
+    is_structured: true
+  project.achievement:
+    canonical_name: project.achievement
+    description: Specific achievements or results from the project
+    aliases:
+    - project result
+    - project outcome
+    data_type: string
+    cardinality: multiple
+    is_structured: false
+  skills.programming_languages:
+    canonical_name: skills.programming_languages
+    description: Programming languages known
+    aliases:
+    - languages
+    - programming
+    - coding languages
+    - c++
+    - java
+    - python
+    - javascript
+    data_type: string
+    cardinality: single
+    is_structured: true
+  skills.frontend:
+    canonical_name: skills.frontend
+    description: Frontend technologies and frameworks
+    aliases:
+    - frontend
+    - front-end
+    - ui tools
+    - react
+    - html
+    - css
+    data_type: string
+    cardinality: single
+    is_structured: true
+  skills.backend:
+    canonical_name: skills.backend
+    description: Backend technologies and frameworks
+    aliases:
+    - backend
+    - back-end
+    - server tools
+    - node
+    - express
+    data_type: string
+    cardinality: single
+    is_structured: true
+  skills.databases:
+    canonical_name: skills.databases
+    description: Database systems
+    aliases:
+    - databases
+    - dbms
+    - sql
+    - mongodb
+    - mysql
+    data_type: string
+    cardinality: single
+    is_structured: true
+  skills.cloud_devops:
+    canonical_name: skills.cloud_devops
+    description: Cloud platforms and DevOps tools
+    aliases:
+    - cloud
+    - devops
+    - aws
+    - docker
+    - kubernetes
+    - linux
+    data_type: string
+    cardinality: single
+    is_structured: true
+  skills.ai_ml:
+    canonical_name: skills.ai_ml
+    description: Artificial Intelligence and Machine Learning tools
+    aliases:
+    - ai
+    - ml
+    - machine learning
+    - artificial intelligence
+    data_type: string
+    cardinality: single
+    is_structured: true
+  skills.genai_llm:
+    canonical_name: skills.genai_llm
+    description: Generative AI and LLM tools
+    aliases:
+    - genai
+    - llm
+    - chatgpt
+    - prompt engineering
+    data_type: string
+    cardinality: single
+    is_structured: true
+  skills.concepts:
+    canonical_name: skills.concepts
+    description: Core CS concepts and principles
+    aliases:
+    - concepts
+    - core skills
+    - oop
+    - os
+    - cn
+    - dsa
+    data_type: string
+    cardinality: single
+    is_structured: true
+  skills.soft_skills:
+    canonical_name: skills.soft_skills
+    description: Interpersonal and soft skills
+    aliases:
+    - soft skills
+    - interpersonal skills
+    - communication
+    - teamwork
+    data_type: string
+    cardinality: single
+    is_structured: true
+  certification.name:
+    canonical_name: certification.name
+    description: Name of the certification obtained
+    aliases:
+    - certification
+    - certificate
+    - certifications
+    - certificates
+    data_type: string
+    cardinality: multiple
+    is_structured: true
+  certification.issuer:
+    canonical_name: certification.issuer
+    description: Organization that issued the certification
+    aliases:
+    - issued by
+    - issuer
+    - authority
+    data_type: string
+    cardinality: multiple
+    is_structured: true
+  certification.date:
+    canonical_name: certification.date
+    description: Date the certification was obtained
+    aliases:
+    - certification date
+    - issued on
+    data_type: string
+    cardinality: multiple
+    is_structured: true
+  publication.title:
+    canonical_name: publication.title
+    description: Title of a published paper or article
+    aliases:
+    - publication
+    - paper
+    - article
+    data_type: string
+    cardinality: multiple
+    is_structured: true
+  publication.conference:
+    canonical_name: publication.conference
+    description: Conference where the paper was presented
+    aliases:
+    - conference
+    - presented at
+    data_type: string
+    cardinality: multiple
+    is_structured: true
+  publication.publisher:
+    canonical_name: publication.publisher
+    description: Publisher of the publication
+    aliases:
+    - published in
+    - publisher
+    data_type: string
+    cardinality: multiple
+    is_structured: true
+  publication.date:
+    canonical_name: publication.date
+    description: Date of publication
+    aliases:
+    - publication date
+    - published on
+    data_type: string
+    cardinality: multiple
+    is_structured: true
+  achievement.title:
+    canonical_name: achievement.title
+    description: Title of the achievement or award
+    aliases:
+    - achievement
+    - award
+    - accomplishment
+    - honor
+    data_type: string
+    cardinality: multiple
+    is_structured: true
+  achievement.organization:
+    canonical_name: achievement.organization
+    description: Organization granting the achievement
+    aliases:
+    - awarded by
+    - organizer
+    data_type: string
+    cardinality: multiple
+    is_structured: true
+  achievement.result:
+    canonical_name: achievement.result
+    description: Result or rank obtained
+    aliases:
+    - rank
+    - result
+    - position
+    data_type: string
+    cardinality: multiple
+    is_structured: true
+  experience.company:
+    canonical_name: experience.company
+    description: Company or organization of employment
+    aliases:
+    - company
+    - employer
+    - organization
+    - workplace
+    data_type: string
+    cardinality: multiple
+    is_structured: true
+  experience.role:
+    canonical_name: experience.role
+    description: Job title or designation
+    aliases:
+    - job title
+    - designation
+    - role
+    - position
+    - profile
+    data_type: string
+    cardinality: multiple
+    is_structured: true
+  experience.start_date:
+    canonical_name: experience.start_date
+    description: Start date of employment
+    aliases:
+    - start date
+    - joined on
+    data_type: string
+    cardinality: multiple
+    is_structured: true
+  experience.end_date:
+    canonical_name: experience.end_date
+    description: End date of employment
+    aliases:
+    - end date
+    - left on
+    data_type: string
+    cardinality: multiple
+    is_structured: true
+  experience.description:
+    canonical_name: experience.description
+    description: Description of work experience and responsibilities
+    aliases:
+    - experience description
+    - responsibilities
+    - work experience
+    - total experience
+    data_type: string
+    cardinality: multiple
+    is_structured: false
+  experience.technologies:
+    canonical_name: experience.technologies
+    description: Technologies used during employment
+    aliases:
+    - experience technologies
+    - tools used at work
+    data_type: string
+    cardinality: multiple
+    is_structured: true
+  identity.passport_number:
+    canonical_name: identity.passport_number
+    description: Passport Number
+    aliases:
+    - passport
+    - passport no
+    data_type: string
+    cardinality: single
+    is_structured: true
+  identity.national_id:
+    canonical_name: identity.national_id
+    description: National ID or SSN
+    aliases:
+    - ssn
+    - social security
+    - national id
+    data_type: string
+    cardinality: single
+    is_structured: true
+  identity.gender:
+    canonical_name: identity.gender
+    description: Gender
+    aliases:
+    - sex
+    - gender
+    data_type: string
+    cardinality: single
+    is_structured: true
+  identity.nationality:
+    canonical_name: identity.nationality
+    description: Nationality or Citizenship
+    aliases:
+    - nationality
+    - citizenship
+    data_type: string
+    cardinality: single
+    is_structured: true
+  identity.marital_status:
+    canonical_name: identity.marital_status
+    description: Marital Status
+    aliases:
+    - marital status
+    data_type: string
+    cardinality: single
+    is_structured: true
+  contact.website:
+    canonical_name: contact.website
+    description: Personal Website
+    aliases:
+    - website
+    - portfolio
+    data_type: string
+    cardinality: single
+    is_structured: true
+  contact.skype:
+    canonical_name: contact.skype
+    description: Skype ID
+    aliases:
+    - skype
+    data_type: string
+    cardinality: single
+    is_structured: true
+  contact.twitter:
+    canonical_name: contact.twitter
+    description: Twitter Handle
+    aliases:
+    - twitter
+    data_type: string
+    cardinality: single
+    is_structured: true
+  address.street:
+    canonical_name: address.street
+    description: Street Address
+    aliases:
+    - street
+    - address line 1
+    - address1
+    data_type: string
+    cardinality: single
+    is_structured: true
+  address.city:
+    canonical_name: address.city
+    description: City
+    aliases:
+    - city
+    - town
+    data_type: string
+    cardinality: single
+    is_structured: true
+  address.state:
+    canonical_name: address.state
+    description: State or Province
+    aliases:
+    - state
+    - province
+    data_type: string
+    cardinality: single
+    is_structured: true
+  address.zipcode:
+    canonical_name: address.zipcode
+    description: Zip or Postal Code
+    aliases:
+    - zip
+    - postal code
+    - pincode
+    data_type: string
+    cardinality: single
+    is_structured: true
+  address.country:
+    canonical_name: address.country
+    description: Country
+    aliases:
+    - country
+    data_type: string
+    cardinality: single
+    is_structured: true
+  medical.blood_group:
+    canonical_name: medical.blood_group
+    description: Blood Group
+    aliases:
+    - blood group
+    - blood type
+    data_type: string
+    cardinality: single
+    is_structured: true
+  medical.history_description:
+    canonical_name: medical.history_description
+    description: Medical History Description
+    aliases:
+    - medical history
+    - past illnesses
+    data_type: string
+    cardinality: single
+    is_structured: false
+  medical.allergies:
+    canonical_name: medical.allergies
+    description: Allergies
+    aliases:
+    - allergies
+    - allergic to
+    data_type: string
+    cardinality: multiple
+    is_structured: true
+  medical.insurance_provider:
+    canonical_name: medical.insurance_provider
+    description: Health Insurance Provider
+    aliases:
+    - insurance provider
+    - insurance company
+    data_type: string
+    cardinality: single
+    is_structured: true
+  financial.bank_name:
+    canonical_name: financial.bank_name
+    description: Bank Name
+    aliases:
+    - bank
+    - bank name
+    data_type: string
+    cardinality: single
+    is_structured: true
+  financial.account_number:
+    canonical_name: financial.account_number
+    description: Bank Account Number
+    aliases:
+    - account number
+    - acct no
+    data_type: string
+    cardinality: single
+    is_structured: true
+  financial.routing_number:
+    canonical_name: financial.routing_number
+    description: Routing Number
+    aliases:
+    - routing number
+    - sort code
+    data_type: string
+    cardinality: single
+    is_structured: true
+  financial.tax_id:
+    canonical_name: financial.tax_id
+    description: Tax Identification Number
+    aliases:
+    - tax id
+    - tin
+    - pan
+    data_type: string
+    cardinality: single
+    is_structured: true
+  financial.annual_income:
+    canonical_name: financial.annual_income
+    description: Annual Income
+    aliases:
+    - annual income
+    - salary
+    data_type: string
+    cardinality: single
+    is_structured: true
+  legal.signature:
+    canonical_name: legal.signature
+    description: Digital Signature
+    aliases:
+    - signature
+    data_type: string
+    cardinality: single
+    is_structured: true
+  legal.consent:
+    canonical_name: legal.consent
+    description: Consent Checkbox
+    aliases:
+    - i agree
+    - consent
+    data_type: boolean
+    cardinality: single
+    is_structured: true
+  business.company_name:
+    canonical_name: business.company_name
+    description: Business Company Name
+    aliases:
+    - company name
+    - business name
+    data_type: string
+    cardinality: single
+    is_structured: true
+  business.registration_number:
+    canonical_name: business.registration_number
+    description: Company Registration Number
+    aliases:
+    - registration number
+    - ein
+    data_type: string
+    cardinality: single
+    is_structured: true
+  business.industry:
+    canonical_name: business.industry
+    description: Industry Sector
+    aliases:
+    - industry
+    - sector
+    data_type: string
+    cardinality: single
+    is_structured: true
+  emergency_contact.name:
+    canonical_name: emergency_contact.name
+    description: Emergency Contact Name
+    aliases:
+    - emergency contact name
+    data_type: string
+    cardinality: multiple
+    is_structured: true
+  emergency_contact.relationship:
+    canonical_name: emergency_contact.relationship
+    description: Emergency Contact Relationship
+    aliases:
+    - relationship
+    data_type: string
+    cardinality: multiple
+    is_structured: true
+  emergency_contact.phone:
+    canonical_name: emergency_contact.phone
+    description: Emergency Contact Phone
+    aliases:
+    - emergency phone
+    data_type: string
+    cardinality: multiple
+    is_structured: true
+  event.dietary_preferences:
+    canonical_name: event.dietary_preferences
+    description: Dietary Preferences
+    aliases:
+    - dietary preferences
+    - food allergies
+    data_type: string
+    cardinality: multiple
+    is_structured: true
+  event.tshirt_size:
+    canonical_name: event.tshirt_size
+    description: T-Shirt Size
+    aliases:
+    - t-shirt size
+    - size
+    data_type: string
+    cardinality: single
+    is_structured: true
+  shipping.tracking_number:
+    canonical_name: shipping.tracking_number
+    description: Shipping Tracking Number
+    aliases:
+    - tracking number
+    - tracking
+    data_type: string
+    cardinality: single
+    is_structured: true
+  shipping.delivery_instructions:
+    canonical_name: shipping.delivery_instructions
+    description: Delivery Instructions
+    aliases:
+    - delivery instructions
+    - notes
+    data_type: string
+    cardinality: single
+    is_structured: false

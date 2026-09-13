@@ -8,7 +8,9 @@ from pathlib import Path
 
 from app.core.config import get_settings
 from app.db.mongo import MongoConnection
-from app.extraction.facts import CandidateFactExtractor
+from app.extraction.llm_extractor import DocumentOntologyExtractor
+from app.agents.llm_provider import get_llm_provider
+from app.ontology.loader import FieldOntology
 from app.processing.extractor import OCRUnavailableError, PaddleOCRAdapter, PDFExtractor
 from app.processing.pipeline import DocumentPipeline, PipelineRetryableError
 from app.repositories.collections import (
@@ -60,6 +62,10 @@ async def _process(document_id: str, user_id: str) -> None:
         chunker = TextChunker(chunk_size=settings.rag_chunk_size, chunk_overlap=settings.rag_chunk_overlap)
         embedding_provider = DefaultEmbeddingProvider(settings)
         chroma_client = ChromaClient(settings)
+        
+        llm_provider = get_llm_provider(settings)
+        ontology = FieldOntology()
+        llm_extractor = DocumentOntologyExtractor(llm_provider, ontology)
 
         pipeline = DocumentPipeline(
             PDFExtractor(
@@ -68,7 +74,7 @@ async def _process(document_id: str, user_id: str) -> None:
             ),
             processing,
             settings.processing_max_retries,
-            fact_extractor=CandidateFactExtractor(),
+            fact_extractor=llm_extractor,
             fact_writer=StructuredFactsRepository(connection.database),
             chunker=chunker,
             embedding_provider=embedding_provider,

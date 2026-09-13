@@ -64,6 +64,31 @@ async def _completed() -> None:
     return None
 
 
+class FakeFactExtractor:
+    def extract(self, document, document_id):
+        class MockEvidence:
+            def __init__(self):
+                self.document_id = "doc-1"
+                self.page = 1
+                self.text = "test"
+                
+        class MockFact:
+            def __init__(self):
+                self.ontology = "email"
+                self.value = "candidate@example.com"
+                self.data_type = "string"
+                self.confidence = 0.99
+                self.evidence = MockEvidence()
+                
+        class MockOutput:
+            def __init__(self):
+                self.document_status = "PROCESSED"
+                self.facts = [MockFact()]
+                self.conflicts = []
+                
+        return MockOutput()
+
+
 @pytest.mark.asyncio
 async def test_tc_ocr_01_digital_pdf_uses_direct_parse() -> None:
     writer = await run_pipeline(NormalizedDocument(pages=[page(1, "Digital PDF text")]))
@@ -118,6 +143,7 @@ async def test_extraction_runs_after_normalization_and_writes_candidates() -> No
     pipeline = DocumentPipeline(
         FakeExtractor(NormalizedDocument(pages=[page(1, "Email: candidate@example.com")])),
         writer,
+        fact_extractor=FakeFactExtractor(),
         fact_writer=fact_writer,
     )
     await pipeline.run("user-a", "document-a", "document.pdf", lambda _: _completed())

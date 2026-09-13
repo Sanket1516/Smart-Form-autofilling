@@ -104,6 +104,15 @@ export const documentApi = {
     if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to fetch document status'));
     const json = await res.json();
     return json.data;
+  },
+
+  getDocumentFacts: async (id: string): Promise<any[]> => {
+    const res = await fetch(`${getBaseUrl()}/api/v1/documents/${id}/facts`, {
+      headers: getHeaders(),
+    });
+    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to fetch document facts'));
+    const json = await res.json();
+    return json.data?.facts || [];
   }
 };
 

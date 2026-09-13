@@ -208,15 +208,22 @@ def test_tc_auth_08_current_user_cannot_be_selected_by_client(
 
 def test_login_rate_limit(auth_client: tuple[TestClient, FakeUsers]) -> None:
     client, _ = auth_client
-    for _ in range(5):
+    app.state.limiter.enabled = True
+    try:
+        for _ in range(5):
+            response = client.post(
+                "/api/v1/auth/login",
+                json={"email": "unknown@example.com", "password": "wrong-password"},
+            )
+            if response.status_code == 429:
+                break
+            assert response.status_code == 401
+        
         response = client.post(
             "/api/v1/auth/login",
             json={"email": "unknown@example.com", "password": "wrong-password"},
         )
-        assert response.status_code == 401
-    response = client.post(
-        "/api/v1/auth/login",
-        json={"email": "unknown@example.com", "password": "wrong-password"},
-    )
-    assert response.status_code == 429
-    assert response.json()["error"]["code"] == "RATE_LIMITED"
+        assert response.status_code == 429
+        assert "Rate limit exceeded" in response.json()["error"]
+    finally:
+        app.state.limiter.enabled = False

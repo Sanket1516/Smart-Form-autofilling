@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Protocol
 
 from app.db.chroma_client import ChromaClient
-from app.extraction.facts import CandidateFactExtractor, with_user_id
+from app.extraction.llm_extractor import DocumentOntologyExtractor
 from app.models.documents import StructuredFact
 from app.processing.chunking import TextChunker
 from app.processing.extractor import OCRUnavailableError, PDFExtractor
@@ -55,7 +55,7 @@ class DocumentPipeline:
         extractor: PDFExtractor,
         stage_writer: StageWriter,
         max_retries: int = 2,
-        fact_extractor: CandidateFactExtractor | None = None,
+        fact_extractor: DocumentOntologyExtractor | None = None,
         fact_writer: FactWriter | None = None,
         chunker: TextChunker | None = None,
         embedding_provider: EmbeddingProvider | None = None,
@@ -64,7 +64,7 @@ class DocumentPipeline:
         self.extractor = extractor
         self.stage_writer = stage_writer
         self.max_retries = max_retries
-        self.fact_extractor = fact_extractor or CandidateFactExtractor()
+        self.fact_extractor = fact_extractor
         self.fact_writer = fact_writer
         self.chunker = chunker or TextChunker()
         self.embedding_provider = embedding_provider
@@ -111,8 +111,48 @@ class DocumentPipeline:
             await self._stage(user_id, document_id, "normalization", "completed", on_update)
             await self._stage(user_id, document_id, "extraction", "started", on_update)
             if self.fact_extractor is not None and self.fact_writer is not None:
-                for fact in self.fact_extractor.extract(result, document_id, document_name):
-                    await self.fact_writer.create(user_id, with_user_id(fact, user_id))
+                from datetime import datetime, UTC
+                now = datetime.now(UTC)
+                llm_output = self.fact_extractor.extract(result, document_id)
+                if llm_output.document_status == "PROCESSED" or llm_output.document_status == "PARTIAL":
+                    for fact in llm_output.facts:
+                        structured = StructuredFact(
+                            user_id=user_id,
+                            concept=fact.ontology,
+                            value=fact.value,
+                            value_type=fact.data_type,
+                            source_document_id=fact.evidence.document_id,
+                            source_page=fact.evidence.page,
+                            confidence=fact.confidence,
+                            provenance={"extracted_text": fact.evidence.text, "extraction_method": "llm"},
+                            status="EXTRACTED",
+                            is_user_confirmed=False,
+                            created_at=now,
+                            updated_at=now
+                        )
+                        await self.fact_writer.create(user_id, structured)
+                    for conflict in llm_output.conflicts:
+                        candidates = []
+                        for c in conflict.candidates:
+                            candidates.append({
+                                "value": c.value,
+                                "confidence": c.confidence,
+                                "provenance": {"extracted_text": c.evidence.text, "document_id": c.evidence.document_id, "page": c.evidence.page}
+                            })
+                        structured_conflict = StructuredFact(
+                            user_id=user_id,
+                            concept=conflict.ontology,
+                            value=None,
+                            value_type="unknown",
+                            source_document_id=document_id,
+                            confidence=0.5,
+                            status="CONFLICT",
+                            candidates=candidates,
+                            is_user_confirmed=False,
+                            created_at=now,
+                            updated_at=now
+                        )
+                        await self.fact_writer.create(user_id, structured_conflict)
             await self._stage(user_id, document_id, "extraction", "completed", on_update)
 
             await self._stage(user_id, document_id, "embedding", "started", on_update)

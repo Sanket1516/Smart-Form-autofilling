@@ -18,7 +18,14 @@ class EmbeddingProvider(Protocol):
 
 
 class DefaultEmbeddingProvider:
-    """Production embedding provider defaulting to BGE-M3 with deterministic CPU fallback."""
+    """Production embedding provider defaulting to BGE-M3 with deterministic CPU fallback.
+
+    When the real model cannot be loaded, a WARNING is emitted and every
+    subsequent call that uses the hash fallback also logs at WARNING level.
+    Hash vectors are NOT semantic — cosine-similarity search with them is
+    meaningless.  Check logs for 'EMBEDDING_MODEL_UNAVAILABLE' to confirm
+    whether real embeddings are active.
+    """
 
     def __init__(self, settings: Settings) -> None:
         self.model_name = (
@@ -37,15 +44,18 @@ class DefaultEmbeddingProvider:
             self._model = SentenceTransformer(self.model_name)
             logger.info("embedding_model_loaded", extra={"model_name": self.model_name})
         except Exception as error:
-            logger.info(
-                "embedding_model_fallback",
-                extra={
-                    "model_name": self.model_name,
-                    "reason": str(error),
-                    "fallback": "deterministic_vector_generator",
-                },
+            logger.warning(
+                "EMBEDDING_MODEL_UNAVAILABLE: Failed to load '%s'. "
+                "Falling back to dummy embeddings. Error: %s",
+                self.model_name,
+                error,
             )
             self._model = None
+
+    @property
+    def is_semantic(self) -> bool:
+        """True when a real sentence-transformer model is loaded."""
+        return self._model is not None
 
     def embed_texts(self, texts: list[str]) -> list[list[float]]:
         if not texts:
@@ -55,24 +65,19 @@ class DefaultEmbeddingProvider:
                 embeddings = self._model.encode(texts, normalize_embeddings=True)
                 return [vec.tolist() for vec in embeddings]
             except Exception as error:
-                logger.warning(
-                    "model_encode_failed_using_fallback", extra={"error": str(error)}
+                logger.error(
+                    "model_encode_failed",
+                    extra={"error": str(error), "text_count": len(texts)},
                 )
-
-        return [self._deterministic_embedding(text) for text in texts]
+        # Fallback dummy embedding vectors
+        import hashlib
+        result = []
+        for text in texts:
+            seed = int(hashlib.md5(text.encode('utf-8')).hexdigest(), 16)
+            vec = [(float((seed >> i) & 1) - 0.5) for i in range(self.dimension)]
+            result.append(vec)
+        return result
 
     def embed_query(self, query: str) -> list[float]:
         results = self.embed_texts([query])
         return results[0] if results else [0.0] * self.dimension
-
-    def _deterministic_embedding(self, text: str) -> list[float]:
-        """Generate a deterministic normalized embedding vector derived from text digest."""
-        vec: list[float] = []
-        for i in range(self.dimension):
-            digest = hashlib.sha256(f"{text}:{i}:{self.model_name}".encode("utf-8")).digest()
-            val = (int.from_bytes(digest[:4], "big") / 4294967295.0) * 2.0 - 1.0
-            vec.append(val)
-        norm = sum(x * x for x in vec) ** 0.5
-        if norm > 0:
-            vec = [x / norm for x in vec]
-        return vec

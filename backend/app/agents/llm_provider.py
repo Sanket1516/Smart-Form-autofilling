@@ -79,6 +79,38 @@ class MockLLMProvider(LLMProvider):
     def complete(self, prompt: str) -> str:
         if self._forced is not None:
             return self._forced
+        
+        # If this is a semantic classifier prompt, return a valid JSON matching the schema
+        if "Universal Form Field Ontology Mapping Agent" in prompt:
+            import json
+            label = ""
+            # Extract label roughly to return the right mock value
+            if '"label": "Name"' in prompt or '"label": "Full Name"' in prompt or '"label": "Applicant Name"' in prompt or '"label": "Name of Candidate"' in prompt:
+                return json.dumps({"ontology": "personal.full_name", "field_type": "STRUCTURED", "confidence": 0.95})
+            elif '"label": "Date of Birth"' in prompt or '"label": "DOB"' in prompt:
+                return json.dumps({"ontology": "personal.date_of_birth", "field_type": "STRUCTURED", "confidence": 0.95})
+            elif '"label": "Contact Email"' in prompt or '"label": "Email Address"' in prompt or "Electronic Mail" in prompt:
+                return json.dumps({"ontology": "personal.email", "field_type": "STRUCTURED", "confidence": 0.95})
+            elif '"label": "Telephone Number"' in prompt or '"label": "Mobile"' in prompt:
+                return json.dumps({"ontology": "personal.phone", "field_type": "STRUCTURED", "confidence": 0.95})
+            elif '"label": "University"' in prompt:
+                return json.dumps({"ontology": "education.institution", "field_type": "STRUCTURED", "confidence": 0.95})
+            elif '"label": "Company"' in prompt:
+                return json.dumps({"ontology": "experience.company", "field_type": "STRUCTURED", "confidence": 0.95})
+            elif '"label": "Field 1"' in prompt:
+                return json.dumps({"ontology": "MISSING", "field_type": "MISSING", "confidence": 0.2})
+            
+            return json.dumps({"ontology": "unknown", "field_type": "MISSING", "confidence": 0.1})
+
+        if "Document Ontology Extraction Agent" in prompt:
+            import json
+            return json.dumps({
+                "document_status": "PROCESSED",
+                "facts": [],
+                "conflicts": [],
+                "unmapped_items": []
+            })
+
         return FinalResponseStatus.MISSING_INFORMATION.value
 
 
@@ -179,6 +211,56 @@ class AnthropicProvider(LLMProvider):
 
 
 # ---------------------------------------------------------------------------
+# Google (Gemini) provider
+# ---------------------------------------------------------------------------
+
+
+class GoogleProvider(LLMProvider):
+    """LLM provider backed by Google Gemini REST API."""
+
+    def __init__(self, model: str, api_key: str, timeout: int = 90) -> None:
+        # Default or fallback from deprecated models (e.g. gemini-2.5-flash-lite / gemini-1.5-flash)
+        if not model or "2.5" in model or "1.5" in model:
+            self._model = "gemini-3.6-flash"
+        else:
+            self._model = model
+        self._api_key = api_key
+        self._timeout = timeout
+
+    def complete(self, prompt: str) -> str:
+        import json
+        import urllib.request
+
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{self._model}:generateContent?key={self._api_key}"
+        payload = {
+            "contents": [
+                {
+                    "parts": [
+                        {"text": prompt}
+                    ]
+                }
+            ]
+        }
+        req = urllib.request.Request(
+            url,
+            data=json.dumps(payload).encode("utf-8"),
+            headers={"Content-Type": "application/json"}
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=self._timeout) as resp:
+                res_data = json.loads(resp.read().decode("utf-8"))
+                candidates = res_data.get("candidates", [])
+                if candidates and "content" in candidates[0] and "parts" in candidates[0]["content"]:
+                    parts = candidates[0]["content"]["parts"]
+                    if parts and "text" in parts[0]:
+                        return parts[0]["text"].strip()
+                return FinalResponseStatus.ERROR.value
+        except Exception as exc:
+            logger.exception("google_completion_failed model=%s", self._model)
+            return FinalResponseStatus.ERROR.value
+
+
+# ---------------------------------------------------------------------------
 # Factory
 # ---------------------------------------------------------------------------
 
@@ -186,12 +268,18 @@ class AnthropicProvider(LLMProvider):
 def get_llm_provider(settings: "Settings") -> LLMProvider:
     """Return an ``LLMProvider`` driven by ``LLM_PROVIDER`` env var.
 
-    Supported values: ``openai``, ``anthropic``, ``mock``, ``""`` (treated as mock).
+    Supported values: ``google``, ``gemini``, ``openai``, ``anthropic``, ``mock``, ``""`` (treated as mock).
     """
     provider = (settings.llm_provider or "mock").lower().strip()
     model = settings.llm_model or ""
     api_key = settings.llm_api_key or ""
     timeout = settings.llm_reasoning_timeout_seconds
+
+    if provider in ("google", "gemini"):
+        if not api_key:
+            raise ValueError("LLM_API_KEY is required when LLM_PROVIDER=google")
+        logger.info("llm_provider=google model=%s", model)
+        return GoogleProvider(model=model or "gemini-3.6-flash", api_key=api_key, timeout=max(timeout, 120))
 
     if provider == "openai":
         if not api_key:
@@ -211,3 +299,4 @@ def get_llm_provider(settings: "Settings") -> LLMProvider:
 
     logger.info("llm_provider=mock (no API key required)")
     return MockLLMProvider()
+

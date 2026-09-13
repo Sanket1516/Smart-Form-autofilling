@@ -102,12 +102,15 @@ async def lifespan(app: FastAPI):
     )
     app.state.profile_service = ProfileService(profiles_repo, structured_facts_repo)
     app.state.field_ontology = FieldOntology()
-    app.state.semantic_classifier = SemanticClassifier(ontology=app.state.field_ontology)
+    app.state.llm_provider = get_llm_provider(settings)
+    app.state.semantic_classifier = SemanticClassifier(
+        ontology=app.state.field_ontology,
+        llm_provider=app.state.llm_provider
+    )
     app.state.embedding_provider = DefaultEmbeddingProvider(settings)
     app.state.retrieval_service = RAGRetrievalService(
         app.state.chromadb, app.state.embedding_provider
     )
-    app.state.llm_provider = get_llm_provider(settings)
     app.state.conflict_resolver = ConflictResolver(
         confidence_threshold=settings.confidence_threshold,
         sensitive_concepts=settings.sensitive_concepts_list,

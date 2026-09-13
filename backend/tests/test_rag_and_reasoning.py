@@ -210,7 +210,7 @@ async def test_tc_agent_04_full_graph_ready_to_fill() -> None:
         "field_objects": [],
         "page_context": {},
         # Pre-supply classification result so routing hits structured_retrieval
-        "semantic_result": {"concept": "first_name", "confidence": 0.95, "status": "classified"},
+        "semantic_result": {"ontology": "first_name", "field_type": "STRUCTURED", "confidence": 0.95, "status": "classified"},
     }
     final = await agent.run(state)
 
@@ -249,7 +249,7 @@ async def test_tc_agent_05_full_graph_requires_confirmation() -> None:
         "current_field": {"field_id": "f5", "label": "Address", "type": "text"},
         "field_objects": [],
         "page_context": {},
-        "semantic_result": {"concept": "address", "confidence": 0.88, "status": "classified"},
+        "semantic_result": {"ontology": "address", "field_type": "STRUCTURED", "confidence": 0.88, "status": "classified"},
     }
     final = await agent.run(state)
 

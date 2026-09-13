@@ -6,6 +6,7 @@ from typing import Any
 import os
 
 os.environ["JWT_SECRET_KEY"] = "test-secret-key"
+os.environ["AUTH_LOGIN_RATE_LIMIT_ATTEMPTS"] = "100"
 
 import pytest
 from fastapi.testclient import TestClient
@@ -14,6 +15,25 @@ from app.api.v1.auth import get_auth_service
 from app.core.config import get_settings
 from app.main import app
 from app.services.auth import AuthService
+
+class MockSentenceTransformer:
+    def __init__(self, model_name: str, *args, **kwargs):
+        pass
+    def encode(self, texts, **kwargs):
+        class DummyVec:
+            def tolist(self):
+                return [0.1] * 1024
+        return [DummyVec() for _ in texts]
+
+@pytest.fixture(autouse=True)
+def mock_sentence_transformers(monkeypatch):
+    import sys
+    import types
+    module = types.ModuleType("sentence_transformers")
+    module.SentenceTransformer = MockSentenceTransformer # type: ignore
+    sys.modules["sentence_transformers"] = module
+    yield
+    del sys.modules["sentence_transformers"]
 
 
 class FakeUsers:
@@ -53,6 +73,7 @@ def test_client() -> Iterator[TestClient]:
     users = FakeUsers()
     service = AuthService(users, FakeRevocations(), settings)
     with TestClient(app) as client:
+        app.state.limiter.enabled = False
         previous_service = app.state.auth_service
         app.state.auth_service = service
         app.dependency_overrides[get_auth_service] = lambda: service

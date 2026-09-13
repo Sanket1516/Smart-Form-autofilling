@@ -163,30 +163,26 @@ class AutofillAgent:
         return {"status": "routing"}
 
     async def _route_retrieval(self, state: AgentState) -> str:
-        """Decides which retrieval branch to follow (SRS §14)."""
+        """Decides which retrieval branch to follow based on LLM field understanding."""
         semantic_result = state.get("semantic_result") or {}
-        concept = semantic_result.get("concept", "unknown")
+        
+        # Determine the ontology string (alias vs concept name)
+        concept = semantic_result.get("ontology") or semantic_result.get("concept", "unknown")
+        field_type = semantic_result.get("field_type", "MISSING")
         user_id = state.get("user_id")
 
         # If classification was blocked, skip retrieval entirely
         if state.get("final_response_status") == FinalResponseStatus.SECURITY_BLOCKED.value:
             return "missing_information"
 
-        if self.fact_service and concept != "unknown":
-            # Prefer verified facts, fall back to any candidate
-            facts_verified = await self.fact_service.list(user_id=user_id, concept=concept, confirmed=True)
-            if facts_verified and facts_verified.facts:
-                return "structured_retrieval"
-            facts_any = await self.fact_service.list(user_id=user_id, concept=concept)
-            if facts_any and facts_any.facts:
-                return "structured_retrieval"
-
-        if concept == "unknown":
-            # Contextual document evidence required
+        if field_type == "STRUCTURED" and concept != "unknown":
+            return "structured_retrieval"
+        elif field_type == "CONTEXTUAL":
             return "rag_retrieval"
-
-        # Known concept but no stored facts — try RAG for document evidence
-        return "rag_retrieval"
+        else:
+            # MISSING
+            state["final_response_status"] = FinalResponseStatus.UNSUPPORTED_FIELD.value
+            return "missing_information"
 
     async def _node_missing_information(self, state: AgentState) -> dict[str, Any]:
         """No-data route — emits MISSING_INFORMATION unless a more specific status is already set."""
@@ -206,7 +202,7 @@ class AutofillAgent:
         """Retrieves user-scoped structured fact candidates (SRS §15)."""
         logger.debug("Executing structured_retrieval node")
         semantic_result = state.get("semantic_result") or {}
-        concept = semantic_result.get("concept")
+        concept = semantic_result.get("ontology") or semantic_result.get("concept")
         user_id = state.get("user_id")
 
         candidates: list[dict[str, Any]] = []
@@ -228,7 +224,7 @@ class AutofillAgent:
         """Runs ChromaDB similarity search scoped to the authenticated user (SRS §7, Phase 7)."""
         logger.debug("Executing rag_retrieval node")
         semantic_result = state.get("semantic_result") or {}
-        concept = semantic_result.get("concept", "unknown")
+        concept = semantic_result.get("ontology") or semantic_result.get("concept", "unknown")
         user_id = state.get("user_id")
         current_field = state.get("current_field") or {}
 
@@ -323,7 +319,7 @@ class AutofillAgent:
             }
 
         semantic_result = state.get("semantic_result") or {}
-        concept = semantic_result.get("concept", "unknown")
+        concept = semantic_result.get("ontology") or semantic_result.get("concept", "unknown")
         current_field = state.get("current_field") or {}
         structured = state.get("structured_candidates") or []
         rag = state.get("rag_candidates") or []
@@ -469,7 +465,8 @@ class AutofillAgent:
         field = state.get("current_field") or {}
         field_id = field.get("field_id", "")
         field_label = field.get("label", "")
-        concept = state.get("semantic_result", {}).get("concept", "unknown")
+        semantic_result = state.get("semantic_result") or {}
+        concept = semantic_result.get("ontology") or semantic_result.get("concept", "unknown")
         
         # Aggregate sources
         structured = state.get("structured_candidates", [])

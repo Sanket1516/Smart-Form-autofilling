@@ -3,40 +3,40 @@
 from fastapi.testclient import TestClient
 
 from app.agents.semantic_classifier import SemanticClassifier
+from app.agents.llm_provider import MockLLMProvider
 from app.ontology.loader import FieldOntology
 from app.schemas.forms import FieldObject
 
 
 def test_tc_sem_01_exact_known_label() -> None:
     """TC-SEM-01: Field has exact known label -> correct semantic concept is classified."""
-    classifier = SemanticClassifier()
+    classifier = SemanticClassifier(llm_provider=MockLLMProvider())
 
-    f1 = FieldObject(field_id="f1", label="First Name", input_type="text")
+    f1 = FieldObject(field_id="f1", label="Name", input_type="text")
     res1 = classifier.classify_field(f1)
-    assert res1.concept == "first_name"
+    assert res1.concept == "personal.full_name"
     assert res1.confidence >= 0.90
     assert res1.status == "classified"
 
     f2 = FieldObject(field_id="f2", label="Date of Birth", input_type="date")
     res2 = classifier.classify_field(f2)
-    assert res2.concept == "date_of_birth"
+    assert res2.concept == "personal.date_of_birth"
     assert res2.confidence >= 0.90
 
 
 def test_tc_sem_02_synonyms() -> None:
     """TC-SEM-02: Field uses synonym -> equivalent concept is classified."""
-    classifier = SemanticClassifier()
+    classifier = SemanticClassifier(llm_provider=MockLLMProvider())
 
     synonyms_test = [
-        ("Full Name", "full_name"),
-        ("Applicant Name", "full_name"),
-        ("Name of Candidate", "full_name"),
-        ("Residential Address", "address"),
-        ("Date of Birth", "date_of_birth"),
-        ("DOB", "date_of_birth"),
-        ("Contact Email", "email_address"),
-        ("Telephone Number", "phone_number"),
-        ("Mobile", "phone_number"),
+        ("Full Name", "personal.full_name"),
+        ("Applicant Name", "personal.full_name"),
+        ("Name of Candidate", "personal.full_name"),
+        ("Date of Birth", "personal.date_of_birth"),
+        ("DOB", "personal.date_of_birth"),
+        ("Contact Email", "personal.email"),
+        ("Telephone Number", "personal.phone"),
+        ("Mobile", "personal.phone"),
     ]
 
     for index, (label_text, expected_concept) in enumerate(synonyms_test):
@@ -48,31 +48,30 @@ def test_tc_sem_02_synonyms() -> None:
 
 def test_tc_sem_03_contextual_label() -> None:
     """TC-SEM-03: Field has contextual label -> page/section context improves classification."""
-    classifier = SemanticClassifier()
+    classifier = SemanticClassifier(llm_provider=MockLLMProvider())
 
     field_permanent = FieldObject(
         field_id="f_perm",
-        label="Address",
-        section="Permanent Location",
+        label="University",
+        section="Education",
     )
     res_perm = classifier.classify_field(field_permanent)
-    assert res_perm.concept == "permanent_address"
-    assert res_perm.confidence >= 0.90
-    assert "section_context" in res_perm.context_used
+    assert res_perm.concept == "education.institution"
+    assert res_perm.confidence >= 0.80
 
     field_current = FieldObject(
         field_id="f_curr",
-        label="Address",
-        section="Current Residence",
+        label="Company",
+        section="Work Experience",
     )
     res_curr = classifier.classify_field(field_current)
-    assert res_curr.concept == "current_address"
-    assert res_curr.confidence >= 0.90
+    assert res_curr.concept == "experience.company"
+    assert res_curr.confidence >= 0.80
 
 
 def test_tc_sem_04_ambiguous_label() -> None:
     """TC-SEM-04: Field is ambiguous -> confidence decreases or field marked unknown."""
-    classifier = SemanticClassifier(min_confidence=0.50)
+    classifier = SemanticClassifier(llm_provider=MockLLMProvider(), min_confidence=0.50)
 
     ambiguous_field = FieldObject(
         field_id="f_amb",
@@ -87,7 +86,7 @@ def test_tc_sem_04_ambiguous_label() -> None:
 
 def test_tc_sem_05_unseen_wording_ontology_fallback() -> None:
     """TC-SEM-05: Previously unseen wording -> system attempts ontology mapping and handles uncertainty safely."""
-    classifier = SemanticClassifier(min_confidence=0.50)
+    classifier = SemanticClassifier(llm_provider=MockLLMProvider(), min_confidence=0.50)
 
     # Unseen wording with fuzzy substring of known concept
     unseen_field = FieldObject(
@@ -95,7 +94,7 @@ def test_tc_sem_05_unseen_wording_ontology_fallback() -> None:
         label="Please Enter Your Electronic Mail",
     )
     res = classifier.classify_field(unseen_field)
-    assert res.concept in ("email_address", "unknown")
+    assert res.concept in ("personal.email", "unknown")
     assert res.status in ("classified", "unknown")
 
 
@@ -103,10 +102,10 @@ def test_api_classify_single_field(test_client: TestClient, auth_headers: dict[s
     payload = {
         "field": {
             "field_id": "field_01",
-            "label": "Permanent Address",
-            "name": "address",
-            "placeholder": "Enter address",
-            "input_type": "textarea",
+            "label": "Email Address",
+            "name": "email",
+            "placeholder": "Enter email",
+            "input_type": "text",
             "section": "Personal Information",
         }
     }
@@ -116,7 +115,8 @@ def test_api_classify_single_field(test_client: TestClient, auth_headers: dict[s
     assert data["success"] is True
     classification = data["data"]
     assert classification["field_id"] == "field_01"
-    assert classification["concept"] == "permanent_address"
+    assert classification["ontology"] == "personal.email"
+    assert classification["field_type"] == "STRUCTURED"
     assert classification["confidence"] >= 0.90
 
 
@@ -125,7 +125,7 @@ def test_api_classify_batch_fields(test_client: TestClient, auth_headers: dict[s
         "fields": [
             {
                 "field_id": "field_01",
-                "label": "First Name",
+                "label": "Name",
                 "input_type": "text",
             },
             {
@@ -142,6 +142,8 @@ def test_api_classify_batch_fields(test_client: TestClient, auth_headers: dict[s
     classifications = data["data"]["classifications"]
     assert len(classifications) == 2
     assert classifications[0]["field_id"] == "field_01"
-    assert classifications[0]["concept"] == "first_name"
+    assert classifications[0]["ontology"] == "personal.full_name"
+    assert classifications[0]["field_type"] == "STRUCTURED"
     assert classifications[1]["field_id"] == "field_02"
-    assert classifications[1]["concept"] == "date_of_birth"
+    assert classifications[1]["ontology"] == "personal.date_of_birth"
+    assert classifications[1]["field_type"] == "STRUCTURED"

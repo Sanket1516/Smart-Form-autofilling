@@ -37,11 +37,15 @@ class AlternativeConcept(BaseModel):
 
 
 class ClassificationOutput(BaseModel):
-    """Semantic Classification Agent output shape per SRS §13.6."""
+    """Semantic Classification Agent output shape per Pipeline C."""
 
     field_id: str
-    concept: str
+    concept: str = Field(alias="ontology")
+    field_type: str = Field(description="STRUCTURED, CONTEXTUAL, or MISSING")
     confidence: float = Field(ge=0.0, le=1.0)
+    retrieval: dict[str, Any] | None = Field(default_factory=dict)
+    
+    # Keeping old fields with defaults for backward compatibility where needed
     alternatives: list[AlternativeConcept] = Field(default_factory=list)
     context_used: list[str] = Field(default_factory=list)
     status: str = "classified"
