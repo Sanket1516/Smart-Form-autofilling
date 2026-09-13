@@ -39,9 +39,10 @@ class FieldOntology:
             self._synonym_map[canonical.lower()] = canonical
 
             for synonym in concept_data.get("aliases", []):
-                norm_syn = synonym.strip().lower()
-                if norm_syn:
-                    self._synonym_map[norm_syn] = canonical
+                if isinstance(synonym, str):
+                    norm_syn = synonym.strip().lower()
+                    if norm_syn:
+                        self._synonym_map[norm_syn] = canonical
 
         logger.info("ontology_loaded version=%s concepts=%d", self.version, len(self.concepts))
 

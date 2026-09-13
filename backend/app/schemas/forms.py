@@ -41,10 +41,16 @@ class ClassificationOutput(BaseModel):
 
     field_id: str
     concept: str = Field(alias="ontology")
+    # NEW: semantic type label for document-agnostic retrieval
+    # e.g. "BANK_ACCOUNT_NUMBER", "ACADEMIC_SCORE", "PERSON_FULL_NAME"
+    semantic_type: str = "UNKNOWN"
     field_type: str = Field(description="STRUCTURED, CONTEXTUAL, or MISSING")
     confidence: float = Field(ge=0.0, le=1.0)
     retrieval: dict[str, Any] | None = Field(default_factory=dict)
-    
+    # NEW: explicit retrieval strategy
+    # "MONGODB" → structured/discovered facts | "CHROMADB" → RAG | "BOTH" | "MISSING"
+    retrieval_strategy: str = "MISSING"
+
     # Keeping old fields with defaults for backward compatibility where needed
     alternatives: list[AlternativeConcept] = Field(default_factory=list)
     context_used: list[str] = Field(default_factory=list)

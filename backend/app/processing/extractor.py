@@ -31,36 +31,55 @@ class PaddleOCRAdapter:
         return self._engine
 
     def extract(self, image: Any, page_number: int) -> list[ExtractedSpan]:
-        processed = preprocess_for_ocr(image)
-        result = self._get_engine().predict(processed)
+        import numpy as np
+        if hasattr(image, "convert"):
+            image_np = np.array(image.convert("RGB"))
+        elif isinstance(image, np.ndarray):
+            image_np = image
+        else:
+            processed = preprocess_for_ocr(image)
+            image_np = np.array(processed.convert("RGB")) if hasattr(processed, "convert") else processed
+
+        ocr_result = self._get_engine().ocr(image_np, cls=False)
         spans: list[ExtractedSpan] = []
-        for page_result in result:
-            data = page_result.json if hasattr(page_result, "json") else page_result
-            spans.extend(_spans_from_paddle(data, page_number))
+        if not ocr_result:
+            return spans
+
+        for page in ocr_result:
+            if not page:
+                continue
+            for line in page:
+                if not line or len(line) < 2:
+                    continue
+                box, text_info = line[0], line[1]
+                if isinstance(text_info, (tuple, list)) and len(text_info) >= 2:
+                    text, score = str(text_info[0]).strip(), float(text_info[1])
+                elif isinstance(text_info, str):
+                    text, score = text_info.strip(), 1.0
+                else:
+                    continue
+
+                if not text or score < 0.35:
+                    continue
+
+                bbox = None
+                if isinstance(box, (tuple, list)) and len(box) >= 4:
+                    try:
+                        xs = [float(pt[0]) for pt in box]
+                        ys = [float(pt[1]) for pt in box]
+                        bbox = LayoutBox(x0=min(xs), top=min(ys), x1=max(xs), bottom=max(ys))
+                    except Exception:
+                        bbox = None
+
+                spans.append(
+                    ExtractedSpan(
+                        page_number=page_number,
+                        text=text,
+                        source_method="ocr",
+                        bbox=bbox,
+                    )
+                )
         return spans
-
-
-def _spans_from_paddle(data: Any, page_number: int) -> list[ExtractedSpan]:
-    if isinstance(data, dict) and "res" in data:
-        data = data["res"]
-    if not isinstance(data, dict):
-        return []
-    texts = data.get("rec_texts", [])
-    boxes = data.get("rec_boxes", [])
-    scores = data.get("rec_scores", [])
-    spans: list[ExtractedSpan] = []
-    for index, text in enumerate(texts):
-        if not text or (scores and float(scores[index]) < 0.35):
-            continue
-        box = boxes[index] if index < len(boxes) else None
-        bbox = None
-        if box is not None and len(box) >= 4:
-            values = [float(value) for value in box]
-            bbox = LayoutBox(x0=values[0], top=values[1], x1=values[2], bottom=values[3])
-        spans.append(
-            ExtractedSpan(page_number=page_number, text=str(text), source_method="ocr", bbox=bbox)
-        )
-    return spans
 
 
 class PDFExtractor:
@@ -78,8 +97,10 @@ class PDFExtractor:
         with pdfplumber.open(path) as pdf:
             for page_number, page in enumerate(pdf.pages, start=1):
                 spans = self._direct_spans(page, page_number)
-                if not any(span.text.strip() for span in spans):
-                    spans = self._ocr_page(page, page_number)
+                if not self._is_sufficient_text(spans):
+                    ocr_spans = self._ocr_page(page, page_number)
+                    if ocr_spans:
+                        spans = ocr_spans
                 pages.append(
                     NormalizedPage(
                         page_number=page_number,
@@ -89,6 +110,16 @@ class PDFExtractor:
                     )
                 )
         return NormalizedDocument(pages=pages)
+
+    @staticmethod
+    def _is_sufficient_text(spans: list[ExtractedSpan]) -> bool:
+        if not spans:
+            return False
+        combined = " ".join(s.text for s in spans)
+        if "%PDF" in combined or "/Type /Catalog" in combined or "/FlateDecode" in combined or "endobj" in combined:
+            return False
+        words = [w for w in combined.split() if any(c.isalnum() for c in w)]
+        return len(words) >= 10
 
     @staticmethod
     def _direct_spans(page: Any, page_number: int) -> list[ExtractedSpan]:

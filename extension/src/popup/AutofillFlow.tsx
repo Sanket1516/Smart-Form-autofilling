@@ -3,13 +3,19 @@ import { Loader2, CheckCircle, Play, Check, X, ShieldAlert } from 'lucide-react'
 
 const API_BASE_URL = 'http://localhost:8000/api/v1';
 
+/** Always reads token fresh from storage to avoid stale React state. */
+function getToken(): Promise<string> {
+  return new Promise((resolve) => {
+    chrome.storage.local.get(['token'], (res) => resolve(res.token || ''));
+  });
+}
+
 export const AutofillFlow = ({ 
   sessionId, 
-  token,
   onComplete
 }: { 
   sessionId: string, 
-  token: string,
+  token: string,  // kept for prop compat but we read fresh from storage
   onComplete: () => void 
 }) => {
   const [status, setStatus] = useState<'processing' | 'review_required' | 'ready' | 'filling' | 'verifying' | 'done'>('processing');
@@ -22,11 +28,12 @@ export const AutofillFlow = ({
 
     const interval = setInterval(async () => {
       try {
+        const freshToken = await getToken();
         const res = await fetch(`${API_BASE_URL}/forms/sessions/${sessionId}`, {
-          headers: { 'Authorization': `Bearer ${token}` }
+          headers: { 'Authorization': `Bearer ${freshToken}` }
         });
         const data = await res.json();
-        
+
         if (data.data.status === 'review_required') {
           setStatus('review_required');
           fetchReviews();
@@ -46,11 +53,11 @@ export const AutofillFlow = ({
 
   const fetchReviews = async () => {
     try {
+      const freshToken = await getToken();
       const res = await fetch(`${API_BASE_URL}/reviews/pending`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${freshToken}` }
       });
       const data = await res.json();
-      // Filter for this session only
       const sessionReviews = data.data.reviews.filter((r: any) => r.session_id === sessionId);
       if (sessionReviews.length === 0) {
         setStatus('ready');
@@ -65,11 +72,12 @@ export const AutofillFlow = ({
 
   const fetchApprovedValues = async () => {
     try {
+      const freshToken = await getToken();
       const res = await fetch(`${API_BASE_URL}/forms/sessions/${sessionId}/approved-values`, {
-        headers: { 'Authorization': `Bearer ${token}` }
+        headers: { 'Authorization': `Bearer ${freshToken}` }
       });
       const data = await res.json();
-      setApprovedValues(data.data.approved_values);
+      setApprovedValues(data.data.approved_values || []);
     } catch (err) {
       console.error(err);
     }
@@ -77,18 +85,19 @@ export const AutofillFlow = ({
 
   const handleReviewDecision = async (reviewId: string, decision: 'confirm' | 'reject', value?: string) => {
     try {
+      const freshToken = await getToken();
       await fetch(`${API_BASE_URL}/reviews/${reviewId}/decision`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`,
+          'Authorization': `Bearer ${freshToken}`,
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({ decision, value })
       });
-      
+
       const newReviews = reviews.filter(r => r.review_id !== reviewId);
       setReviews(newReviews);
-      
+
       if (newReviews.length === 0) {
         setStatus('ready');
         fetchApprovedValues();
@@ -98,33 +107,23 @@ export const AutofillFlow = ({
     }
   };
 
-  const startFilling = () => {
+  const startFilling = async () => {
     setStatus('filling');
-    
-    // Listen for verifications from background
-    const listener = (_msg: any) => {
-      // In a real app, we'd wait for all verifications. For simplicity, just gather them.
-      // We rely on the content script to send VERIFY_FIELD to background, but background
-      // responds. We could also just let background broadcast TAB_VERIFIED, but since the
-      // background doesn't broadcast, we should have content script send directly to popup?
-      // Actually, content script sends VERIFY_FIELD to background.
-      // Let's just wait 2 seconds after filling then transition to done.
-    };
-    chrome.runtime.onMessage.addListener(listener);
-    
+    const freshToken = await getToken();
+
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs[0] && tabs[0].id) {
         chrome.tabs.sendMessage(tabs[0].id, {
           type: 'FILL_FIELDS',
-          payload: { approvedValues, sessionId, token }
+          payload: { approvedValues, sessionId, token: freshToken }
+        }, () => {
+          // After content script confirms receipt, wait briefly then show done
+          setTimeout(() => setStatus('done'), 1500);
         });
+      } else {
+        setStatus('done');
       }
     });
-
-    setTimeout(() => {
-      setStatus('done');
-      chrome.runtime.onMessage.removeListener(listener);
-    }, 2000); // Wait for fills to complete
   };
 
   if (status === 'processing') {

@@ -1,29 +1,39 @@
 import React, { useState } from 'react';
 import { Settings as SettingsIcon, Shield, Trash2, Key, Bell, AppWindow } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import { authApi, profileApi } from '../services/api';
 import './Settings.css';
 
 export const Settings = () => {
   const [deleteDataConfirm, setDeleteDataConfirm] = useState(false);
   const [deleteAccountConfirm, setDeleteAccountConfirm] = useState(false);
 
-  const handleDeleteData = () => {
+  const handleDeleteData = async () => {
     if (!deleteDataConfirm) {
       setDeleteDataConfirm(true);
       return;
     }
-    // Delete data logic
-    alert('All user data (documents, facts, reviews) deleted successfully.');
+    try {
+      await profileApi.deleteData();
+      alert('All user data (documents, facts, reviews) deleted successfully.');
+    } catch (err: any) {
+      alert(`Error deleting data: ${err.message}`);
+    }
     setDeleteDataConfirm(false);
   };
 
-  const handleDeleteAccount = () => {
+  const handleDeleteAccount = async () => {
     if (!deleteAccountConfirm) {
       setDeleteAccountConfirm(true);
       return;
     }
-    // Delete account logic
-    alert('Account deleted successfully.');
+    try {
+      await authApi.deleteAccount();
+      alert('Account deleted successfully.');
+      window.location.href = '/login';
+    } catch (err: any) {
+      alert(`Error deleting account: ${err.message}`);
+    }
     setDeleteAccountConfirm(false);
   };
 

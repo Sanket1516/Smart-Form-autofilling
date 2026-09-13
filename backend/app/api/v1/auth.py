@@ -76,6 +76,26 @@ async def me(
     return SuccessResponse(data=current_user)
 
 
+@router.delete("/me", response_model=MessageResponse)
+async def delete_me(
+    request: Request,
+    credentials: Credentials,
+    current_user: Annotated[CurrentUser, Depends(get_current_user)],
+) -> MessageResponse:
+    if credentials is None:
+        raise APIError("UNAUTHORIZED", "Authentication required", 401)
+    
+    # Delete account logic
+    auth = get_auth_service(request)
+    await auth.delete_account(current_user.user_id)
+    
+    # Also log out
+    _, payload = await request.app.state.auth_service.current_user(credentials.credentials)
+    await request.app.state.auth_service.logout(payload)
+    
+    return MessageResponse(message="Account deleted successfully")
+
+
 @router.post("/logout", response_model=MessageResponse)
 async def logout(
     request: Request,

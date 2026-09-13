@@ -43,6 +43,7 @@ class AutofillAgent:
         llm_provider: LLMProvider | None = None,
         conflict_resolver: ConflictResolver | None = None,
         recommendations_repo: RecommendationsRepository | None = None,
+        discovered_facts_repo: Any | None = None,   # DiscoveredFactsRepository
         max_evidence_chunks: int = 5,
     ) -> None:
         self.semantic_classifier = semantic_classifier
@@ -51,6 +52,7 @@ class AutofillAgent:
         self.llm_provider = llm_provider
         self.conflict_resolver = conflict_resolver
         self.recommendations_repo = recommendations_repo
+        self.discovered_facts_repo = discovered_facts_repo
         self.max_evidence_chunks = max_evidence_chunks
         self.graph = self._build_graph()
 
@@ -165,22 +167,28 @@ class AutofillAgent:
     async def _route_retrieval(self, state: AgentState) -> str:
         """Decides which retrieval branch to follow based on LLM field understanding."""
         semantic_result = state.get("semantic_result") or {}
-        
-        # Determine the ontology string (alias vs concept name)
+
         concept = semantic_result.get("ontology") or semantic_result.get("concept", "unknown")
+        semantic_type = semantic_result.get("semantic_type", "UNKNOWN")
         field_type = semantic_result.get("field_type", "MISSING")
-        user_id = state.get("user_id")
+        retrieval_strategy = semantic_result.get("retrieval_strategy", "MISSING")
 
         # If classification was blocked, skip retrieval entirely
         if state.get("final_response_status") == FinalResponseStatus.SECURITY_BLOCKED.value:
             return "missing_information"
 
-        if field_type == "STRUCTURED" and concept != "unknown":
+        # Primary routing: use retrieval_strategy if set
+        if retrieval_strategy == "CHROMADB":
+            return "rag_retrieval"
+        if retrieval_strategy in ("MONGODB", "BOTH"):
+            return "structured_retrieval"
+
+        # Legacy routing fallback (for backward compat with old classifier)
+        if field_type == "STRUCTURED" and (concept != "unknown" or semantic_type not in ("UNKNOWN", "", None)):
             return "structured_retrieval"
         elif field_type == "CONTEXTUAL":
             return "rag_retrieval"
         else:
-            # MISSING
             state["final_response_status"] = FinalResponseStatus.UNSUPPORTED_FIELD.value
             return "missing_information"
 
@@ -199,14 +207,23 @@ class AutofillAgent:
         }
 
     async def _node_structured_retrieval(self, state: AgentState) -> dict[str, Any]:
-        """Retrieves user-scoped structured fact candidates (SRS §15)."""
+        """Retrieves user-scoped structured fact candidates.
+
+        Now queries BOTH:
+          1. structured_facts (Track B, ontology-mapped, via FactService)
+          2. discovered_facts (Track A, dynamic, via DiscoveredFactsRepository)
+        Results are merged and deduped before passing to reasoning.
+        """
         logger.debug("Executing structured_retrieval node")
         semantic_result = state.get("semantic_result") or {}
         concept = semantic_result.get("ontology") or semantic_result.get("concept")
+        semantic_type = semantic_result.get("semantic_type", "UNKNOWN")
         user_id = state.get("user_id")
 
         candidates: list[dict[str, Any]] = []
-        if self.fact_service and concept:
+
+        # --- Source 1: structured_facts (ontology-mapped) ---
+        if self.fact_service and concept and concept != "unknown":
             facts_verified = await self.fact_service.list(user_id=user_id, concept=concept, confirmed=True)
             if facts_verified.facts:
                 candidates = [f.model_dump() for f in facts_verified.facts]
@@ -214,6 +231,62 @@ class AutofillAgent:
                 facts_any = await self.fact_service.list(user_id=user_id, concept=concept)
                 candidates = [f.model_dump() for f in facts_any.facts]
 
+        # --- Source 2: discovered_facts (semantic_type-based) ---
+        if self.discovered_facts_repo and user_id:
+            # Try by semantic_type first
+            if semantic_type and semantic_type not in ("UNKNOWN", ""):
+                discovered = await self.discovered_facts_repo.find_by_semantic_type(
+                    user_id, semantic_type
+                )
+                for d in discovered:
+                    # Normalize to same shape as structured_fact candidate
+                    candidates.append({
+                        "value": d.get("value"),
+                        "confidence": d.get("confidence", 0.5),
+                        "is_user_confirmed": d.get("verification_status") == "VERIFIED",
+                        "provenance": {
+                            "extraction_method": d.get("extraction_method", "llm_dynamic"),
+                            "extracted_text": d.get("evidence_text", ""),
+                            "document_id": d.get("source_document_id", ""),
+                            "page": d.get("source_page"),
+                        },
+                        "concept": concept or d.get("semantic_type", ""),
+                        "source": "discovered_facts",
+                        "semantic_type": d.get("semantic_type"),
+                        "field": d.get("field"),
+                    })
+
+            # Also try by ontology mapping in discovered_facts
+            if concept and concept != "unknown":
+                ontology_discovered = await self.discovered_facts_repo.find_by_ontology(
+                    user_id, concept
+                )
+                existing_values = {str(c.get("value", "")) for c in candidates}
+                for d in ontology_discovered:
+                    v = str(d.get("value", ""))
+                    if v not in existing_values:
+                        candidates.append({
+                            "value": d.get("value"),
+                            "confidence": d.get("confidence", 0.5),
+                            "is_user_confirmed": d.get("verification_status") == "VERIFIED",
+                            "provenance": {
+                                "extraction_method": d.get("extraction_method", "llm_dynamic"),
+                                "extracted_text": d.get("evidence_text", ""),
+                                "document_id": d.get("source_document_id", ""),
+                                "page": d.get("source_page"),
+                            },
+                            "concept": concept,
+                            "source": "discovered_facts",
+                            "semantic_type": d.get("semantic_type"),
+                        })
+                        existing_values.add(v)
+
+        logger.info(
+            "structured_retrieval concept=%s semantic_type=%s candidates=%d",
+            concept,
+            semantic_type,
+            len(candidates),
+        )
         return {
             "status": "retrieving",
             "retrieval_route": "structured_retrieval",

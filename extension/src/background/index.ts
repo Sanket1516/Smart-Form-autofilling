@@ -102,6 +102,39 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     return true; // async response
   }
 
+  if (message.type === 'ANALYZE_FORM') {
+    // Always read token fresh from storage — avoids React state race condition
+    chrome.storage.local.get(['token'], (res) => {
+      const token = res.token;
+      if (!token) {
+        sendResponse({ success: false, error: 'No token' });
+        return;
+      }
+      const { sessionId, fields } = message.payload;
+      fetch(`${API_BASE_URL}/forms/sessions/${sessionId}/analyze`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ fields })
+      }).then(async response => {
+        if (response.status === 401) {
+          await chrome.storage.local.set({ authState: 'session-expired' });
+          throw new Error('Session expired');
+        }
+        if (!response.ok) {
+          const body = await response.json().catch(() => null);
+          throw new Error(body?.error?.message || body?.detail || 'Failed to analyze form');
+        }
+        sendResponse({ success: true });
+      }).catch((err: any) => {
+        sendResponse({ success: false, error: err.message });
+      });
+    });
+    return true;
+  }
+
   if (message.type === 'VERIFY_FIELD') {
     const { sessionId, fieldId, filledValue, actualValue, match, token } = message.payload;
     

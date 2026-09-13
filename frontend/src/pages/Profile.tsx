@@ -10,6 +10,9 @@ export const Profile = () => {
   const [profile, setProfile] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  const [editingFact, setEditingFact] = useState<any>(null);
+  const [editValue, setEditValue] = useState('');
 
   useEffect(() => {
     fetchData();
@@ -33,8 +36,34 @@ export const Profile = () => {
   };
 
   const handleEditFact = (fact: any) => {
-    // In a full implementation, this would open a modal to edit the fact via correction API
-    alert(`Editing concept: ${fact.concept} (Current: ${fact.value})`);
+    setEditingFact(fact);
+    let initialValue = fact.value;
+    if (typeof initialValue === 'object' && initialValue !== null) {
+      initialValue = Array.isArray(initialValue) ? initialValue.join(', ') : JSON.stringify(initialValue);
+    }
+    setEditValue(initialValue || '');
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingFact) return;
+    try {
+      await factsApi.updateFact(editingFact.fact_id || editingFact.id, editValue);
+      setEditingFact(null);
+      fetchData();
+    } catch (err: any) {
+      alert(`Error updating fact: ${err.message}`);
+    }
+  };
+
+  const handleDeleteFact = async (fact: any) => {
+    if (confirm(`Are you sure you want to delete ${fact.concept}?`)) {
+      try {
+        await factsApi.deleteFact(fact.fact_id || fact.id);
+        fetchData();
+      } catch (err: any) {
+        alert(`Error deleting fact: ${err.message}`);
+      }
+    }
   };
 
   if (isLoading) {
@@ -82,12 +111,34 @@ export const Profile = () => {
                   confidence={fact.confidence}
                   sourceDocument={fact.source_document_id}
                   onEdit={() => handleEditFact(fact)}
+                  onDelete={() => handleDeleteFact(fact)}
                 />
               ))}
             </div>
           )}
         </div>
       </div>
+
+      {editingFact && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3>Edit Fact: {editingFact.concept.replace(/_/g, ' ')}</h3>
+            <div className="form-group" style={{marginTop: '1rem'}}>
+              <input 
+                type="text" 
+                value={editValue} 
+                onChange={(e) => setEditValue(e.target.value)} 
+                className="filter-input"
+                style={{width: '100%', padding: '0.5rem'}}
+              />
+            </div>
+            <div className="modal-actions" style={{display: 'flex', gap: '1rem', marginTop: '1rem', justifyContent: 'flex-end'}}>
+              <Button variant="outline" onClick={() => setEditingFact(null)}>Cancel</Button>
+              <Button onClick={handleSaveEdit}>Save</Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

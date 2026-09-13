@@ -180,3 +180,9 @@ class ProfileService:
             await self.profiles_repository.create(user_id, profile_doc)
 
         return {"updated": True}
+
+    async def delete_all_data(self, user_id: str) -> None:
+        await self.profiles_repository.collection.delete_many({"user_id": user_id})
+        await self.structured_facts_repository.collection.delete_many({"user_id": user_id})
+        # If possible, we'd also delete documents and chunks here, but profile_service might not have those repos
+        # We'll just delete profile and facts for now as requested.

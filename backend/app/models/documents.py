@@ -10,6 +10,63 @@ class MongoDocument(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
+# ---------------------------------------------------------------------------
+# NEW: Flexible discovered facts model (document-agnostic extraction)
+# ---------------------------------------------------------------------------
+
+class DiscoveredFact(BaseModel):
+    """Stores a dynamically discovered fact from any document type.
+
+    Schema is intentionally flexible — new semantic_types can appear
+    at runtime without requiring code changes.
+    """
+    model_config = ConfigDict(extra="allow")   # Allow future fields without breaking
+
+    user_id: str = Field(min_length=1)
+    source_document_id: str = Field(min_length=1)
+    source_page: int | None = None
+    entity_id: str | None = None              # e.g. "entity_1" — groups related attributes
+    entity_type: str | None = None            # e.g. "PERSON", "FINANCIAL_ACCOUNT"
+    field: str = Field(min_length=1)          # e.g. "account_number", "cgpa"
+    semantic_type: str = Field(min_length=1)  # e.g. "BANK_ACCOUNT_NUMBER", "ACADEMIC_SCORE"
+    value: Any
+    data_type: str = "string"
+    confidence: float = Field(ge=0.0, le=1.0)
+    evidence_text: str = ""                   # Exact text from document supporting this value
+    ontology: str | None = None               # Canonical ontology concept if mapped
+    ontology_confidence: float | None = None
+    unit: str | None = None
+    currency: str | None = None
+    date_format: str | None = None
+    normalization: str | None = None
+    verification_status: Literal["UNVERIFIED", "VERIFIED", "REJECTED"] = "UNVERIFIED"
+    conflict_status: Literal["OK", "CONFLICT", "RESOLVED"] = "OK"
+    extraction_method: str = "llm_dynamic"
+    document_type: str | None = None          # e.g. "BANK_PASSBOOK", "RESUME"
+    created_at: datetime
+    updated_at: datetime
+
+
+class DiscoveredConflict(BaseModel):
+    """Tracks a conflict between two or more fact values for HITL resolution."""
+    model_config = ConfigDict(extra="allow")
+
+    user_id: str = Field(min_length=1)
+    field: str = Field(min_length=1)
+    semantic_type: str = Field(min_length=1)
+    ontology: str | None = None
+    conflict_type: str = "CROSS_DOCUMENT"     # "INTRA_DOCUMENT" | "CROSS_DOCUMENT" | "LLM_VS_DETERMINISTIC" | "VERIFIED_VS_NEW"
+    conflict_status: Literal["CONFLICT", "RESOLVED", "REJECTED"] = "CONFLICT"
+    verification_status: Literal["UNVERIFIED", "VERIFIED"] = "UNVERIFIED"
+    candidates: list[dict[str, Any]] = Field(default_factory=list)
+    resolved_value: Any = None
+    resolved_by: str | None = None            # user_id or "system"
+    resolution_reason: str | None = None
+    is_verified_conflict: bool = False         # True when an existing fact was user-verified
+    created_at: datetime
+    updated_at: datetime
+
+
 class UserDocument(MongoDocument):
     full_name: str = Field(min_length=1)
     email: EmailStr

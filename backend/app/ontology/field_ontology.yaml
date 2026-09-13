@@ -490,7 +490,7 @@ concepts:
     - pan number
     - pan no
     - customer's pan
-    - pan:
+    - "pan:"
     data_type: string
     cardinality: single
     is_structured: true
@@ -665,7 +665,7 @@ concepts:
     - account number
     - account no
     - acct no
-    - account number :
+    - "account number:"
     - account no.
     data_type: string
     cardinality: single
@@ -676,7 +676,7 @@ concepts:
     aliases:
     - ifsc
     - ifsc code
-    - ifsc:
+    - "ifsc:"
     data_type: string
     cardinality: single
     is_structured: true
@@ -687,7 +687,7 @@ concepts:
     - cif
     - cif number
     - cif no
-    - cif number :
+    - "cif number:"
     data_type: string
     cardinality: single
     is_structured: true

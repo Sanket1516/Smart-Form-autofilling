@@ -1,8 +1,11 @@
 import { FieldObject } from '../types';
 
 /**
- * Extracts a structured FieldObject strictly adhering to SRS §11.2 
+ * Extracts a structured FieldObject strictly adhering to SRS §11.2
  * from an HTML input, select, or textarea element.
+ * 
+ * For radio/checkbox groups, one FieldObject is returned per element
+ * so that every option can be individually addressed.
  */
 export function extractFieldObject(el: HTMLElement): FieldObject | null {
   if (!['INPUT', 'SELECT', 'TEXTAREA'].includes(el.tagName)) {
@@ -10,14 +13,20 @@ export function extractFieldObject(el: HTMLElement): FieldObject | null {
   }
 
   const inputEl = el as HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
-  
-  // Skip hidden fields or buttons
+
+  // Skip hidden fields, buttons, and file inputs
   if (inputEl.tagName === 'INPUT') {
     const type = (inputEl as HTMLInputElement).type.toLowerCase();
     if (['hidden', 'submit', 'button', 'reset', 'image', 'file'].includes(type)) {
       return null;
     }
   }
+
+  // Skip off-screen elements (zero-size, not visible)
+  const rect = inputEl.getBoundingClientRect();
+  const style = window.getComputedStyle(inputEl);
+  if (rect.width === 0 && rect.height === 0) return null;
+  if (style.display === 'none') return null;
 
   // 1. Core attributes
   const field_id = generateUniqueFieldId(inputEl);
@@ -26,35 +35,48 @@ export function extractFieldObject(el: HTMLElement): FieldObject | null {
   const name = inputEl.getAttribute('name') || undefined;
   const id = inputEl.getAttribute('id') || undefined;
   const placeholder = inputEl.getAttribute('placeholder') || undefined;
-  
+
   // 2. Label association
   const label = extractAssociatedLabel(inputEl);
-  
+
   // 3. Accessibility
   const aria_label = inputEl.getAttribute('aria-label') || undefined;
   const aria_description = inputEl.getAttribute('aria-description') || inputEl.getAttribute('aria-describedby') || undefined;
-  
+
   // 4. Validation & behaviors
   const autocomplete = inputEl.getAttribute('autocomplete') || undefined;
   const required = inputEl.hasAttribute('required') || inputEl.getAttribute('aria-required') === 'true';
   const pattern = inputEl.getAttribute('pattern') || undefined;
-  
+
   // 5. Context
   const nearby_text = extractNearbyText(inputEl);
   const section_context = extractSectionContext(inputEl);
-  
-  // 6. Layout & Bounds
-  const rect = inputEl.getBoundingClientRect();
+
+  // 6. For radio/checkbox, include the option value in context
+  let option_value: string | undefined;
+  if (type === 'radio' || type === 'checkbox') {
+    option_value = (inputEl as HTMLInputElement).value;
+  }
+
+  // 7. For select, include available options
+  let options: string[] | undefined;
+  if (inputEl instanceof HTMLSelectElement) {
+    options = Array.from(inputEl.options).map(o => o.text || o.value).filter(Boolean);
+  }
+
+  // 8. Layout & Bounds
   const position = {
     x: rect.x,
     y: rect.y,
     width: rect.width,
     height: rect.height,
   };
-  
+
   const visual_context = {
-    visible: rect.width > 0 && rect.height > 0 && window.getComputedStyle(inputEl).visibility !== 'hidden',
-    zIndex: window.getComputedStyle(inputEl).zIndex
+    visible: rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden',
+    zIndex: style.zIndex,
+    option_value,   // helps agent know which radio/checkbox value this represents
+    options,        // helps agent pick from a select
   };
 
   const dom_context = {
@@ -90,9 +112,15 @@ export function extractFieldObject(el: HTMLElement): FieldObject | null {
 }
 
 function generateUniqueFieldId(el: HTMLElement): string {
-  // Try to create a deterministic ID based on id/name/path
   const idAttr = el.getAttribute('id');
   const nameAttr = el.getAttribute('name');
+  const type = el.getAttribute('type') || '';
+  const value = el.getAttribute('value') || '';
+
+  // For radio/checkbox, include both name and value to make each option unique
+  if ((type === 'radio' || type === 'checkbox') && nameAttr) {
+    return `rc_${nameAttr}_${value}`;
+  }
   if (idAttr) return `id_${idAttr}`;
   if (nameAttr) return `name_${nameAttr}`;
   return `path_${getDOMPath(el).replace(/[^a-zA-Z0-9]/g, '_')}`;
@@ -110,25 +138,42 @@ function extractAssociatedLabel(el: HTMLElement): string | undefined {
   const parentLabel = el.closest('label');
   if (parentLabel) {
     const clone = parentLabel.cloneNode(true) as HTMLElement;
-    // Remove the input itself from the clone to just get the text
     const innerInput = clone.querySelector('input, select, textarea');
     if (innerInput) innerInput.remove();
-    return clone.textContent?.trim();
+    const text = clone.textContent?.trim();
+    if (text) return text;
+  }
+  // For radio/checkbox: try the parent td/div/li text
+  const type = el.getAttribute('type') || '';
+  if (type === 'radio' || type === 'checkbox') {
+    const container = el.closest('td, li, div, span');
+    if (container) {
+      const clone = container.cloneNode(true) as HTMLElement;
+      clone.querySelectorAll('input').forEach(i => i.remove());
+      const text = clone.textContent?.trim();
+      if (text && text.length < 60) return text;
+    }
   }
   return undefined;
 }
 
 function extractNearbyText(el: HTMLElement): string | undefined {
-  // Get text from immediately preceding sibling or parent container
   const previousSibling = el.previousElementSibling;
   if (previousSibling && previousSibling.textContent && previousSibling.textContent.length < 100) {
     return previousSibling.textContent.trim();
+  }
+  // Try parent's previous sibling (for table-based forms)
+  const parentRow = el.closest('tr, .form-row, .field-row');
+  if (parentRow) {
+    const firstCell = parentRow.querySelector('td:first-child, th:first-child, label');
+    if (firstCell && firstCell !== el && firstCell.textContent) {
+      return firstCell.textContent.trim();
+    }
   }
   return undefined;
 }
 
 function extractSectionContext(el: HTMLElement): string | undefined {
-  // Look for fieldset legend or heading in the ancestor tree
   const fieldset = el.closest('fieldset');
   if (fieldset) {
     const legend = fieldset.querySelector('legend');
@@ -151,16 +196,14 @@ function getDOMPath(el: HTMLElement): string {
     for (let i = 0; i < current.parentNode.childNodes.length; i++) {
       const sib: any = current.parentNode.childNodes[i];
       if (sib.nodeName === current.nodeName) {
-        if (sib === current) {
-          sibIndex = sibCount;
-        }
+        if (sib === current) sibIndex = sibCount;
         sibCount++;
       }
     }
     const nodeName = current.nodeName.toLowerCase();
     if (current.hasAttribute('id') && current.id !== '') {
       stack.unshift(`${nodeName}#${current.id}`);
-      break; // stop at first ID
+      break;
     } else if (sibCount > 1) {
       stack.unshift(`${nodeName}:eq(${sibIndex})`);
     } else {

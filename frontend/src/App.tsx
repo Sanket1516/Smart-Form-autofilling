@@ -10,9 +10,12 @@ import { Dashboard } from './pages/Dashboard';
 import { Documents } from './pages/Documents';
 import { DocumentDetails } from './components/documents/DocumentDetails';
 import { Profile } from './pages/Profile';
+import { DiscoveredFacts } from './pages/DiscoveredFacts';
+import { Conflicts } from './pages/Conflicts';
 import { Activity } from './pages/Activity';
 import { Settings } from './pages/Settings';
 import { Reviews } from './pages/Reviews';
+
 function App() {
   return (
     <AuthProvider>
@@ -29,6 +32,8 @@ function App() {
               <Route path="/documents" element={<Documents />} />
               <Route path="/documents/:id" element={<DocumentDetails />} />
               <Route path="/profile" element={<Profile />} />
+              <Route path="/discovered-facts" element={<DiscoveredFacts />} />
+              <Route path="/conflicts" element={<Conflicts />} />
               <Route path="/reviews" element={<Reviews />} />
               <Route path="/activity" element={<Activity />} />
               <Route path="/settings" element={<Settings />} />

@@ -5,6 +5,7 @@ import uuid
 
 from fastapi import APIRouter, Depends, Request, HTTPException, status, BackgroundTasks
 import asyncio
+import json
 
 from app.api.v1.auth import get_current_user
 from app.schemas.auth import CurrentUser
@@ -21,6 +22,8 @@ from app.schemas.forms import (
     RecommendationOutput,
     RecommendationProvenance,
 )
+from app.schemas.retrieval import RAGRetrievalRequest
+from app.agents.prompts import build_bulk_fill_prompt
 from app.schemas.form_sessions import (
     FormSessionCreate,
     FormSessionCreateData,
@@ -126,22 +129,105 @@ async def analyze_form(
     agent = request.app.state.agent_graph
     
     async def process_all_fields():
-        async def process_field(field):
-            try:
-                workflow_id = f"wf-{uuid.uuid4().hex[:8]}"
-                await agent.run({
-                    "workflow_id": workflow_id,
-                    "user_id": user.user_id,
-                    "session_id": session_id,
-                    "current_field": field.model_dump(),
-                    "field_objects": [f.model_dump() for f in body.fields],
-                    "page_context": {"website_origin": doc.get("website_origin", ""), "page_url": doc.get("page_url", "")}
+        import logging
+        from datetime import datetime, UTC
+        logger = logging.getLogger(__name__)
+        try:
+            # 1. Fetch all user data
+            fact_service = request.app.state.fact_service
+            discovered_repo = request.app.state.discovered_facts_repo
+            
+            structured_facts_resp = await fact_service.list(user_id=user.user_id)
+            structured_facts = structured_facts_resp.facts
+            
+            discovered_facts = []
+            if discovered_repo:
+                discovered_facts = await discovered_repo.list(user_id=user.user_id)
+            
+            # 2. Format facts for the prompt
+            all_facts = []
+            for f in structured_facts:
+                d = f.model_dump()
+                d["source"] = "structured_facts"
+                all_facts.append(d)
+            for f in discovered_facts:
+                all_facts.append({
+                    "concept": f.get("ontology") or f.get("semantic_type"),
+                    "value": f.get("value"),
+                    "confidence": f.get("confidence", 0.5),
+                    "source": "discovered_facts"
                 })
+                
+            # 2.5 Fetch RAG Evidence
+            retrieval_service = request.app.state.retrieval_service
+            rag_chunks_deduped = {}
+            if retrieval_service:
+                for field in body.fields:
+                    query = f"{field.label or ''} {field.placeholder or ''} {field.name or ''}".strip()
+                    if query:
+                        try:
+                            rag_req = RAGRetrievalRequest(query=query, top_k=2)
+                            rag_res = await retrieval_service.search(user_id=user.user_id, request=rag_req)
+                            for r in rag_res.results:
+                                txt = r.text.strip()
+                                if txt and txt not in rag_chunks_deduped:
+                                    rag_chunks_deduped[txt] = {
+                                        "text": txt,
+                                        "similarity": r.similarity,
+                                        "document_id": r.metadata.document_id,
+                                        "page": r.metadata.page_number
+                                    }
+                        except Exception as e:
+                            logger.error(f"RAG search error for field {field.field_id}: {e}")
+                            
+            rag_evidence = list(rag_chunks_deduped.values())
+
+            # 3. Generate Bulk Prompt
+            field_dicts = [f.model_dump() for f in body.fields]
+            prompt = build_bulk_fill_prompt(facts=all_facts, fields=field_dicts, rag_evidence=rag_evidence)
+            
+            # 4. Call LLM
+            llm = request.app.state.llm_provider
+            raw_response = llm.complete(prompt)
+            
+            # 5. Parse JSON
+            try:
+                mapping = json.loads(raw_response.strip())
             except Exception as e:
-                import logging
-                logging.error(f"Error analyzing field {field.field_id}: {e}")
-        await asyncio.gather(*[process_field(f) for f in body.fields])
-        
+                logger.error(f"Failed to parse bulk LLM JSON: {e}. Raw: {raw_response[:200]}")
+                mapping = {}
+                
+            # 6. Save Recommendations
+            rec_repo = request.app.state.recommendations_repo
+            for field in body.fields:
+                field_id = field.field_id
+                rec_data = mapping.get(field_id) or {}
+                
+                # Determine status and value
+                rec_status = rec_data.get("status", "MISSING_INFORMATION")
+                val = rec_data.get("value", "")
+                conf = float(rec_data.get("confidence", 0.0))
+                reason = str(rec_data.get("reason", "No recommendation provided."))
+                
+                db_status = "pending_review" if rec_status in ("REQUIRES_CONFIRMATION", "MISSING_INFORMATION") else "READY_TO_FILL"
+                
+                await rec_repo.create_recommendation(
+                    user_id=user.user_id,
+                    session_id=session_id,
+                    field_id=field_id,
+                    field_label=field.label or field.name or field_id,
+                    concept=rec_data.get("concept", "unknown"),
+                    recommended_value=val,
+                    confidence=conf,
+                    retrieval_type="bulk_llm",
+                    source_fact_ids=[],
+                    status=db_status,
+                    decision_reason=reason
+                )
+                
+        except Exception as e:
+            logger.error(f"Error in bulk form analysis: {e}")
+            
         # Determine final status
         rec_repo = request.app.state.recommendations_repo
         pending = await rec_repo.collection.count_documents({"session_id": session_id, "status": "pending_review"})

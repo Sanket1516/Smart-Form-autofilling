@@ -43,6 +43,8 @@ from app.db.repositories.recommendations import RecommendationsRepository
 from app.db.repositories.form_sessions import FormSessionsRepository
 from app.repositories.collections import (
     CorrectionsRepository,
+    DiscoveredConflictsRepository,
+    DiscoveredFactsRepository,
     DocumentsRepository,
     ProfilesRepository,
     StructuredFactsRepository,
@@ -95,6 +97,9 @@ async def lifespan(app: FastAPI):
     structured_facts_repo = StructuredFactsRepository(app.state.mongodb.database)
     app.state.recommendations_repo = RecommendationsRepository(app.state.mongodb.database)
     app.state.form_sessions_repo = FormSessionsRepository(app.state.mongodb.database)
+    # NEW: dynamic discovery repositories
+    app.state.discovered_facts_repo = DiscoveredFactsRepository(app.state.mongodb.database)
+    app.state.discovered_conflicts_repo = DiscoveredConflictsRepository(app.state.mongodb.database)
 
     app.state.corrections_service = CorrectionsService(corrections_repo)
     app.state.fact_service = FactService(
@@ -123,6 +128,7 @@ async def lifespan(app: FastAPI):
         llm_provider=app.state.llm_provider,
         conflict_resolver=app.state.conflict_resolver,
         recommendations_repo=app.state.recommendations_repo,
+        discovered_facts_repo=app.state.discovered_facts_repo,
         max_evidence_chunks=settings.llm_max_evidence_chunks,
     )
     app.state.health_service = HealthService(app.state.mongodb, app.state.chromadb)

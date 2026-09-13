@@ -52,3 +52,12 @@ async def get_profile_corrections(
     corrections_service = request.app.state.corrections_service
     corrections = await corrections_service.list_corrections(user.user_id, concept)
     return SuccessResponse(success=True, data=corrections)
+
+@router.delete("/profile/data", response_model=SuccessResponse[dict])
+async def delete_profile_data(
+    request: Request,
+    user: User,
+) -> SuccessResponse[dict]:
+    profile_service = request.app.state.profile_service
+    await profile_service.delete_all_data(user.user_id)
+    return SuccessResponse(success=True, data={"deleted": True}, message="Data deleted successfully")

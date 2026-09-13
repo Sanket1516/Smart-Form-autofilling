@@ -148,3 +148,7 @@ class AuthService:
     async def logout(self, payload: dict[str, Any]) -> None:
         expires_at = datetime.fromtimestamp(payload["exp"], tz=UTC)
         await self.revocations.revoke(payload["jti"], expires_at)
+
+    async def delete_account(self, user_id: str) -> None:
+        # Delete user
+        await getattr(self.users, 'collection').delete_one({"_id": __import__("bson").ObjectId(user_id)})

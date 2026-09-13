@@ -4,6 +4,8 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.models.documents import (
     Correction,
+    DiscoveredConflict,
+    DiscoveredFact,
     DocumentRecord,
     Feedback,
     FormSession,
@@ -158,3 +160,129 @@ class ProcessingRecordsRepository(UserScopedRepository[ProcessingRecord]):
 class FormSessionsRepository(UserScopedRepository[FormSession]):
     def __init__(self, database: AsyncIOMotorDatabase) -> None:
         super().__init__(database["form_sessions"], FormSession)
+
+
+# ---------------------------------------------------------------------------
+# NEW: Dynamic discovery repositories
+# ---------------------------------------------------------------------------
+
+class DiscoveredFactsRepository(UserScopedRepository[DiscoveredFact]):
+    """Stores dynamically discovered facts from any document type.
+
+    The schema is flexible — new semantic_types can appear without code changes.
+    """
+
+    def __init__(self, database: AsyncIOMotorDatabase) -> None:
+        super().__init__(database["discovered_facts"], DiscoveredFact)
+
+    async def find_by_semantic_type(
+        self, user_id: str, semantic_type: str
+    ) -> list[dict]:
+        """Retrieve all stored facts with a given semantic_type for a user."""
+        return await self.list(user_id, {"semantic_type": semantic_type})
+
+    async def find_by_ontology(
+        self, user_id: str, ontology: str
+    ) -> list[dict]:
+        """Retrieve facts that have been mapped to a specific ontology concept."""
+        return await self.list(user_id, {"ontology": ontology})
+
+    async def list_for_document(
+        self, user_id: str, document_id: str
+    ) -> list[dict]:
+        """All discovered facts for a specific document."""
+        return await self.list(user_id, {"source_document_id": document_id})
+
+    async def list_unverified(self, user_id: str) -> list[dict]:
+        """Facts awaiting user verification."""
+        return await self.list(user_id, {"verification_status": "UNVERIFIED"})
+
+    async def upsert_discovered_fact(
+        self, user_id: str, fact: DiscoveredFact
+    ) -> dict:
+        """Upsert a discovered fact.
+
+        Singleton fields (personal identity, account numbers) are matched by
+        (user_id, semantic_type). Multi-value fields (skills, certifications)
+        are matched by (user_id, semantic_type, value).
+        """
+        SINGLETON_TYPES = {
+            "PERSON_FULL_NAME", "PERSON_FIRST_NAME", "PERSON_LAST_NAME",
+            "DATE_OF_BIRTH", "GENDER", "NATIONALITY",
+            "EMAIL_ADDRESS", "PHONE_NUMBER",
+            "BANK_ACCOUNT_NUMBER", "IFSC_CODE", "CIF_NUMBER",
+            "PAN_NUMBER", "AADHAAR_NUMBER", "PASSPORT_NUMBER",
+            "TAX_IDENTIFICATION_NUMBER",
+            "EMPLOYEE_IDENTIFIER", "EMPLOYEE_ID",
+        }
+        if fact.semantic_type in SINGLETON_TYPES:
+            filter_doc = self._owner_filter(user_id, {"semantic_type": fact.semantic_type})
+        else:
+            filter_doc = self._owner_filter(
+                user_id, {"semantic_type": fact.semantic_type, "value": fact.value}
+            )
+
+        existing = await self.collection.find_one(filter_doc)
+        if existing:
+            new_conf = max(existing.get("confidence", 0.0), fact.confidence)
+            update_data = {
+                "confidence": new_conf,
+                "source_document_id": fact.source_document_id,
+                "source_page": fact.source_page,
+                "evidence_text": fact.evidence_text,
+                "updated_at": fact.updated_at,
+            }
+            # Only overwrite value if the new fact is more confident
+            if fact.confidence >= existing.get("confidence", 0.0):
+                update_data["value"] = fact.value
+            if fact.ontology and not existing.get("ontology"):
+                update_data["ontology"] = fact.ontology
+                update_data["ontology_confidence"] = fact.ontology_confidence
+            await self.collection.update_one(
+                {"_id": existing["_id"]}, {"$set": update_data}
+            )
+            existing.update(update_data)
+            return existing
+        else:
+            return await self.create(user_id, fact)
+
+
+class DiscoveredConflictsRepository(UserScopedRepository[DiscoveredConflict]):
+    """Stores unresolved and resolved extraction conflicts for HITL review."""
+
+    def __init__(self, database: AsyncIOMotorDatabase) -> None:
+        super().__init__(database["discovered_conflicts"], DiscoveredConflict)
+
+    async def list_unresolved(self, user_id: str) -> list[dict]:
+        """All conflicts awaiting user resolution."""
+        return await self.list(user_id, {"conflict_status": "CONFLICT"})
+
+    async def resolve(
+        self,
+        user_id: str,
+        conflict_id: str,
+        resolved_value: object,
+        resolution: str,
+        reason: str | None = None,
+    ) -> dict | None:
+        """Mark a conflict as resolved with the chosen value."""
+        from datetime import UTC, datetime
+        from bson import ObjectId
+
+        update = {
+            "conflict_status": "RESOLVED" if resolution != "reject" else "REJECTED",
+            "verification_status": "VERIFIED",
+            "resolved_value": resolved_value,
+            "resolved_by": user_id,
+            "resolution_reason": reason or resolution,
+            "updated_at": datetime.now(UTC),
+        }
+        try:
+            result = await self.collection.find_one_and_update(
+                {"_id": ObjectId(conflict_id), "user_id": user_id},
+                {"$set": update},
+                return_document=True,
+            )
+            return result
+        except Exception:
+            return None

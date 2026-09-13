@@ -22,11 +22,17 @@ export const App = () => {
       if (res.token) {
         setToken(res.token);
       }
+      // If we have a token but no authState set, restore connected
+      if (res.token && !res.authState) {
+        chrome.storage.local.set({ authState: 'connected' });
+        setAuthState('connected');
+      }
     });
 
     // Listen for state changes
     const listener = (changes: any) => {
       if (changes.authState) setAuthState(changes.authState.newValue);
+      if (changes.token) setToken(changes.token.newValue || '');
     };
     chrome.storage.onChanged.addListener(listener);
 
@@ -87,40 +93,48 @@ export const App = () => {
       const activeTab = tabs[0];
       if (activeTab && activeTab.url) {
         chrome.runtime.sendMessage({ type: 'CREATE_SESSION', payload: { url: activeTab.url } }, (res) => {
-          setLoading(false);
-          if (res.success) {
-            chrome.runtime.sendMessage({ type: 'GET_TAB_FIELDS', tabId: activeTab.id }, (fieldsRes) => {
-              const fields = (fieldsRes?.payload || []).map((field: any) => ({
-                field_id: field.field_id,
-                label: field.label || field.aria_label || field.name || field.id || 'Unlabeled field',
-                name: field.name || '',
-                placeholder: field.placeholder || '',
-                input_type: field.type || 'text',
-                section: field.section_context || '',
-                dom_context: field.dom_context || {},
-                accessibility_context: field.accessibility_context || {},
-              }));
-              fetch(`http://localhost:8000/api/v1/forms/sessions/${res.session.session_id}/analyze`, {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Bearer ${token}`,
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ fields })
-              }).then(async response => {
-                if (!response.ok) {
-                  const body = await response.json().catch(() => null);
-                  throw new Error(body?.error?.message || 'Failed to analyze form');
-                }
-                setActiveSessionId(res.session.session_id);
-              }).catch(err => {
-                setError('Failed to start analysis: ' + err.message);
-              });
-            });
-          } else {
-            setError(res.error || 'Failed to start autofill session');
+          if (!res || !res.success) {
+            setLoading(false);
+            // If token expired, force re-login
+            if (res?.error === 'Session expired' || res?.error === 'No token') {
+              setAuthState('session-expired');
+            } else {
+              setError(res?.error || 'Failed to start autofill session');
+            }
+            return;
           }
+          chrome.runtime.sendMessage({ type: 'GET_TAB_FIELDS', tabId: activeTab.id }, (fieldsRes) => {
+            const fields = (fieldsRes?.payload || []).map((field: any) => ({
+              field_id: field.field_id,
+              label: field.label || field.aria_label || field.name || field.id || 'Unlabeled field',
+              name: field.name || '',
+              placeholder: field.placeholder || '',
+              input_type: field.type || 'text',
+              section: field.section_context || '',
+              dom_context: field.dom_context || {},
+              accessibility_context: field.accessibility_context || {},
+            }));
+            // Delegate analyze call to background so it always has the freshest token
+            chrome.runtime.sendMessage({
+              type: 'ANALYZE_FORM',
+              payload: { sessionId: res.session.session_id, fields }
+            }, (analyzeRes) => {
+              setLoading(false);
+              if (analyzeRes?.success) {
+                setActiveSessionId(res.session.session_id);
+              } else {
+                if (analyzeRes?.error === 'Session expired') {
+                  setAuthState('session-expired');
+                } else {
+                  setError('Failed to start analysis: ' + (analyzeRes?.error || 'Unknown error'));
+                }
+              }
+            });
+          });
         });
+      } else {
+        setLoading(false);
+        setError('Could not determine the current tab URL.');
       }
     });
   };

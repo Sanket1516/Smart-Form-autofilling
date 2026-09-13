@@ -1,6 +1,6 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, FileText, User, FileQuestion, Activity, Settings } from 'lucide-react';
+import { LayoutDashboard, FileText, User, FileQuestion, Activity, Settings, Brain, AlertTriangle } from 'lucide-react';
 import './Sidebar.css';
 
 export const Sidebar = () => {
@@ -24,6 +24,18 @@ export const Sidebar = () => {
             <NavLink to="/profile" className={({ isActive }) => isActive ? 'active' : ''}>
               <User size={20} />
               My Profile
+            </NavLink>
+          </li>
+          <li>
+            <NavLink to="/discovered-facts" className={({ isActive }) => isActive ? 'active' : ''}>
+              <Brain size={20} />
+              Discovered Facts
+            </NavLink>
+          </li>
+          <li>
+            <NavLink to="/conflicts" className={({ isActive }) => isActive ? 'active' : ''}>
+              <AlertTriangle size={20} />
+              Conflicts
             </NavLink>
           </li>
           <li>

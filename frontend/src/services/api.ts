@@ -153,6 +153,23 @@ export const profileApi = {
     if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to update profile'));
     const json = await res.json();
     return json.data;
+  },
+  deleteData: async () => {
+    const res = await fetch(`${getBaseUrl()}/api/v1/profile/data`, {
+      method: 'DELETE',
+      headers: getHeaders(),
+    });
+    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to delete data'));
+  }
+};
+
+export const authApi = {
+  deleteAccount: async () => {
+    const res = await fetch(`${getBaseUrl()}/api/v1/auth/me`, {
+      method: 'DELETE',
+      headers: getHeaders(),
+    });
+    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to delete account'));
   }
 };
 
@@ -165,8 +182,18 @@ export const factsApi = {
     const json = await res.json();
     return json.data.facts || [];
   },
+  updateFact: async (id: string, value: string) => {
+    const res = await fetch(`${getBaseUrl()}/api/v1/profile/facts/${id}`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify({ value, is_user_confirmed: true }),
+    });
+    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to update fact'));
+    const json = await res.json();
+    return json.data;
+  },
   deleteFact: async (id: string) => {
-    const res = await fetch(`${getBaseUrl()}/api/v1/facts/${id}`, {
+    const res = await fetch(`${getBaseUrl()}/api/v1/profile/facts/${id}`, {
       method: 'DELETE',
       headers: getHeaders(),
     });

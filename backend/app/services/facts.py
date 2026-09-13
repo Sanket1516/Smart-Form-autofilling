@@ -110,6 +110,15 @@ class FactService:
             raise APIError("RESOURCE_NOT_FOUND", "Fact not found", 404)
         return self._data(updated)
 
+    async def delete(self, user_id: str, fact_id: str) -> None:
+        record = await self.repository.get(user_id, fact_id)
+        if record is None:
+            raise APIError("RESOURCE_NOT_FOUND", "Fact not found", 404)
+        # Using the base collection to delete the fact
+        await self.repository.collection.delete_one(
+            {"_id": __import__("bson").ObjectId(fact_id), "user_id": user_id}
+        )
+
     @staticmethod
     def _data(record: dict[str, Any]) -> FactData:
         doc_id = record["source_document_id"]

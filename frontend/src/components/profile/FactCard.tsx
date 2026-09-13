@@ -10,6 +10,7 @@ interface FactCardProps {
   sourceDocument?: string;
   confidence: number;
   onEdit: () => void;
+  onDelete: () => void;
 }
 
 export const FactCard: React.FC<FactCardProps> = ({ 
@@ -17,7 +18,8 @@ export const FactCard: React.FC<FactCardProps> = ({
   value, 
   sourceDocument, 
   confidence, 
-  onEdit 
+  onEdit,
+  onDelete
 }) => {
   // Determine confidence level mapping
   let level: ConfidenceLevel = 'low';
@@ -32,6 +34,9 @@ export const FactCard: React.FC<FactCardProps> = ({
           <Button variant="outline" size="sm" onClick={onEdit} className="edit-btn">
             <Edit2 size={14} />
             <span>Edit</span>
+          </Button>
+          <Button variant="outline" size="sm" onClick={onDelete} className="delete-btn">
+            <span>Delete</span>
           </Button>
         </div>
       </div>
