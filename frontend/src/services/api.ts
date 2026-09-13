@@ -96,6 +96,27 @@ export const documentApi = {
     });
     if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to delete document'));
   },
+
+  downloadDocument: async (id: string, fileName: string): Promise<void> => {
+    const res = await fetch(`${getBaseUrl()}/api/v1/documents/${id}/download`, {
+      headers: getHeaders(),
+    });
+    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to download document'));
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  },
+
+  getPreviewUrl: (id: string): string => {
+    const token = localStorage.getItem('token') || '';
+    return `${getBaseUrl()}/api/v1/documents/${id}/preview?token=${encodeURIComponent(token)}`;
+  },
   
   getDocumentStatus: async (id: string): Promise<{status: string; current_stage: string; progress: number; error: string | null}> => {
     const res = await fetch(`${getBaseUrl()}/api/v1/documents/${id}/status`, {

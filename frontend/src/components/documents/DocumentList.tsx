@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { documentApi, DocumentResponse } from '../../services/api';
-import { File, Trash2, Clock, CheckCircle, AlertCircle, Loader } from 'lucide-react';
+import { File, Trash2, Clock, CheckCircle, AlertCircle, Loader, Download, Eye } from 'lucide-react';
 import { Button } from '../ui/Button';
 import './DocumentList.css';
 
@@ -40,14 +40,26 @@ export const DocumentList: React.FC<DocumentListProps> = ({ onViewDocument, refr
       setDocuments(prev => prev.filter(doc => doc.document_id !== id));
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to delete document';
-      // A stale card can be shown if this page was left open while the item
-      // was deleted elsewhere. It is already gone, so remove it locally.
       if (message === 'Document not found') {
         setDocuments(prev => prev.filter(doc => doc.document_id !== id));
         return;
       }
       setError(message);
     }
+  };
+
+  const handleDownload = async (e: React.MouseEvent, doc: DocumentResponse) => {
+    e.stopPropagation();
+    try {
+      await documentApi.downloadDocument(doc.document_id, doc.file_name);
+    } catch (err: any) {
+      alert(err?.message || 'Failed to download file');
+    }
+  };
+
+  const handlePreview = (e: React.MouseEvent, id: string) => {
+    e.stopPropagation();
+    onViewDocument(id);
   };
 
   const renderStatus = (status: string) => {
@@ -119,13 +131,32 @@ export const DocumentList: React.FC<DocumentListProps> = ({ onViewDocument, refr
           >
             <div className="doc-card-header">
               <File className="doc-icon" size={24} />
-              <button 
-                className="doc-delete-btn" 
-                onClick={(e) => handleDelete(e, doc.document_id)}
-                aria-label="Delete document"
-              >
-                <Trash2 size={16} />
-              </button>
+              <div className="doc-actions-inline" onClick={(e) => e.stopPropagation()}>
+                <button 
+                  className="doc-action-btn" 
+                  onClick={(e) => handlePreview(e, doc.document_id)}
+                  aria-label="Preview document"
+                  title="Preview / Details"
+                >
+                  <Eye size={16} />
+                </button>
+                <button 
+                  className="doc-action-btn" 
+                  onClick={(e) => handleDownload(e, doc)}
+                  aria-label="Download document"
+                  title="Download file"
+                >
+                  <Download size={16} />
+                </button>
+                <button 
+                  className="doc-delete-btn" 
+                  onClick={(e) => handleDelete(e, doc.document_id)}
+                  aria-label="Delete document"
+                  title="Delete"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
             </div>
             
             <div className="doc-card-body">

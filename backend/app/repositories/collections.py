@@ -71,6 +71,43 @@ class StructuredFactsRepository(UserScopedRepository[StructuredFact]):
     async def list_for_document(self, user_id: str, document_id: str) -> list[dict]:
         return await self.list(user_id, {"source_document_id": document_id})
 
+    async def upsert_fact(self, user_id: str, fact: StructuredFact) -> dict:
+        SINGLETON_PREFIXES = (
+            "personal.",
+            "identity.",
+            "contact.",
+            "demographics.",
+            "address.",
+            "passport.",
+            "visa.",
+        )
+        c = fact.concept or ""
+        v = str(fact.value or "").strip().lower()
+
+        if any(c.startswith(prefix) for prefix in SINGLETON_PREFIXES):
+            filter_doc = self._owner_filter(user_id, {"concept": fact.concept})
+        else:
+            filter_doc = self._owner_filter(user_id, {"concept": fact.concept, "value": fact.value})
+
+        existing = await self.collection.find_one(filter_doc)
+        if existing:
+            update_data = {
+                "confidence": max(existing.get("confidence", 0.0), fact.confidence),
+                "source_document_id": fact.source_document_id,
+                "source_page": fact.source_page,
+                "provenance": fact.provenance,
+                "updated_at": fact.updated_at,
+            }
+            if fact.value is not None:
+                update_data["value"] = fact.value
+            if fact.is_user_confirmed:
+                update_data["is_user_confirmed"] = True
+            await self.collection.update_one({"_id": existing["_id"]}, {"$set": update_data})
+            existing.update(update_data)
+            return existing
+        else:
+            return await self.create(user_id, fact)
+
 
 class RecommendationsRepository(UserScopedRepository[Recommendation]):
     def __init__(self, database: AsyncIOMotorDatabase) -> None:

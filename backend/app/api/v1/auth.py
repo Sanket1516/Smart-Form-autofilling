@@ -31,9 +31,15 @@ async def get_current_user(
     request: Request,
     credentials: Credentials,
 ) -> CurrentUser:
-    if credentials is None or credentials.scheme.lower() != "bearer":
+    token_str = None
+    if credentials and credentials.scheme.lower() == "bearer":
+        token_str = credentials.credentials
+    elif "token" in request.query_params:
+        token_str = request.query_params["token"]
+
+    if not token_str:
         raise APIError("UNAUTHORIZED", "Authentication required", 401)
-    user, _ = await get_auth_service(request).current_user(credentials.credentials)
+    user, _ = await get_auth_service(request).current_user(token_str)
     return user
 
 

@@ -1,6 +1,7 @@
 """Authenticated document lifecycle service."""
 
 import hashlib
+import logging
 from pathlib import Path
 from typing import Any
 
@@ -13,6 +14,8 @@ from app.repositories.collections import DocumentsRepository
 from app.schemas.documents import DocumentData, DocumentListData, ProcessingStatusData
 from app.storage.base import DocumentStorage
 from app.tasks.documents import process_document
+
+logger = logging.getLogger(__name__)
 
 SUPPORTED_TYPES = {
     ".pdf": {"application/pdf"},
@@ -30,7 +33,6 @@ MAGIC = {
     ".txt": (),
     ".docx": (b"PK\x03\x04",),
 }
-
 
 from app.db.chroma_client import ChromaClient
 
@@ -67,9 +69,6 @@ class DocumentService:
         if existing and existing.get("status") != "deleted":
             raise APIError("DUPLICATE_DOCUMENT", "Document has already been uploaded", 409)
         if existing:
-            # The old record predates this upload and is already deleted. Give
-            # it a tombstone checksum so the unique (user_id, checksum) index
-            # permits the user to upload the same file again.
             await self.repository.update(
                 user_id,
                 str(existing["_id"]),
@@ -93,6 +92,14 @@ class DocumentService:
         )
         try:
             created = await self.repository.create(user_id, document)
+            doc_id = str(created.get("_id", ""))
+            if doc_id:
+                try:
+                    await self.start_processing(user_id, doc_id)
+                    created["status"] = "processing"
+                    created["current_stage"] = "queued"
+                except Exception as proc_err:
+                    logger.warning("auto_start_processing_failed doc_id=%s err=%s", doc_id, proc_err)
         except DuplicateKeyError as error:
             await self.storage.delete(storage_reference)
             raise APIError(
@@ -103,8 +110,6 @@ class DocumentService:
     async def list(
         self, user_id: str, status: str | None, document_type: str | None, page: int, limit: int
     ) -> DocumentListData:
-        # Deletion is a soft delete so processing/audit data can be retained.
-        # Do not return those records in the ordinary document library.
         filters = {
             "status": status if status else {"$ne": "deleted"},
             **({"document_type": document_type} if document_type else {}),
@@ -123,6 +128,19 @@ class DocumentService:
         if record is None or record.get("status") == "deleted":
             raise APIError("RESOURCE_NOT_FOUND", "Document not found", 404)
         return self._data(record)
+
+    async def get_file_content(self, user_id: str, document_id: str) -> tuple[bytes, str, str]:
+        record = await self.repository.get(user_id, document_id)
+        if record is None or record.get("status") == "deleted":
+            raise APIError("RESOURCE_NOT_FOUND", "Document not found", 404)
+        
+        async with self.storage.get_local_path(record["storage_reference"]) as local_path:
+            with open(local_path, "rb") as f:
+                content = f.read()
+
+        file_name = record["file_name"]
+        file_type = record.get("file_type") or "application/octet-stream"
+        return content, file_name, file_type
 
     async def start_processing(self, user_id: str, document_id: str) -> dict[str, str]:
         record = await self.repository.get(user_id, document_id)
@@ -161,8 +179,6 @@ class DocumentService:
                 "status": "deleted",
                 "current_stage": "deleted",
                 "progress": 100,
-                # Keep the audit record but release the active-file checksum
-                # so deleting a file actually allows a later re-upload.
                 "checksum": self._deleted_checksum(record["checksum"], document_id),
             },
         )
@@ -183,7 +199,6 @@ class DocumentService:
 
     @staticmethod
     def _deleted_checksum(checksum: str, document_id: str) -> str:
-        """Return a valid, unique checksum value for a soft-deleted record."""
         return hashlib.sha256(f"deleted:{checksum}:{document_id}".encode()).hexdigest()
 
     @staticmethod

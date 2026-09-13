@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { documentApi, DocumentResponse } from '../../services/api';
-import { ArrowLeft, FileText, CheckCircle, AlertCircle, Clock, Loader, Play, Tag } from 'lucide-react';
+import { ArrowLeft, FileText, CheckCircle, AlertCircle, Clock, Loader, Play, Tag, Download, Eye, X } from 'lucide-react';
 import { Button } from '../ui/Button';
 import './DocumentDetails.css';
 
@@ -69,6 +69,7 @@ export const DocumentDetails: React.FC = () => {
   const [processStatus, setProcessStatus] = useState<any>(null);
   const [facts, setFacts] = useState<any[]>([]);
   const [factsLoading, setFactsLoading] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
 
   // Load document on mount
   useEffect(() => {
@@ -144,7 +145,7 @@ export const DocumentDetails: React.FC = () => {
   const handleProcess = async () => {
     if (!id || !document) return;
     setIsProcessing(true);
-    setFacts([]); // clear stale facts from a previous run
+    setFacts(); // clear stale facts from a previous run
     try {
       await documentApi.processDocument(id);
       setDocument({ ...document, status: 'processing' });
@@ -152,6 +153,15 @@ export const DocumentDetails: React.FC = () => {
     } catch (err) {
       alert('Failed to start processing');
       setIsProcessing(false);
+    }
+  };
+
+  const handleDownload = async () => {
+    if (!id || !document) return;
+    try {
+      await documentApi.downloadDocument(id, document.file_name);
+    } catch (err: any) {
+      alert(err?.message || 'Failed to download file');
     }
   };
 
@@ -207,6 +217,15 @@ export const DocumentDetails: React.FC = () => {
         </div>
 
         <div className="doc-actions">
+          <Button variant="outline" onClick={() => setShowPreview(!showPreview)}>
+            <Eye size={16} style={{ marginRight: '8px' }} />
+            {showPreview ? 'Hide Preview' : 'Preview Document'}
+          </Button>
+          <Button variant="outline" onClick={handleDownload}>
+            <Download size={16} style={{ marginRight: '8px' }} />
+            Download
+          </Button>
+
           {(document.status === 'uploaded' || document.status === 'failed') && (
             <Button onClick={handleProcess} isLoading={isProcessing}>
               <Play size={16} style={{ marginRight: '8px' }} />
@@ -224,6 +243,25 @@ export const DocumentDetails: React.FC = () => {
           </Button>
         </div>
       </div>
+
+      {/* ── preview container ── */}
+      {showPreview && id && (
+        <div className="doc-preview-container">
+          <div className="doc-preview-header">
+            <h3>Document Preview: {document.file_name}</h3>
+            <button className="close-preview-btn" onClick={() => setShowPreview(false)}>
+              <X size={18} />
+            </button>
+          </div>
+          <div className="doc-preview-body">
+            <iframe
+              src={documentApi.getPreviewUrl(id)}
+              title={`Preview of ${document.file_name}`}
+              className="doc-preview-iframe"
+            />
+          </div>
+        </div>
+      )}
 
       {/* ── processing status banner ── */}
       <div className="doc-status-section">

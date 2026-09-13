@@ -11,7 +11,7 @@ from app.db.mongo import MongoConnection
 from app.extraction.llm_extractor import DocumentOntologyExtractor
 from app.agents.llm_provider import get_llm_provider
 from app.ontology.loader import FieldOntology
-from app.processing.extractor import OCRUnavailableError, PaddleOCRAdapter, PDFExtractor
+from app.processing.extractor import OCRUnavailableError, PaddleOCRAdapter, UniversalDocumentExtractor
 from app.processing.pipeline import DocumentPipeline, PipelineRetryableError
 from app.repositories.collections import (
     DocumentsRepository,
@@ -68,7 +68,7 @@ async def _process(document_id: str, user_id: str) -> None:
         llm_extractor = DocumentOntologyExtractor(llm_provider, ontology)
 
         pipeline = DocumentPipeline(
-            PDFExtractor(
+            UniversalDocumentExtractor(
                 PaddleOCRAdapter(language=settings.ocr_language),
                 resolution=settings.ocr_resolution,
             ),

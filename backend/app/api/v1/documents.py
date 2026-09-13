@@ -113,3 +113,29 @@ async def reprocess_document(
         data=await service.reprocess(user.user_id, document_id),
         message="Document processing started",
     )
+
+
+from fastapi.responses import Response
+
+@router.get("/{document_id}/download")
+async def download_document_file(
+    user: User, service: Service, document_id: str
+) -> Response:
+    content, file_name, file_type = await service.get_file_content(user.user_id, document_id)
+    return Response(
+        content=content,
+        media_type=file_type,
+        headers={"Content-Disposition": f'attachment; filename="{file_name}"'},
+    )
+
+
+@router.get("/{document_id}/preview")
+async def preview_document_file(
+    user: User, service: Service, document_id: str
+) -> Response:
+    content, file_name, file_type = await service.get_file_content(user.user_id, document_id)
+    return Response(
+        content=content,
+        media_type=file_type,
+        headers={"Content-Disposition": f'inline; filename="{file_name}"'},
+    )

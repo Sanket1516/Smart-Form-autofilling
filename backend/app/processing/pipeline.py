@@ -81,13 +81,10 @@ class DocumentPipeline:
         await self.stage_writer.record_stage(user_id, document_id, "upload", "completed")
         await self._stage(user_id, document_id, "validation", "started", on_update)
         path = Path(storage_reference)
-        if path.suffix.lower() != ".pdf":
-            await self._stage(user_id, document_id, "validation", "completed", on_update)
-            raise ValueError("processing currently requires a PDF document")
         await self._stage(user_id, document_id, "validation", "completed", on_update)
         try:
             await self._stage(user_id, document_id, "parsing", "started", on_update)
-            result = self.extractor.extract(str(path))
+            result = self.extractor.extract(str(path), document_name=document_name)
             direct_present = any(
                 span.source_method == "direct-parse" for page in result.pages for span in page.spans
             )
@@ -130,7 +127,10 @@ class DocumentPipeline:
                             created_at=now,
                             updated_at=now
                         )
-                        await self.fact_writer.create(user_id, structured)
+                        if hasattr(self.fact_writer, "upsert_fact"):
+                            await self.fact_writer.upsert_fact(user_id, structured)
+                        else:
+                            await self.fact_writer.create(user_id, structured)
                     for conflict in llm_output.conflicts:
                         candidates = []
                         for c in conflict.candidates:
@@ -152,7 +152,10 @@ class DocumentPipeline:
                             created_at=now,
                             updated_at=now
                         )
-                        await self.fact_writer.create(user_id, structured_conflict)
+                        if hasattr(self.fact_writer, "upsert_fact"):
+                            await self.fact_writer.upsert_fact(user_id, structured_conflict)
+                        else:
+                            await self.fact_writer.create(user_id, structured_conflict)
             await self._stage(user_id, document_id, "extraction", "completed", on_update)
 
             await self._stage(user_id, document_id, "embedding", "started", on_update)

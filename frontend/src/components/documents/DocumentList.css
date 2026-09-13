@@ -37,6 +37,13 @@
   color: var(--color-primary);
 }
 
+.doc-actions-inline {
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-4);
+}
+
+.doc-action-btn,
 .doc-delete-btn {
   background: none;
   border: none;
@@ -48,6 +55,11 @@
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
+}
+
+.doc-action-btn:hover {
+  background-color: rgba(59, 130, 246, 0.1);
+  color: var(--color-primary);
 }
 
 .doc-delete-btn:hover {

@@ -1,5 +1,7 @@
 """Structured candidate fact persistence and presentation."""
 
+from __future__ import annotations
+
 from datetime import UTC, datetime
 from typing import Any
 
@@ -28,11 +30,52 @@ class FactService:
         records = await self.repository.list_filtered(
             user_id, concept, source_document_id, confirmed
         )
-        return FactsData(facts=[self._data(record) for record in records])
+        deduped = self._deduplicate_facts(records)
+        return FactsData(facts=[self._data(record) for record in deduped])
 
     async def list_for_document(self, user_id: str, document_id: str) -> FactsData:
         records = await self.repository.list_for_document(user_id, document_id)
-        return FactsData(facts=[self._data(record) for record in records])
+        deduped = self._deduplicate_facts(records)
+        return FactsData(facts=[self._data(record) for record in deduped])
+
+    @staticmethod
+    def _deduplicate_facts(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        SINGLETON_PREFIXES = (
+            "personal.",
+            "identity.",
+            "contact.",
+            "demographics.",
+            "address.",
+            "passport.",
+            "visa.",
+        )
+        grouped: dict[str, dict[str, Any]] = {}
+        for r in records:
+            c = r.get("concept", "")
+            v = str(r.get("value", "") or "").strip().lower()
+
+            if any(c.startswith(prefix) for prefix in SINGLETON_PREFIXES):
+                key = f"singleton:{c}"
+            else:
+                key = f"multi:{c}:{v}"
+
+            existing = grouped.get(key)
+            if existing is None:
+                grouped[key] = r
+            else:
+                cur_confirmed = existing.get("is_user_confirmed", False)
+                new_confirmed = r.get("is_user_confirmed", False)
+                if new_confirmed and not cur_confirmed:
+                    grouped[key] = r
+                elif new_confirmed == cur_confirmed:
+                    cur_conf = existing.get("confidence", 0.0)
+                    new_conf = r.get("confidence", 0.0)
+                    if new_conf > cur_conf:
+                        grouped[key] = r
+                    elif new_conf == cur_conf:
+                        if str(r.get("updated_at", "")) > str(existing.get("updated_at", "")):
+                            grouped[key] = r
+        return list(grouped.values())
 
     async def update(self, user_id: str, fact_id: str, request: FactUpdateRequest) -> FactData:
         record = await self.repository.get(user_id, fact_id)

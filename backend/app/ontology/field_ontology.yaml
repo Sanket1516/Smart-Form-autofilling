@@ -482,6 +482,30 @@ concepts:
     data_type: string
     cardinality: single
     is_structured: true
+  identity.pan_number:
+    canonical_name: identity.pan_number
+    description: PAN Card Number (Permanent Account Number)
+    aliases:
+    - pan
+    - pan number
+    - pan no
+    - customer's pan
+    - pan:
+    data_type: string
+    cardinality: single
+    is_structured: true
+  identity.aadhaar_number:
+    canonical_name: identity.aadhaar_number
+    description: Aadhaar Card Number
+    aliases:
+    - aadhaar
+    - aadhaar number
+    - aadhaar no
+    - adhaar
+    - uid
+    data_type: string
+    cardinality: single
+    is_structured: true
   identity.national_id:
     canonical_name: identity.national_id
     description: National ID or SSN
@@ -639,13 +663,57 @@ concepts:
     description: Bank Account Number
     aliases:
     - account number
+    - account no
     - acct no
+    - account number :
+    - account no.
+    data_type: string
+    cardinality: single
+    is_structured: true
+  financial.ifsc_code:
+    canonical_name: financial.ifsc_code
+    description: Bank IFSC Code
+    aliases:
+    - ifsc
+    - ifsc code
+    - ifsc:
+    data_type: string
+    cardinality: single
+    is_structured: true
+  financial.cif_number:
+    canonical_name: financial.cif_number
+    description: Bank CIF Number
+    aliases:
+    - cif
+    - cif number
+    - cif no
+    - cif number :
+    data_type: string
+    cardinality: single
+    is_structured: true
+  financial.branch_name:
+    canonical_name: financial.branch_name
+    description: Bank Branch Name
+    aliases:
+    - branch
+    - branch name
+    - bank branch
+    data_type: string
+    cardinality: single
+    is_structured: true
+  financial.account_type:
+    canonical_name: financial.account_type
+    description: Bank Account Type (e.g., Savings, Current)
+    aliases:
+    - account type
+    - a/c type
+    - ac type
     data_type: string
     cardinality: single
     is_structured: true
   financial.routing_number:
     canonical_name: financial.routing_number
-    description: Routing Number
+    description: Routing Number / Sort Code
     aliases:
     - routing number
     - sort code

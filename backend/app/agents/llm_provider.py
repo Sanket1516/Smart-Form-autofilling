@@ -216,48 +216,56 @@ class AnthropicProvider(LLMProvider):
 
 
 class GoogleProvider(LLMProvider):
-    """LLM provider backed by Google Gemini REST API."""
+    """LLM provider backed by Google Gemini REST API with automatic model fallback for 429 rate limits."""
 
     def __init__(self, model: str, api_key: str, timeout: int = 90) -> None:
-        # Default or fallback from deprecated models (e.g. gemini-2.5-flash-lite / gemini-1.5-flash)
-        if not model or "2.5" in model or "1.5" in model:
-            self._model = "gemini-3.6-flash"
-        else:
-            self._model = model
+        self._primary_model = model or "gemini-3.5-flash-lite"
+        self._fallback_models = ["gemini-3.5-flash-lite", "gemini-3.6-flash"]
         self._api_key = api_key
         self._timeout = timeout
 
     def complete(self, prompt: str) -> str:
         import json
         import urllib.request
+        import urllib.error
 
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{self._model}:generateContent?key={self._api_key}"
-        payload = {
-            "contents": [
-                {
-                    "parts": [
-                        {"text": prompt}
-                    ]
-                }
-            ]
-        }
-        req = urllib.request.Request(
-            url,
-            data=json.dumps(payload).encode("utf-8"),
-            headers={"Content-Type": "application/json"}
-        )
-        try:
-            with urllib.request.urlopen(req, timeout=self._timeout) as resp:
-                res_data = json.loads(resp.read().decode("utf-8"))
-                candidates = res_data.get("candidates", [])
-                if candidates and "content" in candidates[0] and "parts" in candidates[0]["content"]:
-                    parts = candidates[0]["content"]["parts"]
-                    if parts and "text" in parts[0]:
-                        return parts[0]["text"].strip()
-                return FinalResponseStatus.ERROR.value
-        except Exception as exc:
-            logger.exception("google_completion_failed model=%s", self._model)
-            return FinalResponseStatus.ERROR.value
+        models_to_try = [self._primary_model] + [m for m in self._fallback_models if m != self._primary_model]
+
+        for model_name in models_to_try:
+            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={self._api_key}"
+            payload = {
+                "contents": [
+                    {
+                        "parts": [
+                            {"text": prompt}
+                        ]
+                    }
+                ]
+            }
+            req = urllib.request.Request(
+                url,
+                data=json.dumps(payload).encode("utf-8"),
+                headers={"Content-Type": "application/json"}
+            )
+            try:
+                with urllib.request.urlopen(req, timeout=self._timeout) as resp:
+                    res_data = json.loads(resp.read().decode("utf-8"))
+                    candidates = res_data.get("candidates", [])
+                    if candidates and "content" in candidates[0] and "parts" in candidates[0]["content"]:
+                        parts = candidates[0]["content"]["parts"]
+                        if parts and "text" in parts[0]:
+                            return parts[0]["text"].strip()
+                    return FinalResponseStatus.ERROR.value
+            except urllib.error.HTTPError as exc:
+                if exc.code == 429:
+                    logger.warning("google_completion_429 model=%s trying_fallback", model_name)
+                    continue
+                logger.exception("google_completion_failed model=%s code=%s", model_name, exc.code)
+            except Exception as exc:
+                logger.exception("google_completion_failed model=%s", model_name)
+
+        return FinalResponseStatus.ERROR.value
+
 
 
 # ---------------------------------------------------------------------------

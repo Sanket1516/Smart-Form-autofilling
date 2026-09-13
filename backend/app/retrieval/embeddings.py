@@ -31,38 +31,44 @@ class DefaultEmbeddingProvider:
         self.model_name = (
             settings.embedding_model_name
             or settings.embedding_model
-            or "BAAI/bge-m3"
+            or "all-MiniLM-L6-v2"
         )
-        self.dimension = 1024
+        self.dimension = 384
         self._model = None
-        self._initialize_model()
+        self._initialized = False
 
-    def _initialize_model(self) -> None:
-        try:
-            from sentence_transformers import SentenceTransformer  # type: ignore
+    def _get_model(self):
+        if not self._initialized:
+            self._initialized = True
+            try:
+                from sentence_transformers import SentenceTransformer  # type: ignore
 
-            self._model = SentenceTransformer(self.model_name)
-            logger.info("embedding_model_loaded", extra={"model_name": self.model_name})
-        except Exception as error:
-            logger.warning(
-                "EMBEDDING_MODEL_UNAVAILABLE: Failed to load '%s'. "
-                "Falling back to dummy embeddings. Error: %s",
-                self.model_name,
-                error,
-            )
-            self._model = None
+                self._model = SentenceTransformer(self.model_name)
+                if hasattr(self._model, "get_sentence_embedding_dimension"):
+                    self.dimension = self._model.get_sentence_embedding_dimension()
+                logger.info("embedding_model_loaded", extra={"model_name": self.model_name})
+            except Exception as error:
+                logger.warning(
+                    "EMBEDDING_MODEL_UNAVAILABLE: Failed to load '%s'. "
+                    "Falling back to dummy embeddings. Error: %s",
+                    self.model_name,
+                    error,
+                )
+                self._model = None
+        return self._model
 
     @property
     def is_semantic(self) -> bool:
         """True when a real sentence-transformer model is loaded."""
-        return self._model is not None
+        return self._get_model() is not None
 
     def embed_texts(self, texts: list[str]) -> list[list[float]]:
         if not texts:
             return []
-        if self._model is not None:
+        model = self._get_model()
+        if model is not None:
             try:
-                embeddings = self._model.encode(texts, normalize_embeddings=True)
+                embeddings = model.encode(texts, normalize_embeddings=True)
                 return [vec.tolist() for vec in embeddings]
             except Exception as error:
                 logger.error(

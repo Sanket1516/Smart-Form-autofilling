@@ -68,7 +68,7 @@ class PDFExtractor:
         self.ocr = ocr or PaddleOCRAdapter()
         self.resolution = resolution
 
-    def extract(self, path: str) -> NormalizedDocument:
+    def extract(self, path: str, document_name: str = "") -> NormalizedDocument:
         try:
             import pdfplumber
         except ImportError as error:
@@ -123,3 +123,61 @@ class PDFExtractor:
         except Exception as error:
             raise OCRUnavailableError("Unable to render PDF page for OCR") from error
         return self.ocr.extract(image, page_number)
+
+
+class UniversalDocumentExtractor:
+    """Universal multi-format document extractor supporting PDF, TXT, PNG, JPG, JPEG."""
+
+    def __init__(self, ocr: OCRAdapter | None = None, resolution: int = 150) -> None:
+        self.pdf_extractor = PDFExtractor(ocr=ocr, resolution=resolution)
+        self.ocr = ocr or PaddleOCRAdapter()
+        self.resolution = resolution
+
+    def extract(self, path: str, document_name: str = "") -> NormalizedDocument:
+        from pathlib import Path
+        ext = Path(document_name).suffix.lower() if document_name else Path(path).suffix.lower()
+        if not ext and Path(path).suffix:
+            ext = Path(path).suffix.lower()
+
+        if ext == ".txt":
+            return self._extract_txt(path)
+        elif ext in (".jpg", ".jpeg", ".png"):
+            return self._extract_image(path)
+        else:
+            try:
+                return self.pdf_extractor.extract(path, document_name=document_name)
+            except Exception:
+                # Fallback to image or text extraction if PDF parsing fails
+                try:
+                    return self._extract_image(path)
+                except Exception:
+                    return self._extract_txt(path)
+
+    def _extract_txt(self, path: str) -> NormalizedDocument:
+        spans: list[ExtractedSpan] = []
+        try:
+            with open(path, "r", encoding="utf-8", errors="ignore") as f:
+                content = f.read()
+            for line in content.splitlines():
+                if line.strip():
+                    spans.append(
+                        ExtractedSpan(
+                            page_number=1,
+                            text=line.strip(),
+                            source_method="direct-parse",
+                        )
+                    )
+        except Exception:
+            pass
+        return NormalizedDocument(pages=[NormalizedPage(page_number=1, width=600.0, height=800.0, spans=spans)])
+
+    def _extract_image(self, path: str) -> NormalizedDocument:
+        try:
+            from PIL import Image
+            image = Image.open(path)
+            w, h = image.size
+            spans = self.ocr.extract(image, page_number=1)
+            return NormalizedDocument(pages=[NormalizedPage(page_number=1, width=float(w), height=float(h), spans=spans)])
+        except Exception:
+            return self._extract_txt(path)
+
