@@ -4,7 +4,7 @@ from datetime import UTC, datetime
 from typing import Any, Optional
 
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from app.core.exceptions import APIError
+from app.core.api_errors import APIError
 
 
 class FormSessionsRepository:

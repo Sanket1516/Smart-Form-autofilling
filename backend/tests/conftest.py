@@ -24,6 +24,8 @@ class MockSentenceTransformer:
             def tolist(self):
                 return [0.1] * 1024
         return [DummyVec() for _ in texts]
+    def get_sentence_embedding_dimension(self):
+        return 1024
 
 @pytest.fixture(autouse=True)
 def mock_sentence_transformers(monkeypatch):

@@ -14,7 +14,6 @@ from app.schemas.auth import (
     RegisterRequest,
 )
 from app.schemas.responses import MessageResponse, SuccessResponse
-from app.schemas.responses import MessageResponse, SuccessResponse
 from app.services.auth import AuthService
 from app.core.rate_limit import limiter
 
