@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { AuthState } from '../types';
-import { LogIn, LogOut, Loader2, Sparkles, AlertCircle } from 'lucide-react';
+import { LogIn, LogOut, Loader2, Sparkles, AlertCircle, FileText, ShieldCheck } from 'lucide-react';
 import { AutofillFlow } from './AutofillFlow';
 
 export const App = () => {
@@ -12,16 +12,18 @@ export const App = () => {
   const [fieldCount, setFieldCount] = useState(0);
   const [activeSessionId, setActiveSessionId] = useState<string | null>(null);
   const [token, setToken] = useState<string>('');
+  const [selectedMode, setSelectedMode] = useState<'ask_me' | 'document' | null>(null);
 
   useEffect(() => {
     // Initial state load
-    chrome.storage.local.get(['authState', 'token'], (res) => {
+    chrome.storage.local.get(['authState', 'token', 'pendingAutofillMode'], (res) => {
       if (res.authState) {
         setAuthState(res.authState);
       }
       if (res.token) {
         setToken(res.token);
       }
+      if (res.pendingAutofillMode === 'document') setSelectedMode('document');
       // If we have a token but no authState set, restore connected
       if (res.token && !res.authState) {
         chrome.storage.local.set({ authState: 'connected' });
@@ -103,14 +105,31 @@ export const App = () => {
             }
             return;
           }
-          chrome.runtime.sendMessage({ type: 'GET_TAB_FIELDS', tabId: activeTab.id }, (fieldsRes) => {
-            const fields = (fieldsRes?.payload || []).map((field: any) => ({
+          chrome.tabs.sendMessage(activeTab.id!, { type: 'GET_DETECTED_FIELDS' }, (fieldsRes) => {
+            const sourceFields = fieldsRes?.payload || [];
+            if (!sourceFields.length) {
+              setLoading(false);
+              setError('No form fields were found in this tab. Return to the form and try again.');
+              return;
+            }
+            const fields = sourceFields.map((field: any) => ({
               field_id: field.field_id,
               label: field.label || field.aria_label || field.name || field.id || 'Unlabeled field',
+              tag: field.tag || 'input',
               name: field.name || '',
+              id: field.id || '',
               placeholder: field.placeholder || '',
               input_type: field.type || 'text',
+              aria_label: field.aria_label || '',
+              aria_description: field.aria_description || '',
+              autocomplete: field.autocomplete || '',
+              required: Boolean(field.required),
+              pattern: field.pattern || '',
               section: field.section_context || '',
+              section_context: field.section_context || '',
+              nearby_text: field.nearby_text || '',
+              visual_context: field.visual_context || null,
+              position: field.position || null,
               dom_context: field.dom_context || {},
               accessibility_context: field.accessibility_context || {},
             }));
@@ -121,6 +140,8 @@ export const App = () => {
             }, (analyzeRes) => {
               setLoading(false);
               if (analyzeRes?.success) {
+                chrome.storage.local.remove('pendingAutofillMode');
+                setSelectedMode(null);
                 setActiveSessionId(res.session.session_id);
               } else {
                 if (analyzeRes?.error === 'Session expired') {
@@ -136,6 +157,12 @@ export const App = () => {
         setLoading(false);
         setError('Could not determine the current tab URL.');
       }
+    });
+  };
+
+  const openDocumentMode = () => {
+    chrome.storage.local.set({ pendingAutofillMode: 'document' }, () => {
+      chrome.tabs.create({ url: 'http://localhost:5173/documents' });
     });
   };
 
@@ -226,14 +253,37 @@ export const App = () => {
               </div>
             )}
 
-            <button 
-              className="btn-primary large-action" 
-              onClick={handleStartAutofillFlow}
-              disabled={loading || fieldCount === 0}
-            >
-              {loading ? <Loader2 size={16} className="spin" /> : <Sparkles size={16} />}
-              {fieldCount === 0 ? 'No Form Found' : 'Autofill Form'}
-            </button>
+            {selectedMode === 'document' ? (
+              <div className="mode-card">
+                <p className="text-sm">Upload and process your document in the dashboard, then return to this form.</p>
+                <button className="btn-primary large-action" onClick={handleStartAutofillFlow} disabled={loading || fieldCount === 0}>
+                  {loading ? <Loader2 size={16} className="spin" /> : <FileText size={16} />}
+                  Continue with Documents
+                </button>
+                <button className="btn-outline w-full" onClick={() => setSelectedMode(null)}>Choose another option</button>
+              </div>
+            ) : selectedMode === 'ask_me' ? (
+              <div className="mode-card">
+                <p className="text-sm">The system will use information you already approved, then ask only for required fields it cannot resolve.</p>
+                <button className="btn-primary large-action" onClick={handleStartAutofillFlow} disabled={loading || fieldCount === 0}>
+                  {loading ? <Loader2 size={16} className="spin" /> : <ShieldCheck size={16} />}
+                  Continue without a document
+                </button>
+                <button className="btn-outline w-full" onClick={() => setSelectedMode(null)}>Choose another option</button>
+              </div>
+            ) : (
+              <div className="mode-card">
+                <h3>How would you like to provide information?</h3>
+                <button className="btn-outline large-action" onClick={openDocumentMode} disabled={fieldCount === 0}>
+                  <FileText size={16} /> Use a Document
+                </button>
+                <p className="text-secondary text-sm">Upload a document in the dashboard, then return to this form.</p>
+                <button className="btn-primary large-action" onClick={() => setSelectedMode('ask_me')} disabled={fieldCount === 0}>
+                  <ShieldCheck size={16} /> Ask Me Instead
+                </button>
+                <p className="text-secondary text-sm">No upload. Only missing required information will be requested.</p>
+              </div>
+            )}
           </>
         )}
       </div>

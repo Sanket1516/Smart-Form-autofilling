@@ -93,6 +93,9 @@ class RecommendationOutput(BaseModel):
     retrieval_type: str = "structured"
     status: str
     provenance: list[RecommendationProvenance] = Field(default_factory=list)
+    field_label: str = ""
+    required: bool = False
+    input_type: str = "text"
 
 
 class RecommendResponseData(BaseModel):
@@ -104,6 +107,9 @@ class RecommendResponseData(BaseModel):
     retrieval_type: str
     status: str
     provenance: list[RecommendationProvenance] = Field(default_factory=list)
+    field_label: str = ""
+    required: bool = False
+    input_type: str = "text"
 
 
 class BatchRecommendResponseData(BaseModel):

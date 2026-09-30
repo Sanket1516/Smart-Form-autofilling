@@ -33,6 +33,23 @@ class RAGRetrievalData(BaseModel):
     results: list[RAGSearchResult]
 
 
+class RAGAnswerRequest(BaseModel):
+    question: str = Field(min_length=1, max_length=2000)
+    top_k: int = Field(default=5, ge=1, le=20)
+
+
+class RAGAnswerSource(BaseModel):
+    document_id: str
+    page_number: int = 1
+    similarity: float
+
+
+class RAGAnswerData(BaseModel):
+    answer: str
+    confidence: float = Field(ge=0.0, le=1.0)
+    sources: list[RAGAnswerSource] = Field(default_factory=list)
+
+
 class StructuredRetrievalRequest(BaseModel):
     concept: str = Field(min_length=1, description="Ontology concept to search for")
     verified_only: bool = Field(default=False, description="Whether to return only verified canonical facts")

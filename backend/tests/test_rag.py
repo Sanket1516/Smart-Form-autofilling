@@ -33,7 +33,7 @@ class FakeExtractor:
     def __init__(self, result: NormalizedDocument) -> None:
         self.result = result
 
-    def extract(self, path: str) -> NormalizedDocument:
+    def extract(self, path: str, document_name: str = "") -> NormalizedDocument:
         return self.result
 
 

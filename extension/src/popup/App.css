@@ -198,3 +198,88 @@ button {
   text-decoration: underline;
   color: var(--primary-hover);
 }
+
+.mode-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.mode-card h3 {
+  margin: 0 0 4px;
+  font-size: 14px;
+}
+
+.mode-card .large-action {
+  margin-top: 4px;
+}
+
+.text-sm {
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.ask-me-list {
+  max-height: 360px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.ask-me-field {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.ask-me-field > label:first-child {
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.ask-me-field input:not([type="checkbox"]),
+.ask-me-field textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 13px;
+}
+
+.save-choice {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.answer-error {
+  margin: 0 0 10px;
+  color: var(--error);
+  font-size: 12px;
+}
+
+.review-edit-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.review-edit-field input,
+.review-edit-field textarea {
+  box-sizing: border-box;
+  width: 100%;
+  padding: 7px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font: inherit;
+  font-size: 12px;
+}

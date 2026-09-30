@@ -94,7 +94,7 @@ async def submit_decision(review_id: str, payload: ReviewDecisionRequest, reques
     await repo.update_status(user_id, review_id, rec_status, new_value)
     
     # 4. If confirmed/edited, update profile explicitly (SRS §19.3)
-    if decision in ("confirm", "edit"):
+    if decision in ("confirm", "edit") and payload.save_for_future:
         value_to_save = new_value if decision == "edit" else rec.get("recommended_value")
         concept = rec.get("concept")
         if value_to_save and concept:
@@ -119,8 +119,16 @@ async def submit_decision(review_id: str, payload: ReviewDecisionRequest, reques
                         updated_at=datetime.now(UTC),
                     )
                     await fact_service.repository.create(user_id, fact_doc)
-            except Exception as e:
-                logger.warning(f"Failed to update profile from HITL decision: {e}")
+                memory_service = getattr(request.app.state, "user_memory_service", None)
+                if memory_service:
+                    await memory_service.save(
+                        user_id,
+                        str(rec.get("field_label") or concept),
+                        str(concept),
+                        str(value_to_save),
+                    )
+            except Exception:
+                logger.warning("Failed to save user-approved review value")
 
     return ReviewDecisionResponse(
         success=True,

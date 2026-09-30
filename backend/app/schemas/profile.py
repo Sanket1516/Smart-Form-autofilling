@@ -28,6 +28,25 @@ class ProfileUpdateResponse(BaseModel):
     updated: bool = True
 
 
+class UserMemoryCreateRequest(BaseModel):
+    label: str = Field(min_length=1, max_length=200)
+    concept: str = Field(min_length=1, max_length=160)
+    value: str = Field(min_length=1, max_length=10000)
+
+
+class UserMemoryData(BaseModel):
+    memory_id: str
+    label: str
+    concept: str
+    value: str
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
+
+
+class UserMemoriesData(BaseModel):
+    memories: list[UserMemoryData]
+
+
 class CorrectionCreateRequest(BaseModel):
     session_id: str | None = None
     field_id: str | None = None

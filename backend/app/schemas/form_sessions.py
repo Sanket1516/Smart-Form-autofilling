@@ -28,10 +28,21 @@ class FormSessionResponseData(BaseModel):
 class FieldObject(BaseModel):
     field_id: str
     label: str
+    tag: Optional[str] = "input"
     name: Optional[str] = ""
+    id: Optional[str] = ""
     placeholder: Optional[str] = ""
     input_type: str
+    aria_label: Optional[str] = ""
+    aria_description: Optional[str] = ""
+    autocomplete: Optional[str] = ""
+    required: bool = False
+    pattern: Optional[str] = ""
     section: Optional[str] = ""
+    nearby_text: Optional[str] = ""
+    section_context: Optional[str] = ""
+    visual_context: Optional[Dict[str, Any]] = None
+    position: Optional[Dict[str, Any]] = None
     dom_context: Optional[Dict[str, Any]] = Field(default_factory=dict)
     accessibility_context: Optional[Dict[str, Any]] = Field(default_factory=dict)
 
@@ -44,6 +55,22 @@ class FormSessionAnalyzeData(BaseModel):
     session_id: str
     status: str
     field_count: int
+
+
+class AskMeAnswer(BaseModel):
+    field_id: str = Field(min_length=1)
+    value: str = Field(min_length=1, max_length=10000)
+    save_for_future: bool = False
+
+
+class AskMeAnswersRequest(BaseModel):
+    answers: list[AskMeAnswer] = Field(min_length=1, max_length=100)
+
+
+class AskMeAnswersData(BaseModel):
+    session_id: str
+    status: str
+    saved_count: int
 
 
 class FormSessionCompleteRequest(BaseModel):
@@ -65,6 +92,8 @@ class ApprovedValueData(BaseModel):
     value: str
     confidence: float
     requires_confirmation: bool
+    field_label: str = ""
+    input_type: str = "text"
 
 
 class ApprovedValuesResponseData(BaseModel):

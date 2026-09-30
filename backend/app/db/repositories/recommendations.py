@@ -25,7 +25,9 @@ class RecommendationsRepository:
         retrieval_type: str,
         source_fact_ids: list[str],
         status: str,
-        decision_reason: str = ""
+        decision_reason: str = "",
+        required: bool = False,
+        input_type: str = "text",
     ) -> str:
         """Creates a new recommendation document."""
         rec_id = f"rec_{uuid.uuid4().hex[:12]}"
@@ -35,6 +37,8 @@ class RecommendationsRepository:
             "session_id": session_id,
             "field_id": field_id,
             "field_label": field_label,
+            "required": required,
+            "input_type": input_type,
             "concept": concept,
             "recommended_value": recommended_value,
             "confidence": confidence,

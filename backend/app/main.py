@@ -58,6 +58,7 @@ from app.services.facts import FactService
 from app.services.health import HealthService
 from app.services.profile import ProfileService
 from app.services.retrieval import RAGRetrievalService
+from app.services.user_memories import UserMemoryService
 from app.storage.base import DocumentStorage
 from app.storage.local import LocalFileStorage
 from app.storage.cloudinary_storage import CloudinaryStorage
@@ -113,6 +114,11 @@ async def lifespan(app: FastAPI):
         llm_provider=app.state.llm_provider
     )
     app.state.embedding_provider = DefaultEmbeddingProvider(settings)
+    app.state.user_memory_service = UserMemoryService(
+        app.state.mongodb.database,
+        app.state.chromadb,
+        app.state.embedding_provider,
+    )
     app.state.retrieval_service = RAGRetrievalService(
         app.state.chromadb, app.state.embedding_provider
     )

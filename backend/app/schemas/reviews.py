@@ -29,6 +29,7 @@ class PendingReviewsResponse(BaseModel):
 class ReviewDecisionRequest(BaseModel):
     decision: str = Field(..., pattern="^(confirm|edit|reject|skip)$")
     value: str | None = None
+    save_for_future: bool = False
 
 
 class ReviewDecisionResponseData(BaseModel):

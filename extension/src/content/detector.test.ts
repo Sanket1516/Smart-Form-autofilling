@@ -1,8 +1,16 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { extractFieldObject } from './detector';
 
 describe('Field Detector', () => {
   beforeEach(() => {
+    vi.restoreAllMocks();
+    vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
+      x: 0, y: 0, top: 0, left: 0, right: 120, bottom: 24,
+      width: 120, height: 24, toJSON: () => ({}),
+    } as DOMRect);
+    vi.spyOn(window, 'getComputedStyle').mockReturnValue({
+      display: 'block', visibility: 'visible', zIndex: 'auto',
+    } as CSSStyleDeclaration);
     document.body.innerHTML = '';
   });
 

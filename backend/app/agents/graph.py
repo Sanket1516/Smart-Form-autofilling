@@ -219,6 +219,7 @@ class AutofillAgent:
         concept = semantic_result.get("ontology") or semantic_result.get("concept")
         semantic_type = semantic_result.get("semantic_type", "UNKNOWN")
         user_id = state.get("user_id")
+        retrieval_strategy = semantic_result.get("retrieval_strategy", "")
 
         candidates: list[dict[str, Any]] = []
 
@@ -287,10 +288,28 @@ class AutofillAgent:
             semantic_type,
             len(candidates),
         )
+        rag_candidates: list[dict[str, Any]] = []
+        if retrieval_strategy == "BOTH" and self.retrieval_service and user_id:
+            current_field = state.get("current_field") or {}
+            field_hints = " ".join(
+                str(current_field.get(key) or "")[:120]
+                for key in ("label", "placeholder", "nearby_text", "section_context", "section")
+            )
+            query = " ".join(part for part in (str(concept or ""), field_hints) if part).strip()
+            if query:
+                try:
+                    rag_result = await self.retrieval_service.search(
+                        user_id=user_id,
+                        request=RAGRetrievalRequest(query=query, top_k=self.max_evidence_chunks),
+                    )
+                    rag_candidates = [item.model_dump() for item in rag_result.results]
+                except Exception:
+                    logger.exception("combined_rag_retrieval_failed")
         return {
             "status": "retrieving",
             "retrieval_route": "structured_retrieval",
             "structured_candidates": candidates,
+            "rag_candidates": rag_candidates,
         }
 
     async def _node_rag_retrieval(self, state: AgentState) -> dict[str, Any]:
@@ -301,9 +320,15 @@ class AutofillAgent:
         user_id = state.get("user_id")
         current_field = state.get("current_field") or {}
 
-        # Build query from concept + label (sanitized — data only, not instruction)
-        label = str(current_field.get("label") or "")[:100]
-        query = f"{concept} {label}".strip() if label else concept
+        # Search with all user-visible field hints. Narrative questions need their
+        # surrounding context so a prompt like "Tell us about yourself" can find
+        # relevant resume and user-approved experience memories.
+        label = str(current_field.get("label") or "")[:160]
+        prompt_context = " ".join(
+            str(current_field.get(key) or "")[:120]
+            for key in ("placeholder", "nearby_text", "section_context", "section")
+        )
+        query = " ".join(part for part in (concept, label, prompt_context) if part).strip()
 
         rag_candidates: list[dict[str, Any]] = []
         if self.retrieval_service and user_id and (concept != "unknown" or label):
@@ -464,7 +489,7 @@ class AutofillAgent:
         # Call LLM
         try:
             raw_response = self.llm_provider.complete(prompt)
-            reasoning_trace.append(f"llm_response:{raw_response[:200]}")
+            reasoning_trace.append("llm_response_received")
         except Exception as exc:
             logger.exception("llm_reasoning_failed")
             reasoning_trace.append(f"llm_error:{exc}")
@@ -578,7 +603,7 @@ class AutofillAgent:
                 retrieval_type="mixed",
                 source_fact_ids=source_fact_ids,
                 status=db_status,
-                decision_reason=conflict.get("reason", "")
+                decision_reason=conflict.get("reason", ""),
             )
             
         next_status = "waiting_human" if is_hitl else "filling"
