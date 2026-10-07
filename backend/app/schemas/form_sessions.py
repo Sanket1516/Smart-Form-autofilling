@@ -25,21 +25,41 @@ class FormSessionResponseData(BaseModel):
     reviewed_fields: int
 
 
+class FormFieldOption(BaseModel):
+    option_id: str
+    id: Optional[str] = None
+    name: Optional[str] = None
+    value: str = ""
+    label: str = ""
+    checked: bool = False
+    selected: Optional[bool] = None
+    disabled: Optional[bool] = None
+    dom_path: Optional[str] = None
+
+
 class FieldObject(BaseModel):
     field_id: str
     label: str
     tag: Optional[str] = "input"
+    input_type: str
     name: Optional[str] = ""
     id: Optional[str] = ""
     placeholder: Optional[str] = ""
-    input_type: str
+    associated_label: Optional[str] = ""
     aria_label: Optional[str] = ""
+    aria_labelledby: Optional[str] = ""
+    aria_labelledby_text: Optional[str] = ""
     aria_description: Optional[str] = ""
     autocomplete: Optional[str] = ""
     required: bool = False
     pattern: Optional[str] = ""
     section: Optional[str] = ""
     nearby_text: Optional[str] = ""
+    current_value: Optional[str] = ""
+    checked: Optional[bool] = None
+    options: List[FormFieldOption] = Field(default_factory=list)
+    option_labels: List[str] = Field(default_factory=list)
+    option_values: List[str] = Field(default_factory=list)
     section_context: Optional[str] = ""
     visual_context: Optional[Dict[str, Any]] = None
     position: Optional[Dict[str, Any]] = None
