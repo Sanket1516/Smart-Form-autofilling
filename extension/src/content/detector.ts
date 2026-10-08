@@ -4,6 +4,14 @@ const FIELD_SELECTOR = 'input, select, textarea';
 const IGNORED_INPUT_TYPES = new Set(['hidden', 'submit', 'button', 'reset', 'image', 'file']);
 
 type FieldElement = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
+interface RegisteredFieldElements {
+  elements: FieldElement[];
+  isRadioGroup: boolean;
+}
+
+const elementTokens = new WeakMap<FieldElement, number>();
+const elementRegistryByRoot = new WeakMap<object, Map<string, RegisteredFieldElements>>();
+let nextElementToken = 1;
 
 /**
  * Extract all visible form controls under a DOM root. Radio inputs with the same
@@ -12,8 +20,8 @@ type FieldElement = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement;
 export function extractFieldObjects(root: ParentNode = document): FieldObject[] {
   const elements = collectFieldElements(root).filter(isRelevantAndVisible);
   const radioGroups = new Map<string, HTMLInputElement[]>();
-  const idCounts = countAttributes(elements, 'id');
-  const nameCounts = countAttributes(elements.filter((el) => !isRadio(el)), 'name');
+  const usedFieldIds = new Set<string>();
+  const elementsByFieldId = new Map<string, RegisteredFieldElements>();
 
   for (const element of elements) {
     if (!isRadio(element)) continue;
@@ -31,14 +39,32 @@ export function extractFieldObjects(root: ParentNode = document): FieldObject[] 
       const groupKey = getRadioGroupKey(element);
       if (emittedRadioGroups.has(groupKey)) continue;
       emittedRadioGroups.add(groupKey);
-      fields.push(buildRadioGroup(radioGroups.get(groupKey) ?? [element]));
+      const group = radioGroups.get(groupKey) ?? [element];
+      const field = buildRadioGroup(group, usedFieldIds);
+      fields.push(field);
+      elementsByFieldId.set(field.field_id, { elements: group, isRadioGroup: true });
       continue;
     }
 
-    fields.push(buildSingleField(element, idCounts, nameCounts));
+    const field = buildSingleField(element, usedFieldIds);
+    fields.push(field);
+    elementsByFieldId.set(field.field_id, { elements: [element], isRadioGroup: false });
   }
 
+  elementRegistryByRoot.set(root as object, elementsByFieldId);
   return fields;
+}
+
+/** Resolve an extracted field ID to the exact element registered during extraction. */
+export function getElementByFieldId(fieldId: string, root: ParentNode = document): HTMLElement | null {
+  return elementRegistryByRoot.get(root as object)?.get(fieldId)?.elements[0] ?? null;
+}
+
+/** Return every DOM radio belonging to an extracted logical radio field. */
+export function getRadioGroupByFieldId(fieldId: string, root: ParentNode = document): HTMLInputElement[] {
+  const field = elementRegistryByRoot.get(root as object)?.get(fieldId);
+  if (!field?.isRadioGroup) return [];
+  return field.elements.filter(isRadio);
 }
 
 /** Backward-compatible single-control extractor; radio inputs return their group. */
@@ -82,22 +108,11 @@ function isRelevantAndVisible(element: FieldElement): boolean {
   return !(rect.width === 0 && rect.height === 0) && style.display !== 'none';
 }
 
-function countAttributes(elements: FieldElement[], attribute: 'id' | 'name'): Map<string, number> {
-  const counts = new Map<string, number>();
-  for (const element of elements) {
-    const value = element.getAttribute(attribute);
-    if (!value) continue;
-    counts.set(value, (counts.get(value) ?? 0) + 1);
-  }
-  return counts;
-}
-
 function buildSingleField(
-  element: Exclude<FieldElement, HTMLInputElement> | HTMLInputElement,
-  idCounts: Map<string, number>,
-  nameCounts: Map<string, number>,
+  element: FieldElement,
+  usedFieldIds: Set<string>,
 ): FieldObject {
-  const fieldId = makeFieldId(element, idCounts, nameCounts);
+  const fieldId = makeUniqueFieldId(makeFieldId(element), usedFieldIds);
   const associatedLabel = getAssociatedLabel(element);
   const ariaLabel = cleanText(element.getAttribute('aria-label'));
   const ariaLabelledby = cleanText(element.getAttribute('aria-labelledby'));
@@ -157,9 +172,9 @@ function buildSingleField(
   };
 }
 
-function buildRadioGroup(radios: HTMLInputElement[]): FieldObject {
+function buildRadioGroup(radios: HTMLInputElement[], usedFieldIds: Set<string>): FieldObject {
   const first = radios[0];
-  const groupId = makeRadioGroupId(first);
+  const groupId = makeUniqueFieldId(makeRadioGroupId(first), usedFieldIds);
   const options = radios.map((radio) => makeRadioOption(radio, groupId));
   const fieldset = first.closest('fieldset');
   const fieldsetLabel = cleanText(fieldset?.querySelector('legend')?.textContent);
@@ -185,6 +200,7 @@ function buildRadioGroup(radios: HTMLInputElement[]): FieldObject {
     tag: 'input',
     input_type: 'radio',
     type: 'radio',
+    question,
     name: first.name || undefined,
     id: undefined,
     label: question,
@@ -220,20 +236,33 @@ function buildRadioGroup(radios: HTMLInputElement[]): FieldObject {
   };
 }
 
-function makeFieldId(
-  element: FieldElement,
-  idCounts: Map<string, number>,
-  nameCounts: Map<string, number>,
-): string {
+function makeFieldId(element: FieldElement): string {
   const id = element.getAttribute('id');
   const name = element.getAttribute('name');
-  const path = getDOMPath(element);
+  const token = getElementToken(element);
 
-  if (id) return (idCounts.get(id) ?? 0) > 1 ? `id_${id}__${encodeURIComponent(path)}` : `id_${id}`;
-  if (name) return (nameCounts.get(name) ?? 0) > 1
-    ? `name_${name}__${encodeURIComponent(path)}`
-    : `name_${name}`;
-  return `path_${encodeURIComponent(path)}`;
+  if (id) return `id_${encodeURIComponent(id)}__el_${token}`;
+  if (name) return `name_${encodeURIComponent(name)}__el_${token}`;
+  return `path_${token}`;
+}
+
+function getElementToken(element: FieldElement): number {
+  const existing = elementTokens.get(element);
+  if (existing !== undefined) return existing;
+
+  const token = nextElementToken++;
+  elementTokens.set(element, token);
+  return token;
+}
+
+function makeUniqueFieldId(fieldId: string, usedFieldIds: Set<string>): string {
+  let uniqueId = fieldId;
+  let suffix = 2;
+  while (usedFieldIds.has(uniqueId)) {
+    uniqueId = `${fieldId}__${suffix++}`;
+  }
+  usedFieldIds.add(uniqueId);
+  return uniqueId;
 }
 
 function makeRadioGroupId(radio: HTMLInputElement): string {

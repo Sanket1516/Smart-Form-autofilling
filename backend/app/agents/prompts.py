@@ -240,10 +240,17 @@ def build_bulk_fill_prompt(
     field_lines = []
     for f in fields:
         fid = f.get("field_id", "")
-        label = str(f.get("label", ""))[:100]
+        label = str(f.get("question") or f.get("label", ""))[:100]
         placeholder = str(f.get("placeholder", ""))[:100]
         ftype = str(f.get("type") or f.get("input_type", ""))
-        options = f.get("visual_context", {}).get("options", [])
+        if ftype.lower() == "radio":
+            options = [
+                {"label": str(option.get("label", "")), "value": str(option.get("value", ""))}
+                for option in f.get("options", [])
+                if isinstance(option, dict) and not option.get("disabled", False)
+            ]
+        else:
+            options = f.get("visual_context", {}).get("options", [])
         required = bool(f.get("required", False))
         concept = str(f.get("concept", "unknown"))[:120]
         semantic_type = str(f.get("semantic_type", "UNKNOWN"))[:120]
@@ -297,6 +304,7 @@ IMMUTABLE RULES:
    - "value": The recommended value for this field (or "" if missing)
    - "confidence": A float between 0.0 and 1.0
    - "reason": A short one-sentence explanation for this mapping.
+   - For radio fields only, also include "selected_option": {{"label":"exact option label","value":"exact option value"}}.
 4. For narrative fields (about yourself, experience, achievements, goals, strengths, project or
    work descriptions), write a concise answer in the user's voice using only relevant evidence.
    Combine related evidence when it clearly belongs together, but never add unsupported claims.
@@ -304,7 +312,8 @@ IMMUTABLE RULES:
 DERIVATION RULES:
 - NAME SPLITTING: First/last name can be split from full_name.
 - DATE FORMAT: Output dates in YYYY-MM-DD if the field type is "date", else match the field label format hint.
-- RADIO / SELECT: If the field has options, the output value MUST exactly match one of the available options.
+- RADIO: Choose one supported option from the listed label/value pairs. Set "value" to the exact canonical option value and return the matching pair in "selected_option". If no listed option is supported, use MISSING_INFORMATION and an empty value.
+- SELECT: If the field has options, the output value MUST exactly match one of the available options.
 
 Respond ONLY with the JSON object. Do not include any markdown wrappers (like ```json).
 """

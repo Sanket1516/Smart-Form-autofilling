@@ -58,6 +58,69 @@ def _is_narrative_field(label: str, placeholder: str = "") -> bool:
     ))
 
 
+def _normalize_option_text(value: Any) -> str:
+    return " ".join(str(value or "").split()).casefold()
+
+
+def _radio_option_pairs(field: Any) -> list[dict[str, str]]:
+    pairs = []
+    for option in getattr(field, "options", []) or []:
+        if hasattr(option, "model_dump"):
+            option = option.model_dump()
+        if not isinstance(option, dict) or option.get("disabled") is True:
+            continue
+        label = str(option.get("label") or "").strip()
+        value = str(option.get("value") or "").strip()
+        if label or value:
+            pairs.append({"label": label, "value": value})
+    return pairs
+
+
+def _resolve_radio_option(field: Any, recommendation: dict[str, Any]) -> dict[str, str] | None:
+    """Resolve a model answer to one exact enabled option for a radio group."""
+    options = _radio_option_pairs(field)
+    selected = recommendation.get("selected_option")
+    if isinstance(selected, dict):
+        selected_label = _normalize_option_text(selected.get("label"))
+        selected_value = _normalize_option_text(selected.get("value"))
+        if not selected_label or not selected_value:
+            return None
+        matches = [
+            option for option in options
+            if _normalize_option_text(option["label"]) == selected_label
+            and _normalize_option_text(option["value"]) == selected_value
+        ]
+    else:
+        answer = _normalize_option_text(recommendation.get("value"))
+        if not answer:
+            return None
+        matches = [
+            option for option in options
+            if answer in {
+                _normalize_option_text(option["label"]),
+                _normalize_option_text(option["value"]),
+            }
+        ]
+    return matches[0] if len(matches) == 1 else None
+
+
+def _selected_radio_option(field_options: Any, value: Any) -> dict[str, str] | None:
+    answer = _normalize_option_text(value)
+    matches = []
+    for option in field_options or []:
+        if not isinstance(option, dict):
+            continue
+        if answer in {
+            _normalize_option_text(option.get("value")),
+            _normalize_option_text(option.get("label")),
+        } and answer:
+            matches.append({
+                "label": str(option.get("label") or ""),
+                "value": str(option.get("value") or ""),
+            })
+    return matches[0] if len(matches) == 1 else None
+
+
 def _field_is_required(field: Any) -> bool:
     label = str(getattr(field, "label", "") or "")
     return bool(getattr(field, "required", False) or "*" in label)
@@ -433,6 +496,15 @@ async def analyze_form(
                 val = rec_data.get("value", "")
                 if not isinstance(val, (str, int, float, bool)):
                     val = ""
+                selected_radio_option = None
+                if field.input_type.lower() == "radio":
+                    selected_radio_option = _resolve_radio_option(field, rec_data)
+                    if selected_radio_option:
+                        # Persist a canonical option value and its exact label/value pair.
+                        val = selected_radio_option["value"]
+                    else:
+                        val = ""
+                        rec_status = "MISSING_INFORMATION"
                 has_value = val is not None and str(val).strip() != ""
                 try:
                     conf = max(0.0, min(1.0, float(rec_data.get("confidence", 0.0))))
@@ -476,6 +548,11 @@ async def analyze_form(
                     decision_reason=reason,
                     required=required,
                     input_type=field.input_type or "text",
+                    field_options=(
+                        _radio_option_pairs(field)
+                        if field.input_type.lower() == "radio"
+                        else None
+                    ),
                 )
                 
         except Exception:
@@ -788,6 +865,11 @@ async def get_session_approved_values(
             requires_confirmation=False,  # Usually already confirmed if in this list
             field_label=doc.get("field_label", ""),
             input_type=doc.get("input_type", "text"),
+            selected_option=(
+                _selected_radio_option(doc.get("field_options", []), doc.get("recommended_value", ""))
+                if str(doc.get("input_type", "text")).lower() == "radio"
+                else None
+            ),
         ))
         
     return SuccessResponse(

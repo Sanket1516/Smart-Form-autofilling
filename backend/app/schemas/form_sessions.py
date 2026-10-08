@@ -40,6 +40,7 @@ class FormFieldOption(BaseModel):
 class FieldObject(BaseModel):
     field_id: str
     label: str
+    question: Optional[str] = None
     tag: Optional[str] = "input"
     input_type: str
     name: Optional[str] = ""
@@ -114,6 +115,7 @@ class ApprovedValueData(BaseModel):
     requires_confirmation: bool
     field_label: str = ""
     input_type: str = "text"
+    selected_option: Optional[Dict[str, str]] = None
 
 
 class ApprovedValuesResponseData(BaseModel):

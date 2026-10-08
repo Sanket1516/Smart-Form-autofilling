@@ -19,6 +19,8 @@ export interface FieldObject {
   input_type: string;
   /** Legacy alias consumed by existing popup code. */
   type?: string;
+  /** Group question text for logical radio fields. */
+  question?: string;
   name?: string;
   id?: string;
   placeholder?: string;

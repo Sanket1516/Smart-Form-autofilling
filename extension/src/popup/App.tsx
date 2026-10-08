@@ -115,6 +115,7 @@ export const App = () => {
             const fields = sourceFields.map((field: any) => ({
               field_id: field.field_id,
               label: field.label || field.associated_label || field.nearby_text || field.aria_label || field.name || field.id || 'Unlabeled field',
+              question: field.question || undefined,
               tag: field.tag || 'input',
               input_type: field.input_type || field.type || 'text',
               name: field.name || '',

@@ -28,6 +28,7 @@ class RecommendationsRepository:
         decision_reason: str = "",
         required: bool = False,
         input_type: str = "text",
+        field_options: list[dict[str, str]] | None = None,
     ) -> str:
         """Creates a new recommendation document."""
         rec_id = f"rec_{uuid.uuid4().hex[:12]}"
@@ -39,6 +40,7 @@ class RecommendationsRepository:
             "field_label": field_label,
             "required": required,
             "input_type": input_type,
+            "field_options": field_options or [],
             "concept": concept,
             "recommended_value": recommended_value,
             "confidence": confidence,
