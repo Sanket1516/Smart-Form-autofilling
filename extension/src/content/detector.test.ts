@@ -37,15 +37,18 @@ describe('Field Detector', () => {
     const fields = extractFieldObjects(document.body);
     expect(fields.map((field) => field.input_type)).toEqual(['text', 'email', 'number']);
     expect(fields[0]).toMatchObject({
-      tag: 'input', input_type: 'text', type: 'text', field_id: 'id_first',
+      tag: 'input', input_type: 'text', type: 'text',
       name: 'first_name', id: 'first', label: 'First name', associated_label: 'First name',
       required: true, current_value: 'Ada', checked: null, options: [],
     });
+    expect(fields[0].field_id).toMatch(/^id_first__el_\d+$/);
     expect(fields[1]).toMatchObject({
-      field_id: 'id_email', label: 'Email address', placeholder: 'name@example.com',
+      label: 'Email address', placeholder: 'name@example.com',
       current_value: 'ada@example.com', option_labels: [], option_values: [],
     });
-    expect(fields[2]).toMatchObject({ field_id: 'id_age', input_type: 'number', current_value: '37' });
+    expect(fields[1].field_id).toMatch(/^id_email__el_\d+$/);
+    expect(fields[2]).toMatchObject({ input_type: 'number', current_value: '37' });
+    expect(fields[2].field_id).toMatch(/^id_age__el_\d+$/);
   });
 
   it('resolves aria-label and aria-labelledby text', () => {
@@ -71,11 +74,12 @@ describe('Field Detector', () => {
 
     const field = extractFieldObjects(document.body)[0];
     expect(field).toMatchObject({
-      tag: 'textarea', input_type: 'textarea', field_id: 'id_bio',
+      tag: 'textarea', input_type: 'textarea',
       label: 'Short biography', associated_label: 'Short biography',
       placeholder: 'Tell us about yourself', current_value: 'I build useful tools.',
       required: false, checked: null, options: [],
     });
+    expect(field.field_id).toMatch(/^id_bio__el_\d+$/);
   });
 
   it('groups radios by form owner and name and retains each labeled option', () => {
@@ -161,6 +165,8 @@ describe('Field Detector', () => {
 
     const fields = extractFieldObjects(document.body);
     expect(new Set(fields.map((field) => field.field_id)).size).toBe(fields.length);
+    expect(extractFieldObjects(document.body).map((field) => field.field_id))
+      .toEqual(fields.map((field) => field.field_id));
     expect(fields[0].field_id).toContain('name_answer__');
     expect(fields[1].field_id).toContain('name_answer__');
     expect(fields[2].field_id).toMatch(/^path_/);

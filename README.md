@@ -221,7 +221,9 @@ The Chrome Extension is a Manifest V3 implementation that connects your browser 
 - **Minimal Permissions**: Requests only what is absolutely necessary (`storage` for JWT auth state, `activeTab` for ad-hoc popup actions, and `*://*/*` for dynamic autofill detection globally).
 
 ### Building & Loading the Extension
-The extension is built automatically when you run `docker compose up --build` via the `extension-builder` service. You can also build it manually:
+`extension/public/manifest.json` is the source manifest. Vite copies it into `extension/dist` alongside the bundles built from `extension/src`. Chrome must load the generated `extension/dist` folder; do not load the repository's `extension` folder directly.
+
+Build it from the repository root with:
 ```powershell
 cd extension
 npm install
@@ -231,8 +233,10 @@ npm run build
 To load it into Chrome:
 1. Navigate to `chrome://extensions/`
 2. Enable **Developer mode** in the top right.
-3. Click **Load unpacked** and select the `extension/dist` directory from this repository.
-4. Click the extension icon to sign in to your Smart Form account!
+3. Remove any existing Smart Form entry that was loaded from another folder.
+4. Click **Load unpacked** and select the `extension/dist` directory from this repository.
+5. After each build, click the extension's **Reload** button on this page, then refresh the form tab.
+6. Click the extension icon to sign in to your Smart Form account.
 
 ## ChromaDB Backup & Re-Embedding Recovery Procedure (DATABASE_DESIGN §29)
 
@@ -266,7 +270,7 @@ Frontend setup:
   cd extension
   npm run build
   ```
-  The extension output will be available in `extension/dist`. Load this folder into Chrome by opening `chrome://extensions`, enabling Developer mode, selecting **Load unpacked**, and choosing `extension/`.
+  The extension output will be available in `extension/dist`. Load this folder into Chrome by opening `chrome://extensions`, enabling Developer mode, selecting **Load unpacked**, and choosing `extension/dist`.
 
 ## Testing
 - **Backend**: `pytest`

@@ -8,13 +8,13 @@ import os
 os.environ["JWT_SECRET_KEY"] = "test-secret-key"
 os.environ["AUTH_LOGIN_RATE_LIMIT_ATTEMPTS"] = "100"
 
-import pytest
-from fastapi.testclient import TestClient
+import pytest  # noqa: E402
+from fastapi.testclient import TestClient  # noqa: E402
 
-from app.api.v1.auth import get_auth_service
-from app.core.config import get_settings
-from app.main import app
-from app.services.auth import AuthService
+from app.api.v1.auth import get_auth_service  # noqa: E402
+from app.core.config import get_settings  # noqa: E402
+from app.main import app  # noqa: E402
+from app.services.auth import AuthService  # noqa: E402
 
 class MockSentenceTransformer:
     def __init__(self, model_name: str, *args, **kwargs):
@@ -23,7 +23,11 @@ class MockSentenceTransformer:
         class DummyVec:
             def tolist(self):
                 return [0.1] * 1024
+        
+        if isinstance(texts, str):
+            return DummyVec()
         return [DummyVec() for _ in texts]
+        
     def get_sentence_embedding_dimension(self):
         return 1024
 
