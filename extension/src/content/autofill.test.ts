@@ -1,208 +1,125 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { fillFields } from './autofill';
 import { extractFieldObjects } from './detector';
-import { findElementByFieldId, processAutofill } from './autofill';
+import type { ApprovedValue } from '../types';
 
-const sendMessage = vi.fn();
-
-beforeEach(() => {
-  vi.useFakeTimers();
-  vi.restoreAllMocks();
-  sendMessage.mockClear();
-  vi.stubGlobal('chrome', { runtime: { sendMessage } });
+function visible() {
   vi.spyOn(HTMLElement.prototype, 'getBoundingClientRect').mockReturnValue({
-    x: 0, y: 0, top: 0, left: 0, right: 120, bottom: 24,
-    width: 120, height: 24, toJSON: () => ({}),
+    x: 0, y: 0, width: 100, height: 20, top: 0, left: 0, right: 100, bottom: 20, toJSON: () => ({}),
   } as DOMRect);
-  vi.spyOn(window, 'getComputedStyle').mockReturnValue({
-    display: 'block', visibility: 'visible', zIndex: 'auto',
-  } as CSSStyleDeclaration);
-  document.body.innerHTML = '';
-});
-
-afterEach(() => {
-  vi.clearAllTimers();
-  vi.useRealTimers();
-  vi.unstubAllGlobals();
-  vi.restoreAllMocks();
-});
-
-async function fillAndVerify(fieldId: string, value: string, expectedElement: HTMLElement) {
-  const element = findElementByFieldId(fieldId);
-  expect(element).toBe(expectedElement);
-  if (!element) throw new Error(`Field ${fieldId} was not resolved`);
-  const control = element as HTMLInputElement | HTMLTextAreaElement;
-
-  const focus = vi.spyOn(element, 'focus');
-  const input = vi.fn();
-  const change = vi.fn();
-  element.addEventListener('input', input);
-  element.addEventListener('change', change);
-
-  await processAutofill([{
-    field_id: fieldId,
-    concept: 'test answer',
-    value,
-    confidence: 1,
-  }], 'test-session', 'test-token');
-  await vi.runAllTimersAsync();
-
-  expect(control.value).toBe(value);
-  expect(focus).toHaveBeenCalledOnce();
-  expect(input).toHaveBeenCalledOnce();
-  expect(input.mock.calls[0][0]).toBeInstanceOf(InputEvent);
-  expect(change).toHaveBeenCalledOnce();
-
-  const verification = sendMessage.mock.calls
-    .map(([message]) => message)
-    .find((message) => message.type === 'VERIFY_FIELD');
-  expect(verification?.payload).toMatchObject({
-    fieldId,
-    filledValue: value,
-    actualValue: value,
-    match: true,
-  });
 }
 
-describe('basic text field identification and filling', () => {
-  it('resolves and fills an input with an id', async () => {
-    document.body.innerHTML = '<input id="first-name">';
-    const element = document.querySelector('input')!;
-    const field = extractFieldObjects(document)[0];
-
-    expect(field.field_id).toMatch(/^id_first-name__el_\d+$/);
-    await fillAndVerify(field.field_id, 'Ada Lovelace', element);
-  });
-
-  it('resolves a name-only input without using a CSS selector for its name', async () => {
-    document.body.innerHTML = `<input name='profile"email'>`;
-    const element = document.querySelector('input')!;
-    const field = extractFieldObjects(document)[0];
-
-    expect(field.field_id).toMatch(/^name_profile%22email__el_\d+$/);
-    await fillAndVerify(field.field_id, 'ada@example.test', element);
-  });
-
-  it('keeps duplicate name fields distinct and fills the correct element for each id', async () => {
-    document.body.innerHTML = '<input name="answer"><input name="answer">';
-    const elements = Array.from(document.querySelectorAll('input'));
-    const fields = extractFieldObjects(document);
-
-    expect(fields).toHaveLength(2);
-    expect(new Set(fields.map((field) => field.field_id)).size).toBe(2);
-    expect(findElementByFieldId(fields[0].field_id)).toBe(elements[0]);
-    expect(findElementByFieldId(fields[1].field_id)).toBe(elements[1]);
-
-    await processAutofill([
-      { field_id: fields[0].field_id, concept: 'first', value: 'first answer', confidence: 1 },
-      { field_id: fields[1].field_id, concept: 'second', value: 'second answer', confidence: 1 },
-    ], 'test-session', 'test-token');
-    await vi.runAllTimersAsync();
-
-    expect(elements.map((element) => element.value)).toEqual(['first answer', 'second answer']);
-    const verificationMessages = sendMessage.mock.calls
-      .map(([message]) => message)
-      .filter((message) => message.type === 'VERIFY_FIELD');
-    expect(verificationMessages.map((message) => message.payload.fieldId))
-      .toEqual(fields.map((field) => field.field_id));
-    expect(verificationMessages.map((message) => message.payload.match)).toEqual([true, true]);
-  });
-
-  it('resolves and fills an input with neither id nor name', async () => {
-    document.body.innerHTML = '<input type="text">';
-    const element = document.querySelector('input')!;
-    const field = extractFieldObjects(document)[0];
-
-    expect(field.field_id).toMatch(/^path_\d+$/);
-    await fillAndVerify(field.field_id, 'Generated path answer', element);
-  });
-
-  it('resolves and fills a textarea', async () => {
-    document.body.innerHTML = '<textarea id="story"></textarea>';
-    const element = document.querySelector('textarea')!;
-    const field = extractFieldObjects(document)[0];
-
-    expect(field.field_id).toMatch(/^id_story__el_\d+$/);
-    await fillAndVerify(field.field_id, 'A short story.', element);
-  });
+const value = (field_id: string, v: string, input_type = 'text', extra: Partial<ApprovedValue> = {}): ApprovedValue => ({
+  field_id, value: v, input_type, ...extra,
 });
 
-describe('radio group identification and interaction', () => {
-  it('extracts one logical question and selects the exact structured label/value option', async () => {
-    document.body.innerHTML = `
-      <form><fieldset>
-        <legend>Gender</legend>
-        <label><input type="radio" name="gender" value="male"> Male</label>
-        <label><input type="radio" name="gender" value="female"> Female</label>
-        <label><input type="radio" name="gender" value="other"> Other</label>
-      </fieldset></form>
-    `;
-    const radios = Array.from(document.querySelectorAll<HTMLInputElement>('input[type="radio"]'));
-    const fields = extractFieldObjects(document);
-    expect(fields).toHaveLength(1);
-    const field = fields[0];
-    expect(field).toMatchObject({
-      field_id: expect.stringMatching(/^radio_/),
-      input_type: 'radio',
-      question: 'Gender',
-      options: [
-        { label: 'Male', value: 'male' },
-        { label: 'Female', value: 'female' },
-        { label: 'Other', value: 'other' },
-      ],
-    });
-
-    const target = radios[1];
-    const focus = vi.spyOn(target, 'focus');
-    const click = vi.fn();
-    const input = vi.fn();
-    const change = vi.fn();
-    target.addEventListener('click', click);
-    target.addEventListener('input', input);
-    target.addEventListener('change', change);
-
-    await processAutofill([{
-      field_id: field.field_id,
-      concept: 'gender',
-      value: 'female',
-      confidence: 1,
-      selected_option: { label: 'Female', value: 'female' },
-    }], 'radio-session', 'radio-token');
-    await vi.runAllTimersAsync();
-
-    expect(focus).toHaveBeenCalledOnce();
-    expect(click).toHaveBeenCalledOnce();
-    expect(input).toHaveBeenCalledOnce();
-    expect(change).toHaveBeenCalledOnce();
-    expect(radios.map((radio) => radio.checked)).toEqual([false, true, false]);
-    const verification = sendMessage.mock.calls
-      .map(([message]) => message)
-      .find((message) => message.type === 'VERIFY_FIELD');
-    expect(verification?.payload).toMatchObject({
-      fieldId: field.field_id,
-      filledValue: 'female',
-      actualValue: 'female',
-      match: true,
-    });
+describe('autofill', () => {
+  beforeEach(() => {
+    vi.restoreAllMocks();
+    visible();
+    document.body.innerHTML = '';
   });
 
-  it('matches a legacy scalar answer against the visible option label', async () => {
-    document.body.innerHTML = `
-      <fieldset><legend>Contact</legend>
-        <label><input type="radio" name="contact" value="e"> Email</label>
-        <label><input type="radio" name="contact" value="p"> Phone</label>
-      </fieldset>
-    `;
-    const radios = Array.from(document.querySelectorAll<HTMLInputElement>('input[type="radio"]'));
-    const field = extractFieldObjects(document)[0];
-    await processAutofill([{
-      field_id: field.field_id, concept: 'contact', value: 'Phone', confidence: 1,
-    }], 'radio-session', 'radio-token');
-    await vi.runAllTimersAsync();
+  it('fills text and textarea through the native setter and fires input/change', async () => {
+    document.body.innerHTML = '<input id="name"><textarea id="about"></textarea>';
+    extractFieldObjects(document);
+    const name = document.getElementById('name') as HTMLInputElement;
+    const events: string[] = [];
+    name.addEventListener('input', () => events.push('input'));
+    name.addEventListener('change', () => events.push('change'));
+    const results = await fillFields([value('id:name', 'Avery'), value('id:about', 'Hello', 'textarea')]);
+    expect(results).toEqual([
+      { field_id: 'id:name', applied: true, verified: true },
+      { field_id: 'id:about', applied: true, verified: true },
+    ]);
+    expect(name.value).toBe('Avery');
+    expect(events).toEqual(['input', 'change']);
+  });
 
-    expect(radios.map((radio) => radio.checked)).toEqual([false, true]);
-    const verification = sendMessage.mock.calls
-      .map(([message]) => message)
-      .find((message) => message.type === 'VERIFY_FIELD');
-    expect(verification?.payload.match).toBe(true);
+  it('works with framework-controlled inputs that track the native value setter', async () => {
+    document.body.innerHTML = '<input id="ctrl">';
+    extractFieldObjects(document);
+    const input = document.getElementById('ctrl') as HTMLInputElement;
+    // Simulate React: an own-property setter that ignores direct assignment.
+    let tracked = '';
+    Object.defineProperty(input, 'value', {
+      configurable: true,
+      get: () => tracked,
+      set: () => { /* React would swallow this */ },
+    });
+    const nativeSetter = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.set!;
+    input.addEventListener('input', function onInput(this: HTMLInputElement) {
+      tracked = (Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value')!.get!).call(this);
+    });
+    const [result] = await fillFields([value('id:ctrl', 'Controlled')]);
+    expect(nativeSetter).toBeDefined();
+    expect(result.verified).toBe(true);
+    expect(tracked).toBe('Controlled');
+  });
+
+  it('selects options by exact value or label, never by substring', async () => {
+    document.body.innerHTML = `
+      <select id="g"><option value="">Choose</option><option value="F">Female</option><option value="M">Male</option></select>`;
+    extractFieldObjects(document);
+    const select = document.getElementById('g') as HTMLSelectElement;
+    expect((await fillFields([value('id:g', 'Male', 'select')]))[0].verified).toBe(true);
+    expect(select.value).toBe('M');
+    const [miss] = await fillFields([value('id:g', 'ale', 'select')]);
+    expect(miss).toMatchObject({ applied: false, reason: 'No matching option on the page' });
+    expect(select.value).toBe('M');
+  });
+
+  it('toggles checkboxes with click so frameworks see the change', async () => {
+    document.body.innerHTML = '<input type="checkbox" id="news">';
+    extractFieldObjects(document);
+    const box = document.getElementById('news') as HTMLInputElement;
+    const clicks = vi.fn();
+    box.addEventListener('click', clicks);
+    expect((await fillFields([value('id:news', 'true', 'checkbox')]))[0].verified).toBe(true);
+    expect(box.checked).toBe(true);
+    expect(clicks).toHaveBeenCalledTimes(1);
+  });
+
+  it('chooses the radio matching the selected option', async () => {
+    document.body.innerHTML = `
+      <form id="f"><label><input type="radio" name="g" value="M">Male</label>
+      <label><input type="radio" name="g" value="F">Female</label></form>`;
+    const [group] = extractFieldObjects(document);
+    const [result] = await fillFields([
+      value(group.field_id, 'F', 'radio', { selected_option: { label: 'Female', value: 'F' } }),
+    ]);
+    expect(result.verified).toBe(true);
+    expect((document.querySelector('input[value="F"]') as HTMLInputElement).checked).toBe(true);
+  });
+
+  it('reports fields that disappeared, became disabled or are unknown', async () => {
+    document.body.innerHTML = '<input id="a"><input id="b">';
+    extractFieldObjects(document);
+    (document.getElementById('b') as HTMLInputElement).disabled = true;
+    document.getElementById('a')!.remove();
+    const results = await fillFields([value('id:a', 'x'), value('id:b', 'y'), value('id:zzz', 'z')]);
+    expect(results.map((r) => [r.applied, r.reason])).toEqual([
+      [false, 'Field is no longer on the page'],
+      [false, 'Field is disabled'],
+      [false, 'Field is no longer on the page'],
+    ]);
+  });
+
+  it('reports values the page rejected after filling', async () => {
+    document.body.innerHTML = '<input id="masked" maxlength="3">';
+    extractFieldObjects(document);
+    const input = document.getElementById('masked') as HTMLInputElement;
+    input.addEventListener('input', () => { input.value = input.value.slice(0, 3); });
+    const [result] = await fillFields([value('id:masked', 'abcdef')]);
+    expect(result).toMatchObject({ applied: true, verified: false, reason: 'The page changed or rejected the value' });
+  });
+
+  it('never submits the form', async () => {
+    document.body.innerHTML = '<form id="f"><input id="x"><button type="submit">Send</button></form>';
+    const submit = vi.fn((event: Event) => event.preventDefault());
+    document.getElementById('f')!.addEventListener('submit', submit);
+    extractFieldObjects(document);
+    await fillFields([value('id:x', 'hello')]);
+    expect(submit).not.toHaveBeenCalled();
   });
 });

@@ -1,72 +1,44 @@
-import { extractFieldObjects } from './detector';
-import type { FieldObject } from '../types';
-import { processAutofill } from './autofill';
+import type { ContentRequest, ExtractResponse } from '../types';
+import { fillFields } from './autofill';
+import { extractFields } from './detector';
 
-let detectedFields = new Map<string, FieldObject>();
-let publishTimer: ReturnType<typeof setTimeout> | undefined;
+/**
+ * Injected on demand by the popup (activeTab + scripting); never runs on pages
+ * the user did not open the extension on. It only answers requests from this
+ * extension and never receives the user's access token.
+ */
 
-function refreshDetectedFields() {
-  const fields = extractFieldObjects(document);
-  detectedFields = new Map(fields.map((field) => [field.field_id, field]));
-}
-
-// Coalesce bursts of DOM changes while retaining the latest full-page snapshot.
-function scheduleRefreshAndPublish() {
-  if (publishTimer) clearTimeout(publishTimer);
-  publishTimer = setTimeout(() => {
-    refreshDetectedFields();
-    const fieldsArray = Array.from(detectedFields.values());
-    chrome.runtime.sendMessage({ type: 'FIELDS_DETECTED', payload: fieldsArray });
-    publishTimer = undefined;
-  }, 150);
-}
-
-function initAnalysis() {
-  refreshDetectedFields();
-  scheduleRefreshAndPublish();
-
-  const observer = new MutationObserver(scheduleRefreshAndPublish);
-  const observedRoot = document.documentElement || document.body;
-  if (observedRoot) {
-    observer.observe(observedRoot, {
-      childList: true,
-      subtree: true,
-      characterData: true,
-      attributes: true,
-      attributeFilter: [
-        'name', 'id', 'type', 'class', 'placeholder', 'aria-label', 'aria-labelledby',
-        'aria-describedby', 'aria-description', 'aria-required', 'required', 'autocomplete',
-        'pattern', 'value', 'checked', 'disabled', 'for',
-      ],
-    });
-  }
-
-  // Values changed through DOM properties do not produce attribute mutations.
-  document.addEventListener('input', handleFieldValueChange, true);
-  document.addEventListener('change', handleFieldValueChange, true);
-}
-
-function handleFieldValueChange(event: Event) {
-  const target = event.target;
-  if (target instanceof Element && target.matches('input, select, textarea')) {
-    scheduleRefreshAndPublish();
+declare global {
+  interface Window {
+    __smartFormAutofill?: boolean;
   }
 }
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initAnalysis, { once: true });
-} else {
-  initAnalysis();
+if (!window.__smartFormAutofill) {
+  window.__smartFormAutofill = true;
+  chrome.runtime.onMessage.addListener((message: ContentRequest, sender, sendResponse) => {
+    if (sender.id !== chrome.runtime.id) return false;
+    switch (message?.type) {
+      case 'SFA_PING':
+        sendResponse({ ok: true });
+        return false;
+      case 'SFA_EXTRACT': {
+        const { fields, skipped } = extractFields(document);
+        const response: ExtractResponse = {
+          fields,
+          skipped,
+          page: { origin: location.origin, url: location.href.split('#')[0], title: document.title },
+        };
+        sendResponse(response);
+        return false;
+      }
+      case 'SFA_FILL':
+        fillFields(message.values, document)
+          .then((results) => sendResponse({ results }))
+          .catch(() => sendResponse({ results: [], error: 'Filling failed on this page' }));
+        return true; // keep the channel open for the async response
+      default:
+        return false;
+    }
+  });
 }
-
-chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {
-  if (request.type === 'GET_DETECTED_FIELDS') {
-    // Refresh property-backed values immediately before the popup submits fields.
-    refreshDetectedFields();
-    sendResponse({ payload: Array.from(detectedFields.values()) });
-  } else if (request.type === 'FILL_FIELDS') {
-    const { approvedValues, sessionId, token } = request.payload;
-    processAutofill(approvedValues, sessionId, token);
-    sendResponse({ success: true });
-  }
-});

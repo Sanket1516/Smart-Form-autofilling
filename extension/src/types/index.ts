@@ -1,55 +1,109 @@
+/** Description of one form control sent to the backend. Never contains the control's value. */
 export interface FieldOption {
-  /** Unique identifier for this radio, checkbox, or select option. */
   option_id: string;
-  id?: string;
-  name?: string;
   value: string;
   label: string;
-  checked: boolean;
-  selected?: boolean;
   disabled?: boolean;
-  /** Stable path to the individual option control, when it has one. */
-  dom_path?: string;
 }
 
 export interface FieldObject {
   field_id: string;
-  /** HTML tag name; `tag` is kept for the existing API contract. */
   tag: string;
   input_type: string;
-  /** Legacy alias consumed by existing popup code. */
-  type?: string;
-  /** Group question text for logical radio fields. */
+  label: string;
   question?: string;
   name?: string;
   id?: string;
   placeholder?: string;
-  label?: string;
-  associated_label?: string;
   aria_label?: string;
-  aria_labelledby?: string;
-  aria_labelledby_text?: string;
   aria_description?: string;
   autocomplete?: string;
-  required: boolean;
   pattern?: string;
+  section?: string;
   nearby_text?: string;
-  current_value: string;
-  checked: boolean | null;
+  required: boolean;
+  has_value: boolean;
+  max_length?: number;
   options: FieldOption[];
-  option_labels: string[];
-  option_values: string[];
-  section_context?: string;
-  position?: Record<string, any>;
-  dom_context: Record<string, any>;
-  accessibility_context: Record<string, any>;
-  visual_context?: Record<string, any>;
-  concept?: string;
 }
 
-export type AuthState = 'not-signed-in' | 'connected' | 'session-expired';
-
-export interface ExtensionState {
-  authState: AuthState;
-  token?: string;
+export interface PageInfo {
+  origin: string;
+  url: string;
+  title: string;
 }
+
+export interface ExtractResponse {
+  fields: FieldObject[];
+  skipped: number;
+  page: PageInfo;
+}
+
+export interface SelectedOption {
+  label: string;
+  value: string;
+}
+
+export interface RecommendationSource {
+  type: 'profile' | 'document' | 'memory' | 'user' | 'derived';
+  document_id?: string | null;
+  document_name?: string | null;
+  page?: number | null;
+  snippet?: string | null;
+}
+
+export interface RecommendationCandidate {
+  value: unknown;
+  confidence: number;
+  source?: RecommendationSource | null;
+}
+
+export type RecommendationStatus =
+  | 'ready'
+  | 'needs_review'
+  | 'missing_information'
+  | 'security_blocked'
+  | 'skipped'
+  | 'error'
+  | 'approved'
+  | 'edited'
+  | 'rejected';
+
+export interface Recommendation {
+  recommendation_id: string;
+  field_id: string;
+  field_label: string;
+  input_type: string;
+  required: boolean;
+  concept: string | null;
+  recommended_value: unknown;
+  confidence: number;
+  status: RecommendationStatus;
+  reason: string;
+  requires_confirmation: boolean;
+  origin?: string | null;
+  source?: RecommendationSource | null;
+  candidates: RecommendationCandidate[];
+  options: SelectedOption[];
+  selected_option?: SelectedOption | null;
+}
+
+export interface ApprovedValue {
+  field_id: string;
+  value: string;
+  input_type: string;
+  field_label?: string;
+  selected_option?: SelectedOption | null;
+}
+
+export interface FillResult {
+  field_id: string;
+  applied: boolean;
+  verified: boolean;
+  reason?: string;
+}
+
+export type ContentRequest =
+  | { type: 'SFA_PING' }
+  | { type: 'SFA_EXTRACT' }
+  | { type: 'SFA_FILL'; values: ApprovedValue[] };

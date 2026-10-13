@@ -1,259 +1,138 @@
-import { extractFieldObjects, getElementByFieldId, getRadioGroupByFieldId } from './detector';
-
-export interface SelectedRadioOption {
-  label: string;
-  value: string;
-}
-
-export interface ApprovedValue {
-  field_id: string;
-  concept: string;
-  value: string;
-  confidence: number;
-  selected_option?: SelectedRadioOption | null;
-}
-
-export async function processAutofill(approvedValues: ApprovedValue[], sessionId: string, token: string) {
-  // Refresh the element registry before resolving IDs from the backend response.
-  // Element tokens survive repeated extraction, so the original field IDs remain valid.
-  extractFieldObjects(document);
-
-  for (const item of approvedValues) {
-    const radioGroup = getRadioGroupByFieldId(item.field_id, document);
-    if (radioGroup.length) {
-      fillRadioGroup(radioGroup, item, sessionId, token);
-      continue;
-    }
-
-    const el = findElementByFieldId(item.field_id);
-    if (!el) {
-      console.warn(`[SmartAutofill] Could not find element for field_id="${item.field_id}"`);
-      continue;
-    }
-
-    if (isElementVisibleAndEditable(el)) {
-      fillElement(el, item.value);
-      setTimeout(() => verifyFill(el, item.value, item.field_id, sessionId, token), 600);
-    } else {
-      console.warn(`[SmartAutofill] Element for field_id="${item.field_id}" is not editable/visible.`);
-    }
-  }
-}
+import type { ApprovedValue, FillResult } from '../types';
+import { getElementByFieldId, getRadioGroupByFieldId, isVisible, type FieldElement } from './detector';
 
 /**
- * Resolves the exact element registered by detector extraction. This avoids
- * selector escaping issues and ambiguity from duplicate IDs or names.
+ * Fill approved values into the page and verify that the page kept them.
+ *
+ * - Values are set through the native property setter and announced with
+ *   input/change events so framework-controlled inputs (React, Vue, Angular)
+ *   register the change. Checkboxes and radios are toggled with click().
+ * - Nothing is ever submitted, and disabled, read-only or hidden controls are
+ *   left alone.
+ * - Each result reports whether the value was applied and whether the page
+ *   still shows it after the framework had a chance to re-render.
  */
-export function findElementByFieldId(fieldId: string): HTMLElement | null {
-  return getElementByFieldId(fieldId, document);
+
+const TRUTHY = new Set(['true', 'yes', '1', 'on', 'checked']);
+const SETTLE_MS = 80;
+
+export async function fillFields(values: ApprovedValue[], root: ParentNode = document): Promise<FillResult[]> {
+  const attempts = values.map((value) => applyOne(value, root));
+  await new Promise((resolve) => setTimeout(resolve, SETTLE_MS));
+  return attempts.map(({ result, verify }) => (result.applied && verify ? { ...result, ...verify() } : result));
 }
 
-function isElementVisibleAndEditable(el: HTMLElement): boolean {
-  if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement) {
-    if (el.disabled || (el as any).readOnly) return false;
-  }
-  const style = window.getComputedStyle(el);
-  if (style.display === 'none' || style.visibility === 'hidden') return false;
-  // Don't reject based on rect for radio/checkbox — they may be small
-  const rect = el.getBoundingClientRect();
-  if (rect.width === 0 && rect.height === 0) return false;
-  return true;
+interface Attempt {
+  result: FillResult;
+  verify?: () => Pick<FillResult, 'verified' | 'reason'>;
 }
 
-function fillElement(el: HTMLElement, value: string) {
-  const type = el instanceof HTMLInputElement ? el.type.toLowerCase() : '';
-
-  // --- Checkbox ---
-  if (type === 'checkbox') {
-    const checkEl = el as HTMLInputElement;
-    const targetVal = value.toLowerCase().trim();
-    const shouldCheck = targetVal === 'true' || targetVal === '1' || targetVal === 'yes' || targetVal === 'on'
-      || checkEl.value.toLowerCase() === targetVal
-      || checkEl.labels?.[0]?.textContent?.toLowerCase().trim() === targetVal;
-    if (checkEl.checked !== shouldCheck) {
-      checkEl.checked = shouldCheck;
-      checkEl.dispatchEvent(new Event('change', { bubbles: true }));
-    }
-    return;
-  }
-
-  // --- Select dropdown ---
-  if (el instanceof HTMLSelectElement) {
-    const selectEl = el;
-    const targetVal = value.toLowerCase().trim();
-    let matched = false;
-
-    // Try matching by option value or text
-    for (const opt of Array.from(selectEl.options)) {
-      if (
-        opt.value.toLowerCase() === targetVal ||
-        opt.text.toLowerCase() === targetVal ||
-        opt.text.toLowerCase().includes(targetVal) ||
-        targetVal.includes(opt.text.toLowerCase())
-      ) {
-        selectEl.value = opt.value;
-        matched = true;
-        break;
-      }
-    }
-    if (matched) {
-      selectEl.dispatchEvent(new Event('change', { bubbles: true }));
-    }
-    return;
-  }
-
-  // --- Text / Textarea / Email / Number / Date / etc. ---
-  if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) {
-    fillTextControl(el, value);
-  }
-}
-
-function fillRadioGroup(
-  radios: HTMLInputElement[],
-  item: ApprovedValue,
-  sessionId: string,
-  token: string,
-): void {
-  const target = findMatchingRadio(radios, item);
-  if (!target) {
-    console.warn(`[SmartAutofill] Could not match answer to an option for radio field_id="${item.field_id}"`);
-    return;
-  }
-  if (!isElementVisibleAndEditable(target)) {
-    console.warn(`[SmartAutofill] Matched radio option for field_id="${item.field_id}" is not editable/visible.`);
-    return;
-  }
-
-  if (!target.checked) {
-    target.focus();
-    // HTMLElement.click() follows the browser's native radio activation behavior
-    // and emits click/input/change events; it avoids bypassing site listeners.
-    target.click();
-  }
-
-  const verified = target.checked && radios.filter((radio) => radio.checked).length === 1;
-  if (!verified) {
-    console.warn(`[SmartAutofill] Radio selection verification failed for field_id="${item.field_id}"`);
-  }
-  setTimeout(() => verifyRadioFill(target, item, verified, sessionId, token), 600);
-}
-
-function findMatchingRadio(radios: HTMLInputElement[], item: ApprovedValue): HTMLInputElement | null {
-  const structured = item.selected_option;
-  const expectedValue = normalizeOptionText(structured?.value ?? item.value);
-  const expectedLabel = normalizeOptionText(structured?.label ?? '');
-  if (!expectedValue && !expectedLabel) return null;
-
-  const matches = radios.filter((radio) => {
-    if (radio.disabled) return false;
-    const value = normalizeOptionText(radio.value);
-    const label = normalizeOptionText(getRadioOptionLabel(radio));
-    if (structured) {
-      return (!expectedValue || value === expectedValue)
-        && (!expectedLabel || label === expectedLabel);
-    }
-    return value === expectedValue || label === expectedValue;
+function applyOne(value: ApprovedValue, root: ParentNode): Attempt {
+  const fail = (reason: string): Attempt => ({
+    result: { field_id: value.field_id, applied: false, verified: false, reason },
   });
-  return matches.length === 1 ? matches[0] : null;
-}
-
-function getRadioOptionLabel(radio: HTMLInputElement): string {
-  const ariaLabel = radio.getAttribute('aria-label')?.trim();
-  if (ariaLabel) return ariaLabel;
-
-  const labelledBy = radio.getAttribute('aria-labelledby');
-  if (labelledBy) {
-    const text = labelledBy.split(/\s+/)
-      .map((id) => radio.ownerDocument.getElementById(id)?.textContent?.trim())
-      .filter(Boolean)
-      .join(' ');
-    if (text) return text;
+  try {
+    if (value.input_type === 'radio') return fillRadio(value, root) ?? fail('No matching option on the page');
+    const element = getElementByFieldId(value.field_id, root);
+    if (!element || !element.isConnected) return fail('Field is no longer on the page');
+    const blocked = blockedReason(element);
+    if (blocked) return fail(blocked);
+    if (element instanceof HTMLSelectElement) return fillSelect(element, value) ?? fail('No matching option on the page');
+    if (element instanceof HTMLInputElement && element.type === 'checkbox') return fillCheckbox(element, value);
+    return fillText(element, value);
+  } catch {
+    return fail('The page rejected the value');
   }
-
-  const labelsText = Array.from(radio.labels ?? [])
-    .map((label) => label.textContent?.trim())
-    .filter(Boolean)
-    .join(' ');
-  return labelsText || radio.value;
 }
 
-function normalizeOptionText(value: string): string {
-  return value.replace(/\s+/g, ' ').trim().toLowerCase();
-}
-
-function verifyRadioFill(
-  target: HTMLInputElement,
-  item: ApprovedValue,
-  initiallyVerified: boolean,
-  sessionId: string,
-  token: string,
-): void {
-  const actualValue = target.checked ? target.value : '';
-  const expectedRadioValue = item.selected_option?.value ?? target.value;
-  const valueMatches = normalizeOptionText(actualValue)
-    === normalizeOptionText(expectedRadioValue);
-  const labelMatches = !item.selected_option?.label
-    || normalizeOptionText(getRadioOptionLabel(target)) === normalizeOptionText(item.selected_option.label);
-  const match = initiallyVerified && target.checked && valueMatches && labelMatches;
-
-  chrome.runtime.sendMessage({
-    type: 'VERIFY_FIELD',
-    payload: {
-      sessionId,
-      fieldId: item.field_id,
-      filledValue: expectedRadioValue,
-      actualValue,
-      match,
-      token,
-    },
-  });
-}
-
-function fillTextControl(el: HTMLInputElement | HTMLTextAreaElement, value: string): void {
-  el.focus();
-
-  // Call the native setter so framework value trackers observe the subsequent input event.
-  const proto = el instanceof HTMLInputElement
-    ? window.HTMLInputElement.prototype
-    : window.HTMLTextAreaElement.prototype;
-  const nativeSetter = Object.getOwnPropertyDescriptor(proto, 'value')?.set;
-  if (nativeSetter) nativeSetter.call(el, value);
-  else el.value = value;
-
-  el.dispatchEvent(new InputEvent('input', {
-    bubbles: true,
-    composed: true,
-    inputType: 'insertText',
-    data: value,
-  }));
-  el.dispatchEvent(new Event('change', { bubbles: true, composed: true }));
-
-  if (el.value !== value) {
-    console.warn('[SmartAutofill] Value verification failed immediately after input.', {
-      expected: value,
-      actual: el.value,
-    });
+function blockedReason(element: FieldElement): string | null {
+  if (element.disabled) return 'Field is disabled';
+  if ((element instanceof HTMLInputElement || element instanceof HTMLTextAreaElement) && element.readOnly) {
+    return 'Field is read-only';
   }
-
-  el.blur();
+  if (!isVisible(element)) return 'Field is hidden';
+  return null;
 }
 
-function verifyFill(el: HTMLElement, expectedValue: string, fieldId: string, sessionId: string, token: string) {
-  let actualValue = '';
-  if (el instanceof HTMLInputElement) {
-    if (el.type === 'radio' || el.type === 'checkbox') {
-      actualValue = el.checked ? el.value : '';
-    } else {
-      actualValue = el.value;
-    }
-  } else if (el instanceof HTMLTextAreaElement || el instanceof HTMLSelectElement) {
-    actualValue = el.value;
-  }
-
-  const match = actualValue.trim().toLowerCase() === expectedValue.trim().toLowerCase();
-
-  chrome.runtime.sendMessage({
-    type: 'VERIFY_FIELD',
-    payload: { sessionId, fieldId, filledValue: expectedValue, actualValue, match, token }
-  });
+function setNativeValue(element: FieldElement, value: string): void {
+  const prototype = Object.getPrototypeOf(element);
+  const setter = Object.getOwnPropertyDescriptor(prototype, 'value')?.set;
+  if (setter) setter.call(element, value);
+  else element.value = value;
 }
+
+function announce(element: FieldElement): void {
+  element.dispatchEvent(new Event('input', { bubbles: true }));
+  element.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+function fillText(element: FieldElement, value: ApprovedValue): Attempt {
+  element.focus({ preventScroll: true });
+  setNativeValue(element, value.value);
+  element.dispatchEvent(
+    new InputEvent('input', { bubbles: true, inputType: 'insertReplacementText', data: value.value }),
+  );
+  element.dispatchEvent(new Event('change', { bubbles: true }));
+  element.blur();
+  return {
+    result: { field_id: value.field_id, applied: true, verified: false },
+    verify: () => (element.value === value.value
+      ? { verified: true }
+      : { verified: false, reason: 'The page changed or rejected the value' }),
+  };
+}
+
+function normalize(text: string | null | undefined): string {
+  return (text ?? '').replace(/\s+/g, ' ').trim().toLowerCase();
+}
+
+function fillSelect(select: HTMLSelectElement, value: ApprovedValue): Attempt | null {
+  const options = Array.from(select.options).filter((option) => !option.disabled);
+  const wanted = value.selected_option;
+  const match = (wanted && options.find((o) => o.value === wanted.value && normalize(o.label || o.text) === normalize(wanted.label)))
+    || options.find((o) => o.value === value.value)
+    || exactlyOne(options.filter((o) => normalize(o.label || o.text) === normalize(value.value)));
+  if (!match) return null;
+  setNativeValue(select, match.value);
+  announce(select);
+  return {
+    result: { field_id: value.field_id, applied: true, verified: false },
+    verify: () => (select.value === match.value
+      ? { verified: true }
+      : { verified: false, reason: 'The page changed the selection' }),
+  };
+}
+
+function fillCheckbox(box: HTMLInputElement, value: ApprovedValue): Attempt {
+  const desired = TRUTHY.has(normalize(value.value));
+  if (box.checked !== desired) box.click();
+  return {
+    result: { field_id: value.field_id, applied: true, verified: false },
+    verify: () => (box.checked === desired
+      ? { verified: true }
+      : { verified: false, reason: 'The page did not keep the checkbox state' }),
+  };
+}
+
+function fillRadio(value: ApprovedValue, root: ParentNode): Attempt | null {
+  const radios = getRadioGroupByFieldId(value.field_id, root).filter((radio) => !radio.disabled && radio.isConnected);
+  const labelOf = (radio: HTMLInputElement) =>
+    normalize(Array.from(radio.labels ?? []).map((label) => label.textContent).join(' ') || radio.getAttribute('aria-label'));
+  const wanted = value.selected_option;
+  const target = (wanted && exactlyOne(radios.filter((r) => r.value === wanted.value && labelOf(r) === normalize(wanted.label))))
+    || exactlyOne(radios.filter((r) => r.value === value.value))
+    || exactlyOne(radios.filter((r) => labelOf(r) === normalize(value.value)));
+  if (!target) return null;
+  if (!target.checked) target.click();
+  return {
+    result: { field_id: value.field_id, applied: true, verified: false },
+    verify: () => (target.checked
+      ? { verified: true }
+      : { verified: false, reason: 'The page did not keep the selected option' }),
+  };
+}
+
+function exactlyOne<T>(items: T[]): T | undefined {
+  return items.length === 1 ? items[0] : undefined;
+}
+

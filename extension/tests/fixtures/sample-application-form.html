@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Sample Application Form (synthetic test fixture)</title>
+  <style>
+    body { font-family: sans-serif; max-width: 640px; margin: 2rem auto; }
+    .form-row { display: flex; flex-direction: column; margin-bottom: 1rem; }
+    .honeypot { position: absolute; left: -10000px; top: -10000px; }
+  </style>
+</head>
+<body>
+  <h1>Programme Application</h1>
+  <form id="application" action="/should-never-be-called" method="post">
+    <section>
+      <h2>Applicant details</h2>
+      <div class="form-row">
+        <label for="legal_name">Full legal name</label>
+        <input id="legal_name" name="legal_name" required>
+      </div>
+      <div class="form-row">
+        <label for="email_address">Email address</label>
+        <input id="email_address" name="email_address" type="email" required>
+      </div>
+      <div class="form-row">
+        <label for="phone_number">Phone number</label>
+        <input id="phone_number" name="phone_number" type="tel">
+      </div>
+      <div class="form-row">
+        <label for="dob">Date of birth</label>
+        <input id="dob" name="dob" type="date" required>
+      </div>
+      <div class="form-row">
+        <label for="postal">Correspondence PIN code</label>
+        <input id="postal" name="postal">
+      </div>
+      <div class="form-row">
+        <label for="qualification">Highest qualification</label>
+        <input id="qualification" name="qualification">
+      </div>
+    </section>
+    <section>
+      <h2>Account</h2>
+      <div class="form-row">
+        <label for="password">Choose a password</label>
+        <input id="password" name="password" type="password">
+      </div>
+      <div class="honeypot">
+        <label for="website">Website</label>
+        <input id="website" name="website">
+      </div>
+    </section>
+    <button type="submit">Submit application</button>
+  </form>
+  <script>
+    window.submitted = false;
+    document.getElementById('application').addEventListener('submit', (event) => {
+      event.preventDefault();
+      window.submitted = true;
+    });
+  </script>
+</body>
+</html>
