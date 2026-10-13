@@ -27,8 +27,9 @@ class EmbeddingProvider(Protocol):
 
 
 class SentenceTransformerEmbeddings:
-    def __init__(self, model_name: str) -> None:
+    def __init__(self, model_name: str, expected_dimension: int | None = 384) -> None:
         self.model_name = model_name
+        self.expected_dimension = expected_dimension
         self._model: Any | None = None
         self._error: str | None = None
         self._lock = threading.Lock()
@@ -43,7 +44,14 @@ class SentenceTransformerEmbeddings:
     def dimension(self) -> int | None:
         if self._model is None:
             return None
-        return int(self._model.get_sentence_embedding_dimension())
+        return self._read_dimension(self._model)
+
+    @staticmethod
+    def _read_dimension(model: Any) -> int:
+        get_dimension = getattr(model, "get_embedding_dimension", None)
+        if not callable(get_dimension):
+            get_dimension = model.get_sentence_embedding_dimension
+        return int(get_dimension())
 
     def _load(self) -> Any:
         with self._lock:
@@ -51,9 +59,25 @@ class SentenceTransformerEmbeddings:
                 try:
                     from sentence_transformers import SentenceTransformer
 
-                    self._model = SentenceTransformer(self.model_name)
+                    model = SentenceTransformer(self.model_name)
+                    actual_dimension = self._read_dimension(model)
+                    if (
+                        self.expected_dimension is not None
+                        and actual_dimension != self.expected_dimension
+                    ):
+                        self._error = (
+                            f"dimension mismatch: expected {self.expected_dimension}, "
+                            f"got {actual_dimension}"
+                        )
+                        raise EmbeddingUnavailableError(
+                            f"Embedding model '{self.model_name}' produced {actual_dimension} "
+                            f"dimensions; EMBEDDING_DIMENSION is {self.expected_dimension}"
+                        )
+                    self._model = model
                     self._error = None
                     logger.info("embedding_model_loaded", extra={"model_name": self.model_name})
+                except EmbeddingUnavailableError:
+                    raise
                 except Exception as error:
                     self._error = f"{type(error).__name__}"
                     raise EmbeddingUnavailableError(
