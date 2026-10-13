@@ -13,6 +13,7 @@ The extractor never falls back to reading raw bytes as text.
 from __future__ import annotations
 
 import logging
+import os
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -46,13 +47,23 @@ class PaddleOCRAdapter:
     def _get_engine(self) -> Any:
         if self._engine is None:
             try:
+                # Load pyclipper before Paddle's native libraries initialize zlib.
+                # PaddlePaddle 2.6 can otherwise corrupt the later extension import.
+                import pyclipper  # type: ignore[import-not-found]  # noqa: F401
                 from paddleocr import PaddleOCR  # type: ignore[import-not-found]
             except ImportError as error:
                 raise OCRUnavailableError(
                     "This document needs OCR, but the OCR engine is not installed "
                     "(see backend/requirements-ocr.txt)."
                 ) from error
-            self._engine = PaddleOCR(lang=self.language, use_angle_cls=False, show_log=False)
+            self._engine = PaddleOCR(
+                lang=self.language,
+                use_angle_cls=False,
+                show_log=False,
+                cpu_threads=max(1, int(os.getenv("OCR_CPU_THREADS", "2"))),
+                rec_batch_num=1,
+                mkldnn_cache_capacity=2,
+            )
         return self._engine
 
     def extract(self, image: Any, page_number: int) -> list[ExtractedSpan]:

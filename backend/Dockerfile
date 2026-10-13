@@ -20,6 +20,9 @@ COPY requirements.txt ./
 # the official CPU wheel index, then resolve the application dependencies from PyPI.
 RUN pip install --no-deps --index-url https://download.pytorch.org/whl/cpu "torch>=2.0,<3" \
     && pip install -r requirements.txt
+COPY requirements-ocr.txt ./
+ARG INSTALL_OCR=false
+RUN if [ "$INSTALL_OCR" = "true" ]; then pip install -r requirements-ocr.txt; fi
 COPY app ./app
 RUN useradd --create-home --uid 10001 appuser \
     && mkdir -p /data/uploads \

@@ -1,6 +1,10 @@
 """OpenCV preprocessing for OCR input images."""
 
+import math
 from typing import Any
+
+
+_MAX_DESKEW_SAMPLES = 1_000_000
 
 
 def preprocess_for_ocr(image: Any) -> Any:
@@ -12,8 +16,12 @@ def preprocess_for_ocr(image: Any) -> Any:
         array = np.asarray(image)
         gray = cv2.cvtColor(array, cv2.COLOR_RGB2GRAY) if len(array.shape) == 3 else array
         threshold = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
-        coordinates = np.column_stack(np.where(threshold < 255))
-        if coordinates.size:
+        sample_step = max(
+            1, math.ceil(math.sqrt(threshold.size / _MAX_DESKEW_SAMPLES))
+        )
+        sampled = threshold[::sample_step, ::sample_step]
+        coordinates = np.column_stack(np.where(sampled < 255))
+        if coordinates.shape[0] >= 3:
             angle = cv2.minAreaRect(coordinates)[-1]
             angle = -(90 + angle) if angle < -45 else -angle
             if abs(angle) > 0.5:

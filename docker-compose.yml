@@ -51,6 +51,8 @@ services:
     build:
       context: ./backend
       target: ${BACKEND_BUILD_TARGET:-prod}
+      args:
+        INSTALL_OCR: ${INSTALL_OCR:-false}
     environment:
       APP_ENV: ${APP_ENV:-development}
       APP_NAME: ${APP_NAME:-Smart Form Auto-Filling System}
@@ -119,7 +121,17 @@ services:
     build:
       context: ./backend
       target: ${BACKEND_BUILD_TARGET:-prod}
-    command: ["celery", "-A", "app.tasks.celery_app.celery_app", "worker", "--loglevel=INFO"]
+      args:
+        INSTALL_OCR: ${INSTALL_OCR:-false}
+    command:
+      [
+        "celery",
+        "-A",
+        "app.tasks.celery_app.celery_app",
+        "worker",
+        "--loglevel=INFO",
+        "--concurrency=${CELERY_WORKER_CONCURRENCY:-2}",
+      ]
     environment:
       APP_ENV: ${APP_ENV:-development}
       MONGODB_DATABASE: ${MONGODB_DATABASE:-smart_form_db}
@@ -131,6 +143,10 @@ services:
       PROCESSING_MAX_RETRIES: ${PROCESSING_MAX_RETRIES:-2}
       OCR_LANGUAGE: ${OCR_LANGUAGE:-en}
       OCR_RESOLUTION: ${OCR_RESOLUTION:-150}
+      OCR_CPU_THREADS: ${OCR_CPU_THREADS:-2}
+      OMP_NUM_THREADS: "1"
+      MKL_NUM_THREADS: ${OCR_CPU_THREADS:-2}
+      OPENBLAS_NUM_THREADS: "1"
       CHROMADB_URL: http://chromadb:8000
       CHROMADB_COLLECTION: ${CHROMADB_COLLECTION:-user_document_chunks_v2}
       CHROMADB_TENANT: ${CHROMADB_TENANT:-default_tenant}

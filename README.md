@@ -30,6 +30,8 @@ Compose uses `PROCESSING_MODE=celery` and Redis. For local API development outsi
 
 The first embedding request downloads the configured sentence-transformer model. If changing the model, set its correct `EMBEDDING_DIMENSION`, choose a new `CHROMADB_COLLECTION`, and run the [reindex command](docs/DATABASE_SCHEMA.md#chromadb) from `backend`. The old collection is left in place until you verify the replacement.
 
+Scanned documents need the optional PaddleOCR engine. Set `INSTALL_OCR=true` in `.env` and run `docker compose up --build -d` to include it in both the API and worker images. Then open the document and choose **Process again**. The OCR model downloads on first use.
+
 ## Development setup
 
 ```powershell
