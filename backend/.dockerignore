@@ -6,6 +6,5 @@ __pycache__
 .ruff_cache
 tests
 requirements-dev.txt
-requirements-ocr.txt
 uploads
 .env*

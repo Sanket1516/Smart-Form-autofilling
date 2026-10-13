@@ -32,6 +32,12 @@ TASK_DOCUMENT_EXTRACTION = "document_extraction"
 TASK_FIELD_VALUES = "field_value_extraction"
 TASK_RAG_ANSWER = "rag_answer"
 
+# Interactive form analysis should return promptly when a provider is slow or
+# unreachable. Document extraction and ad-hoc RAG answers keep the configured
+# retry policy because they are not on the extension's review path.
+_INTERACTIVE_TASKS = {TASK_FIELD_CLASSIFICATION, TASK_FIELD_VALUES}
+_INTERACTIVE_TIMEOUT_SECONDS = 20
+
 _MOCK_EMPTY_RESPONSES: dict[str, dict[str, object]] = {
     TASK_FIELD_CLASSIFICATION: {"classifications": []},
     TASK_DOCUMENT_EXTRACTION: {"document_type": "UNKNOWN", "attributes": []},
@@ -129,11 +135,16 @@ class _HTTPProvider(LLMProvider):
         self._max_tokens = max_tokens
         self._retries = retries
 
-    def _post(self, url: str, headers: dict[str, str], payload: dict[str, object]) -> dict:
+    def _post(
+        self, url: str, headers: dict[str, str], payload: dict[str, object], *, task: str
+    ) -> dict:
         last_error: Exception | None = None
-        for attempt in range(self._retries + 1):
+        interactive = task in _INTERACTIVE_TASKS
+        timeout = min(self._timeout, _INTERACTIVE_TIMEOUT_SECONDS) if interactive else self._timeout
+        retries = 0 if interactive else self._retries
+        for attempt in range(retries + 1):
             try:
-                response = httpx.post(url, headers=headers, json=payload, timeout=self._timeout)
+                response = httpx.post(url, headers=headers, json=payload, timeout=timeout)
             except httpx.TimeoutException as error:
                 last_error = error
             except httpx.HTTPError as error:
@@ -155,10 +166,10 @@ class _HTTPProvider(LLMProvider):
                         return response.json()
                     except ValueError as error:
                         raise LLMProviderError(f"{self.name} returned a non-JSON body") from error
-            if attempt < self._retries:
+            if attempt < retries:
                 time.sleep(min(2**attempt, 8))
         raise LLMProviderError(
-            f"{self.name} unavailable after {self._retries + 1} attempts"
+            f"{self.name} unavailable after {retries + 1} attempts"
         ) from last_error
 
 
@@ -182,6 +193,7 @@ class GoogleProvider(_HTTPProvider):
             f"{self._BASE}/{self.model}:generateContent",
             {"Content-Type": "application/json", "x-goog-api-key": self._api_key},
             payload,
+            task=task,
         )
         try:
             parts = data["candidates"][0]["content"]["parts"]
@@ -215,6 +227,7 @@ class OpenAIProvider(_HTTPProvider):
             self._URL,
             {"Content-Type": "application/json", "Authorization": f"Bearer {self._api_key}"},
             payload,
+            task=task,
         )
         try:
             text = data["choices"][0]["message"]["content"] or ""
@@ -248,6 +261,7 @@ class AnthropicProvider(_HTTPProvider):
                 "anthropic-version": "2023-06-01",
             },
             payload,
+            task=task,
         )
         try:
             text = "".join(
