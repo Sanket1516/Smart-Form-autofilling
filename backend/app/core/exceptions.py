@@ -1,4 +1,4 @@
-"""Global API exception handlers."""
+"""Global API exception handlers. Responses never include stack traces or input values."""
 
 import logging
 from typing import Any
@@ -7,6 +7,7 @@ from fastapi import HTTPException, Request, status
 from fastapi.encoders import jsonable_encoder
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
+from slowapi.errors import RateLimitExceeded
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from app.core.api_errors import APIError
@@ -27,7 +28,7 @@ def _error_response(
         error=ErrorPayload(
             code=code,
             message=message,
-            details={"request_id": request.state.request_id, **(details or {})},
+            details={"request_id": getattr(request.state, "request_id", "-"), **(details or {})},
         )
     )
     return JSONResponse(status_code=status_code, content=jsonable_encoder(payload))
@@ -36,30 +37,36 @@ def _error_response(
 async def validation_exception_handler(
     request: Request, exc: RequestValidationError
 ) -> JSONResponse:
+    # Report where and why validation failed, but never echo the submitted input
+    # (it may contain passwords or personal data).
+    fields = [
+        {
+            "loc": list(error.get("loc", [])),
+            "msg": error.get("msg", ""),
+            "type": error.get("type", ""),
+        }
+        for error in exc.errors()
+    ]
     return _error_response(
-        request,
-        "VALIDATION_ERROR",
-        "Request validation failed",
-        {"fields": jsonable_encoder(exc.errors())},
-        status.HTTP_422_UNPROCESSABLE_ENTITY,
+        request, "VALIDATION_ERROR", "Request validation failed", {"fields": fields}, 422
     )
 
 
 async def http_exception_handler(
     request: Request, exc: HTTPException | StarletteHTTPException
 ) -> JSONResponse:
-    details = exc.detail if isinstance(exc.detail, dict) else {"detail": exc.detail}
+    message = exc.detail if isinstance(exc.detail, str) else "Request failed"
+    return _error_response(request, f"HTTP_{exc.status_code}", message, None, exc.status_code)
+
+
+async def rate_limit_handler(request: Request, exc: RateLimitExceeded) -> JSONResponse:
     return _error_response(
-        request,
-        f"HTTP_{exc.status_code}",
-        "Request failed",
-        details,
-        exc.status_code,
+        request, "RATE_LIMITED", "Too many requests; try again shortly", None, 429
     )
 
 
 async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
-    logger.exception("unhandled_exception")
+    logger.exception("unhandled_exception", extra={"path": request.url.path})
     return _error_response(request, "INTERNAL_SERVER_ERROR", "Internal server error")
 
 

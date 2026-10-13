@@ -5,12 +5,22 @@ target-version = ["py311"]
 [tool.ruff]
 line-length = 100
 target-version = "py311"
-extend-exclude = [".venv"]
+extend-exclude = [".venv", "node_modules"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
+# black enforces line length for code; long prompt/message strings are allowed
+ignore = ["B008", "E501"]
 
 [tool.pytest.ini_options]
 testpaths = ["backend/tests", "tests"]
 pythonpath = ["backend"]
-
+addopts = "-m 'not real_llm and not chroma'"
+markers = [
+    "mongo: needs a reachable MongoDB (MONGODB_URL); uses a throwaway database",
+    "chroma: needs a running ChromaDB (CHROMADB_URL) and downloads the embedding model",
+    "real_llm: calls the configured LLM provider (costs money); run with RUN_REAL_LLM_TESTS=1",
+]
+filterwarnings = [
+    "ignore:The anyio.abc.BlockingPortal alias is deprecated:DeprecationWarning",
+]

@@ -1,7 +1,13 @@
-"""Structured application logging and request correlation."""
+"""Structured JSON logging, request correlation and PII/secret redaction.
+
+Every log line passes through ``redact``: bearer tokens, JWTs, email addresses
+and long digit runs (phone, account and ID numbers) are masked. Code must still
+avoid logging document text, field values or passwords at all.
+"""
 
 import json
 import logging
+import re
 import time
 import uuid
 from collections.abc import Awaitable, Callable
@@ -12,10 +18,29 @@ from fastapi import Request, Response
 
 REQUEST_ID_HEADER = "X-Request-ID"
 _request_id: ContextVar[str] = ContextVar("request_id", default="-")
+_SAFE_REQUEST_ID = re.compile(r"^[A-Za-z0-9._-]{1,64}$")
+
+_REDACTIONS = (
+    (re.compile(r"(?i)bearer\s+[A-Za-z0-9._~+/=-]+"), "Bearer [REDACTED]"),
+    (re.compile(r"\beyJ[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+\.[A-Za-z0-9_-]+"), "[JWT]"),
+    (
+        re.compile(r"(?i)(api[_-]?key|password|secret|token)(\"?\s*[:=]\s*\"?)[^\s\",}]+"),
+        r"\1\2[REDACTED]",
+    ),
+    (re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+"), "[EMAIL]"),
+    (re.compile(r"(?<!\d)\+?\d[\d -]{7,}\d(?!\d)"), "[NUMBER]"),
+)
+_STANDARD_ATTRS = set(vars(logging.LogRecord("", 0, "", 0, "", (), None))) | {"message", "asctime"}
+
+
+def redact(text: str) -> str:
+    for pattern, replacement in _REDACTIONS:
+        text = pattern.sub(replacement, text)
+    return text
 
 
 class JsonFormatter(logging.Formatter):
-    """Render log records as compact JSON objects."""
+    """Render log records as compact, redacted JSON objects."""
 
     def format(self, record: logging.LogRecord) -> str:
         payload: dict[str, Any] = {
@@ -25,12 +50,12 @@ class JsonFormatter(logging.Formatter):
             "message": record.getMessage(),
             "request_id": _request_id.get(),
         }
-        for field in ("method", "path", "status_code", "duration_ms"):
-            if hasattr(record, field):
-                payload[field] = getattr(record, field)
+        for key, value in vars(record).items():
+            if key not in _STANDARD_ATTRS and not key.startswith("_"):
+                payload[key] = value
         if record.exc_info:
             payload["exception"] = self.formatException(record.exc_info)
-        return json.dumps(payload, default=str)
+        return redact(json.dumps(payload, default=str))
 
 
 def configure_logging(level: str) -> None:
@@ -43,6 +68,8 @@ def configure_logging(level: str) -> None:
         handler._json = True  # type: ignore[attr-defined]
         root_logger.addHandler(handler)
     handler.setFormatter(JsonFormatter())
+    for noisy in ("httpx", "httpcore", "pymongo", "sentence_transformers", "urllib3"):
+        logging.getLogger(noisy).setLevel(logging.WARNING)
 
 
 def get_request_id() -> str:
@@ -53,8 +80,9 @@ async def request_logging_middleware(
     request: Request,
     call_next: Callable[[Request], Awaitable[Response]],
 ) -> Response:
-    """Add request IDs and structured completion logs to every request."""
-    request_id = request.headers.get(REQUEST_ID_HEADER) or str(uuid.uuid4())
+    """Add a request ID and one structured completion log line per request."""
+    supplied = request.headers.get(REQUEST_ID_HEADER, "")
+    request_id = supplied if _SAFE_REQUEST_ID.match(supplied) else str(uuid.uuid4())
     token = _request_id.set(request_id)
     request.state.request_id = request_id
     started = time.perf_counter()
