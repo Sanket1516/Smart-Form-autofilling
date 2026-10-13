@@ -81,7 +81,7 @@ class MockLLMProvider(LLMProvider):
             return self._forced
         
         # If this is a semantic classifier prompt, return a valid JSON matching the schema
-        if "Universal Form Field Ontology Mapping Agent" in prompt:
+        if "Universal Form Field Semantic Classifier" in prompt:
             import json
             label = ""
             # Extract label roughly to return the right mock value

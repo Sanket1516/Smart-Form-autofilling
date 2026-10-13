@@ -36,7 +36,7 @@ class FakeExtractor:
     def __init__(self, result: NormalizedDocument | Exception) -> None:
         self.result = result
 
-    def extract(self, path: str) -> NormalizedDocument:
+    def extract(self, path: str, document_name: str = "") -> NormalizedDocument:
         if isinstance(self.result, Exception):
             raise self.result
         return self.result

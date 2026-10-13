@@ -43,6 +43,7 @@ export const AutofillFlow = ({
   const [savingAnswers, setSavingAnswers] = useState(false);
   const [reviewSaveChoices, setReviewSaveChoices] = useState<Record<string, boolean>>({});
   const [editingApprovedValues, setEditingApprovedValues] = useState(false);
+  const [originalApprovedValues, setOriginalApprovedValues] = useState<any[]>([]);
 
   // Poll for session status
   useEffect(() => {
@@ -85,7 +86,12 @@ export const AutofillFlow = ({
       });
       const data = await res.json();
       const recommendations = data.data?.recommendations || [];
-      const required = recommendations.filter((item: any) => item.required && item.status === 'missing_information');
+      const required = recommendations.filter((item: any) => 
+        item.required && 
+        item.status === 'missing_information' &&
+        item.input_type !== 'radio' &&
+        item.input_type !== 'checkbox'
+      );
       setMissingFields(required);
       if (required.length === 0) {
         const sessionRes = await fetch(`${API_BASE_URL}/forms/sessions/${sessionId}`, {
@@ -170,7 +176,9 @@ export const AutofillFlow = ({
         headers: { 'Authorization': `Bearer ${freshToken}` }
       });
       const data = await res.json();
-      setApprovedValues(data.data.approved_values || []);
+      const values = data.data.approved_values || [];
+      setApprovedValues(values);
+      setOriginalApprovedValues(JSON.parse(JSON.stringify(values)));
     } catch (err) {
       console.error(err);
     }
@@ -203,6 +211,29 @@ export const AutofillFlow = ({
   const startFilling = async () => {
     setStatus('filling');
     const freshToken = await getToken();
+
+    // Save edited approved values
+    const changedValues = approvedValues.filter(v => {
+      const original = originalApprovedValues.find(o => o.field_id === v.field_id);
+      return original && String(original.value) !== String(v.value);
+    });
+
+    for (const v of changedValues) {
+      if (v.value && String(v.value).trim() !== '') {
+        fetch(`${API_BASE_URL}/profile/memories`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${freshToken}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            label: v.field_label || v.concept || 'Edited Value',
+            concept: v.concept || 'unknown',
+            value: v.value
+          })
+        }).catch(console.error);
+      }
+    }
 
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       if (tabs[0] && tabs[0].id) {
