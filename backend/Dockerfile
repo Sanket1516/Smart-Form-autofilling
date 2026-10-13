@@ -16,7 +16,10 @@ RUN apt-get update \
         poppler-utils \
     && rm -rf /var/lib/apt/lists/*
 COPY requirements.txt ./
-RUN pip install -r requirements.txt
+# Keep the CPU-only service image free of CUDA runtime wheels. Install torch from
+# the official CPU wheel index, then resolve the application dependencies from PyPI.
+RUN pip install --no-deps --index-url https://download.pytorch.org/whl/cpu "torch>=2.0,<3" \
+    && pip install -r requirements.txt
 COPY app ./app
 RUN useradd --create-home --uid 10001 appuser \
     && mkdir -p /data/uploads \
