@@ -44,10 +44,12 @@ def decode_access_token(token: str, settings: Settings) -> dict[str, Any]:
             token,
             settings.jwt_secret_key,
             algorithms=[settings.jwt_algorithm],
-            options={"require": ["sub", "jti", "exp", "iat"]},
+            options={"require": ["sub", "jti", "exp", "iat", "typ"]},
         )
     except jwt.PyJWTError as error:
         raise TokenError("invalid access token") from error
     if not isinstance(payload.get("sub"), str) or not isinstance(payload.get("jti"), str):
         raise TokenError("invalid access token")
+    if payload.get("typ") != "access":
+        raise TokenError("invalid token type")
     return payload
