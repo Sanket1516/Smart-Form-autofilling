@@ -1,126 +1,98 @@
-import React, { useState } from 'react';
-import { Settings as SettingsIcon, Shield, Trash2, Key, Bell, AppWindow } from 'lucide-react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { useLoader } from '../hooks/useLoader';
+import { authApi, healthApi, profileApi } from '../services/api';
 import { Button } from '../components/ui/Button';
-import { authApi, profileApi } from '../services/api';
-import './Settings.css';
+
+const STATE_TONE: Record<string, string> = {
+  healthy: 'success', configured: 'success', mock: 'warning', not_loaded: 'info', unhealthy: 'error',
+};
 
 export const Settings = () => {
-  const [deleteDataConfirm, setDeleteDataConfirm] = useState(false);
-  const [deleteAccountConfirm, setDeleteAccountConfirm] = useState(false);
+  const { user, logout, clear } = useAuth();
+  const navigate = useNavigate();
+  const health = useLoader(() => healthApi.services());
+  const [confirming, setConfirming] = useState<'data' | 'account' | null>(null);
+  const [message, setMessage] = useState<{ kind: 'error' | 'success'; text: string } | null>(null);
+  const [busy, setBusy] = useState(false);
 
-  const handleDeleteData = async () => {
-    if (!deleteDataConfirm) {
-      setDeleteDataConfirm(true);
-      return;
-    }
+  const run = async (kind: 'data' | 'account') => {
+    setBusy(true);
+    setMessage(null);
     try {
-      await profileApi.deleteData();
-      alert('All user data (documents, facts, reviews) deleted successfully.');
-    } catch (err: any) {
-      alert(`Error deleting data: ${err.message}`);
+      if (kind === 'data') {
+        await profileApi.deleteAllData();
+        setMessage({ kind: 'success', text: 'All your documents, profile values and history were deleted.' });
+      } else {
+        await authApi.deleteAccount();
+        clear();
+        navigate('/login');
+      }
+      setConfirming(null);
+    } catch (err) {
+      setMessage({ kind: 'error', text: err instanceof Error ? err.message : 'Deletion failed.' });
+    } finally {
+      setBusy(false);
     }
-    setDeleteDataConfirm(false);
-  };
-
-  const handleDeleteAccount = async () => {
-    if (!deleteAccountConfirm) {
-      setDeleteAccountConfirm(true);
-      return;
-    }
-    try {
-      await authApi.deleteAccount();
-      alert('Account deleted successfully.');
-      window.location.href = '/login';
-    } catch (err: any) {
-      alert(`Error deleting account: ${err.message}`);
-    }
-    setDeleteAccountConfirm(false);
   };
 
   return (
-    <div className="settings-page">
+    <div className="page">
       <div className="page-header">
-        <div className="page-title-section">
-          <SettingsIcon size={28} className="page-icon" />
-          <div>
-            <h1>Settings</h1>
-            <p>Manage your account, privacy, and extension preferences.</p>
-          </div>
+        <div>
+          <h1>Settings</h1>
+          <p className="muted">Signed in as {user?.email}</p>
         </div>
+        <Button variant="secondary" onClick={() => void logout().then(() => navigate('/login'))}>Sign out</Button>
+      </div>
+      {message && <div className={`alert alert-${message.kind}`} role="status"><p>{message.text}</p></div>}
+
+      <div className="card">
+        <h2>System status</h2>
+        {health.error && <p className="muted">{health.error}</p>}
+        {health.data && (
+          <ul className="list">
+            {(['mongodb', 'chromadb', 'llm', 'embedding_service'] as const).map((key) => (
+              <li key={key} className="list-item list-item-head">
+                <span className="small">{{ mongodb: 'Database', chromadb: 'Document search', llm: 'AI provider', embedding_service: 'Embedding model' }[key]}</span>
+                <span className={`pill pill-${STATE_TONE[health.data![key]] ?? ''}`}>{health.data![key].replace('_', ' ')}</span>
+              </li>
+            ))}
+          </ul>
+        )}
+        {health.data?.llm === 'mock' && (
+          <p className="small muted" style={{ marginTop: 8 }}>
+            No AI provider is configured: pattern-based extraction and field matching still work, but AI extraction and
+            document answers are disabled. See the README to configure a provider.
+          </p>
+        )}
       </div>
 
-      <div className="settings-content">
-        <div className="settings-section">
-          <h2><AppWindow size={20} /> Extension Preferences</h2>
-          <div className="settings-card">
-            <div className="setting-item">
-              <div>
-                <h4>Auto-fill suggestions</h4>
-                <p>Show inline suggestions when visiting supported web forms.</p>
-              </div>
-              <label className="toggle-switch">
-                <input type="checkbox" defaultChecked />
-                <span className="slider round"></span>
-              </label>
-            </div>
+      <div className="card">
+        <h2>Delete your data</h2>
+        <p className="small muted">Removes every document, extracted value, saved answer, search entry and form history. Your account stays.</p>
+        {confirming === 'data' ? (
+          <div className="row">
+            <Button variant="danger" isLoading={busy} onClick={() => void run('data')}>Yes, delete all my data</Button>
+            <Button variant="secondary" onClick={() => setConfirming(null)}>Cancel</Button>
           </div>
-        </div>
+        ) : (
+          <Button variant="danger" onClick={() => setConfirming('data')}>Delete all data</Button>
+        )}
+      </div>
 
-        <div className="settings-section">
-          <h2><Shield size={20} /> Privacy & Data</h2>
-          <div className="settings-card">
-            <div className="setting-item">
-              <div>
-                <h4>Clear all data</h4>
-                <p>Permanently delete all uploaded documents and extracted facts. This cannot be undone.</p>
-              </div>
-              <div className="destructive-action-container">
-                {deleteDataConfirm && (
-                  <p className="confirmation-warning">Are you absolutely sure?</p>
-                )}
-                <Button 
-                  variant="outline" 
-                  className="btn-danger" 
-                  onClick={handleDeleteData}
-                >
-                  <Trash2 size={16} style={{ marginRight: '8px' }} />
-                  {deleteDataConfirm ? 'Confirm Deletion' : 'Delete Data'}
-                </Button>
-                {deleteDataConfirm && (
-                  <Button variant="outline" onClick={() => setDeleteDataConfirm(false)}>Cancel</Button>
-                )}
-              </div>
-            </div>
+      <div className="card">
+        <h2>Delete your account</h2>
+        <p className="small muted">Deletes your account and all of your data. This cannot be undone.</p>
+        {confirming === 'account' ? (
+          <div className="row">
+            <Button variant="danger" isLoading={busy} onClick={() => void run('account')}>Yes, delete my account</Button>
+            <Button variant="secondary" onClick={() => setConfirming(null)}>Cancel</Button>
           </div>
-        </div>
-
-        <div className="settings-section">
-          <h2><Key size={20} /> Account Management</h2>
-          <div className="settings-card">
-            <div className="setting-item">
-              <div>
-                <h4>Delete Account</h4>
-                <p>Permanently delete your account and all associated data.</p>
-              </div>
-              <div className="destructive-action-container">
-                {deleteAccountConfirm && (
-                  <p className="confirmation-warning">Are you absolutely sure?</p>
-                )}
-                <Button 
-                  variant="outline" 
-                  className="btn-danger" 
-                  onClick={handleDeleteAccount}
-                >
-                  <Trash2 size={16} style={{ marginRight: '8px' }} />
-                  {deleteAccountConfirm ? 'Confirm Account Deletion' : 'Delete Account'}
-                </Button>
-                {deleteAccountConfirm && (
-                  <Button variant="outline" onClick={() => setDeleteAccountConfirm(false)}>Cancel</Button>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+        ) : (
+          <Button variant="danger" onClick={() => setConfirming('account')}>Delete account</Button>
+        )}
       </div>
     </div>
   );

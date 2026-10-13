@@ -1,4 +1,3 @@
-import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
@@ -15,6 +14,7 @@ import { Conflicts } from './pages/Conflicts';
 import { Activity } from './pages/Activity';
 import { Settings } from './pages/Settings';
 import { Reviews } from './pages/Reviews';
+import { Ask } from './pages/Ask';
 
 function App() {
   return (
@@ -35,6 +35,7 @@ function App() {
               <Route path="/discovered-facts" element={<DiscoveredFacts />} />
               <Route path="/conflicts" element={<Conflicts />} />
               <Route path="/reviews" element={<Reviews />} />
+              <Route path="/ask" element={<Ask />} />
               <Route path="/activity" element={<Activity />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/" element={<Navigate to="/dashboard" replace />} />

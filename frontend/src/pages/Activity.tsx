@@ -1,49 +1,83 @@
-import React from 'react';
-import { Activity as ActivityIcon, Clock, Edit } from 'lucide-react';
-import './Activity.css';
+import { useLoader } from '../hooks/useLoader';
+import { conceptLabel, formatValue, formsApi, profileApi } from '../services/api';
+import { ErrorState } from '../components/ui/ErrorState';
+import { LoadingState } from '../components/ui/LoadingState';
+
+const SESSION_STATUS: Record<string, { label: string; tone: string }> = {
+  processing: { label: 'Analysing', tone: 'info' },
+  ready: { label: 'Ready to fill', tone: 'info' },
+  review_required: { label: 'Needs review', tone: 'warning' },
+  information_required: { label: 'Missing information', tone: 'warning' },
+  filled: { label: 'Filled', tone: 'success' },
+  completed: { label: 'Submitted by you', tone: 'success' },
+  closed: { label: 'Closed', tone: '' },
+  failed: { label: 'Failed', tone: 'error' },
+};
 
 export const Activity = () => {
-  // Stubbed activity history data
-  const activities = [
-    { id: 1, type: 'form_session', title: 'Autofilled "Tax Return 2026"', date: '2 hours ago', icon: <Edit size={16} /> },
-    { id: 2, type: 'document', title: 'Processed "W2_Form_2025.pdf"', date: '1 day ago', icon: <ActivityIcon size={16} /> },
-    { id: 3, type: 'review', title: 'Resolved 3 field conflicts', date: '2 days ago', icon: <Clock size={16} /> }
-  ];
+  const { data, error, loading, reload } = useLoader(async () => {
+    const [sessions, corrections] = await Promise.all([formsApi.sessions(), profileApi.corrections()]);
+    return { sessions, corrections };
+  });
+  if (loading && !data) return <LoadingState message="Loading activity…" />;
+  if (error && !data) return <ErrorState message={error} onRetry={() => reload()} />;
+  if (!data) return null;
 
   return (
-    <div className="activity-page">
+    <div className="page">
       <div className="page-header">
-        <div className="page-title-section">
-          <ActivityIcon size={28} className="page-icon" />
-          <div>
-            <h1>Activity & History</h1>
-            <p>Your recent form sessions, document processing, and system events.</p>
-          </div>
+        <div>
+          <h1>Activity</h1>
+          <p className="muted">Forms you filled with the extension and corrections you made to your profile.</p>
         </div>
       </div>
-
-      <div className="activity-content">
-        <div className="timeline-container">
-          {activities.length === 0 ? (
-            <div className="empty-state">
-              <Clock size={48} />
-              <h3>No Activity Yet</h3>
-              <p>Your history will appear here once you start using the system.</p>
-            </div>
-          ) : (
-            <ul className="timeline">
-              {activities.map(act => (
-                <li key={act.id} className="timeline-item">
-                  <div className="timeline-icon">{act.icon}</div>
-                  <div className="timeline-content">
-                    <h4>{act.title}</h4>
-                    <span className="timeline-date">{act.date}</span>
-                  </div>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
+      <div className="card">
+        <h2>Form sessions</h2>
+        {data.sessions.length === 0 ? (
+          <p className="muted">No forms filled yet. Use the browser extension on a form to start.</p>
+        ) : (
+          <div className="table-wrap">
+            <table className="table">
+              <thead><tr><th>Website</th><th>Started</th><th>Status</th><th>Fields</th><th>Filled</th><th>Failed</th></tr></thead>
+              <tbody>
+                {data.sessions.map((session) => {
+                  const status = SESSION_STATUS[session.status] ?? { label: session.status, tone: '' };
+                  return (
+                    <tr key={session.session_id}>
+                      <td title={session.page_url}>{session.website_origin}</td>
+                      <td className="muted">{session.started_at ? new Date(session.started_at).toLocaleString() : '—'}</td>
+                      <td><span className={`pill pill-${status.tone}`}>{status.label}</span></td>
+                      <td>{session.total_fields}</td>
+                      <td>{session.filled_fields}</td>
+                      <td>{session.failed_fields}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+      <div className="card">
+        <h2>Profile corrections</h2>
+        {data.corrections.length === 0 ? (
+          <p className="muted">No corrections yet.</p>
+        ) : (
+          <ul className="list">
+            {data.corrections.map((correction) => (
+              <li key={correction.correction_id} className="list-item">
+                <div className="list-item-head">
+                  <strong className="small">{conceptLabel(correction.concept)}</strong>
+                  <span className="tiny muted">{new Date(correction.created_at).toLocaleString()}</span>
+                </div>
+                <p className="small no-margin">
+                  {correction.original_value != null ? <><s>{formatValue(correction.original_value)}</s> → </> : null}
+                  {correction.corrected_value != null ? formatValue(correction.corrected_value) : correction.reason}
+                </p>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 {
   "name": "smart-form-autofilling",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "workspaces": [
@@ -8,15 +8,12 @@
     "extension"
   ],
   "scripts": {
-    "build": "npm run build --workspace=smart-form-frontend",
-    "lint": "eslint frontend extension && prettier --check \"*.{json,yml}\" \"frontend/**/*.{js,jsx,css,html,json}\" \"extension/**/*.{js,css,html,json}\"",
-    "format": "prettier --write \"*.{json,yml}\" \"frontend/**/*.{js,jsx,css,html,json}\" \"extension/**/*.{js,css,html,json}\"",
-    "test": "python -m pytest backend/tests tests"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.0.0",
-    "eslint": "^9.0.0",
-    "globals": "^15.0.0",
-    "prettier": "^3.0.0"
+    "build": "npm run build --workspace=smart-form-frontend && npm run build --workspace=smart-form-extension",
+    "typecheck": "npm run typecheck --workspace=smart-form-frontend && npm run typecheck --workspace=smart-form-extension",
+    "lint": "npm run lint --workspace=smart-form-frontend && npm run typecheck",
+    "test:frontend": "npm run test --workspace=smart-form-frontend",
+    "test:extension": "npm run test --workspace=smart-form-extension",
+    "test:e2e": "npm run test:e2e --workspace=smart-form-extension",
+    "test": "npm run test:frontend && npm run test:extension"
   }
 }

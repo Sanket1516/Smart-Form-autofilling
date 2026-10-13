@@ -31,6 +31,23 @@ async def update_profile(
     return SuccessResponse(data=ProfileUpdateResponse(**result), message="Profile updated")
 
 
+@router.get("/profile/concepts", response_model=SuccessResponse[list[dict]])
+async def list_profile_concepts(request: Request, user: User) -> SuccessResponse[list[dict]]:
+    """The ontology concepts a profile value can be stored under (for editors)."""
+    ontology = request.app.state.field_ontology
+    concepts = [
+        {
+            "concept": key,
+            "description": ontology.description(key),
+            "data_type": ontology.data_type(key),
+            "sensitive": ontology.is_sensitive(key),
+            "single_valued": ontology.is_single_valued(key),
+        }
+        for key, _ in ontology.catalog()
+    ]
+    return SuccessResponse(data=concepts)
+
+
 @router.get("/profile/corrections", response_model=SuccessResponse[CorrectionsListData])
 async def get_profile_corrections(
     request: Request, user: User, concept: str | None = None

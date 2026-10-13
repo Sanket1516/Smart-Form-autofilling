@@ -1,10 +1,11 @@
-import React from 'react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import { LogOut, User as UserIcon } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 import './Navbar.css';
 
 export const Navbar = () => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <header className="navbar">
@@ -16,11 +17,11 @@ export const Navbar = () => {
           <div className="user-menu">
             <span className="user-name">
               <UserIcon size={16} />
-              {user.name}
+              {user.full_name}
             </span>
-            <button onClick={logout} className="btn-logout" aria-label="Logout">
+            <button onClick={() => void logout().then(() => navigate('/login'))} className="btn-logout" aria-label="Sign out">
               <LogOut size={16} />
-              Logout
+              Sign out
             </button>
           </div>
         )}
