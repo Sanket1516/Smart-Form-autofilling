@@ -1,105 +1,59 @@
-"""Agent execution and tracking endpoints per API_SPECIFICATION §31-33."""
+"""Agent-run API: start a batch analysis and poll its result.
 
-import logging
-import uuid
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Request, status
+A run is a form session analysed by the same LangGraph pipeline the extension
+uses; ``run_id`` equals the session id.
+"""
 
-from app.api.v1.auth import get_current_user
-from app.schemas.auth import CurrentUser
-from app.schemas.agent import AgentRunRequest, AgentRunResponse, AgentStatusResponse
-from app.agents.state import AgentState
+from fastapi import APIRouter, BackgroundTasks, Request
+
+from app.api.v1.auth import User
 from app.core.rate_limit import limiter
-
-logger = logging.getLogger(__name__)
+from app.schemas.agent import AgentRunRequest, AgentRunResponse, AgentStatusResponse
+from app.schemas.responses import SuccessResponse
 
 router = APIRouter(tags=["Agent"])
 
-async def execute_agent_background(run_id: str, request: Request) -> None:
-    """Background task to run the LangGraph state machine."""
-    agent_store = request.app.state.agent_store
-    agent_graph = request.app.state.agent_graph
-    
-    run_doc = await agent_store.get_run(run_id)
-    if not run_doc:
-        logger.error(f"Run {run_id} not found in background task")
-        return
-        
-    state = run_doc.get("state", {})
-    
-    try:
-        final_state = await agent_graph.run(state)
-        # Final state should have status=completed or failed based on nodes
-        await agent_store.update_run(run_id, final_state)
-    except Exception as e:
-        logger.exception(f"Error executing graph for run {run_id}")
-        state["status"] = "failed"
-        state["errors"] = state.get("errors", []) + [str(e)]
-        await agent_store.update_run(run_id, state)
 
-
-@router.post(
-    "/agent/run",
-    response_model=AgentRunResponse,
-    status_code=status.HTTP_202_ACCEPTED,
-    summary="Start an agentic workflow run"
-)
+@router.post("/agent/run", response_model=SuccessResponse[AgentRunResponse], status_code=202)
 @limiter.limit("20/minute")
 async def start_agent_run(
-    payload: AgentRunRequest,
-    request: Request,
-    background_tasks: BackgroundTasks,
-    user: CurrentUser = Depends(get_current_user),
-):
-    """
-    Starts an asynchronous agent run for autofilling form fields.
-    """
-    run_id = str(uuid.uuid4())
-    user_id = user.user_id
-    
-    # Initialize the AgentState
-    initial_state: AgentState = {
-        "workflow_id": payload.workflow_id,
-        "user_id": user_id,
-        "page_context": payload.page_context,
-        "field_objects": [f.model_dump() for f in payload.field_objects],
-        "current_field": payload.field_objects[0].model_dump() if payload.field_objects else None,
-        "status": "started",
-    }
-    
-    agent_store = request.app.state.agent_store
-    await agent_store.create_run(run_id, initial_state)
-    
-    # Enqueue execution
-    background_tasks.add_task(execute_agent_background, run_id, request)
-    
-    return AgentRunResponse(run_id=run_id, status="started")
+    request: Request, payload: AgentRunRequest, background_tasks: BackgroundTasks, user: User
+) -> SuccessResponse[AgentRunResponse]:
+    page = payload.page_context
+    repo = request.app.state.form_sessions_repo
+    session = await repo.create_session(
+        user.user_id,
+        str(page.get("website_origin") or "agent-api")[:300],
+        str(page.get("page_url") or "agent-api")[:2000],
+        payload.workflow_id,
+    )
+    await repo.update_session(
+        user.user_id,
+        session["_id"],
+        {"status": "processing", "total_fields": len(payload.field_objects)},
+    )
+    background_tasks.add_task(
+        request.app.state.form_fill_service.analyze,
+        user.user_id,
+        session["_id"],
+        payload.field_objects,
+    )
+    return SuccessResponse(
+        data=AgentRunResponse(run_id=session["_id"], session_id=session["_id"], status="processing")
+    )
 
 
-@router.get(
-    "/agent/runs/{run_id}",
-    response_model=AgentStatusResponse,
-    summary="Get status and state of an agent run"
-)
+@router.get("/agent/runs/{run_id}", response_model=SuccessResponse[AgentStatusResponse])
 async def get_agent_run_status(
-    run_id: str, 
-    request: Request,
-    user: CurrentUser = Depends(get_current_user),
-):
-    """
-    Retrieves the current status and state of an agent workflow run.
-    """
-    agent_store = request.app.state.agent_store
-    run_doc = await agent_store.get_run(run_id)
-    
-    if not run_doc or run_doc.get("state", {}).get("user_id") != user.user_id:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="Run not found"
+    run_id: str, request: Request, user: User
+) -> SuccessResponse[AgentStatusResponse]:
+    service = request.app.state.form_fill_service
+    session = await service.require_session(user.user_id, run_id)
+    return SuccessResponse(
+        data=AgentStatusResponse(
+            run_id=run_id,
+            session_id=run_id,
+            status=session.get("status", "started"),
+            recommendations=await service.recommendations_for(user.user_id, run_id),
         )
-        
-    return AgentStatusResponse(
-        run_id=run_doc["run_id"],
-        status=run_doc["status"],
-        state=run_doc["state"],
-        created_at=run_doc.get("created_at").isoformat() if run_doc.get("created_at") else None,
-        updated_at=run_doc.get("updated_at").isoformat() if run_doc.get("updated_at") else None,
     )
