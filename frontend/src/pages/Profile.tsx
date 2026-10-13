@@ -1,144 +1,206 @@
-import React, { useEffect, useState } from 'react';
-import { factsApi, profileApi } from '../services/api';
-import { FactCard } from '../components/profile/FactCard';
-import { User, BookOpen, AlertCircle } from 'lucide-react';
+import { useMemo, useState, type FormEvent } from 'react';
+import { Link } from 'react-router-dom';
+import { Check, Eye, EyeOff, Pencil, Plus, Trash2, X } from 'lucide-react';
+import { useLoader } from '../hooks/useLoader';
+import { factsApi, formatValue, profileApi, type ProfileField } from '../services/api';
 import { Button } from '../components/ui/Button';
-import './Profile.css';
+import { ErrorState } from '../components/ui/ErrorState';
+import { LoadingState } from '../components/ui/LoadingState';
+import { OriginPill, SourceLabel } from '../components/ui/Status';
+
+const SECTION_TITLES: Record<string, string> = {
+  personal: 'Personal', identity: 'Identity', address: 'Address', contact: 'Contact', education: 'Education',
+  experience: 'Experience', skills: 'Skills', financial: 'Financial', medical: 'Medical',
+};
 
 export const Profile = () => {
-  const [facts, setFacts] = useState<any[]>([]);
-  const [profile, setProfile] = useState<any>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  
-  const [editingFact, setEditingFact] = useState<any>(null);
-  const [editValue, setEditValue] = useState('');
+  const { data, error, loading, reload } = useLoader(async () => {
+    const [profile, concepts, memories] = await Promise.all([
+      profileApi.get(), profileApi.concepts(), profileApi.memories(),
+    ]);
+    return { profile, concepts, memories };
+  });
+  const [message, setMessage] = useState<{ kind: 'error' | 'success'; text: string } | null>(null);
+  const [newConcept, setNewConcept] = useState('');
+  const [newValue, setNewValue] = useState('');
 
-  useEffect(() => {
-    fetchData();
-  }, []);
+  const sections = useMemo(() => {
+    const grouped = new Map<string, ProfileField[]>();
+    for (const field of data?.profile.fields ?? []) {
+      const section = field.concept.split('.')[0];
+      grouped.set(section, [...(grouped.get(section) ?? []), field]);
+    }
+    return [...grouped.entries()];
+  }, [data]);
 
-  const fetchData = async () => {
-    setIsLoading(true);
-    setError(null);
+  const run = async (action: () => Promise<unknown>, success: string) => {
+    setMessage(null);
     try {
-      const [factsData, profileData] = await Promise.all([
-        factsApi.getFacts(),
-        profileApi.getProfile()
-      ]);
-      setFacts(factsData);
-      setProfile(profileData);
-    } catch (err: any) {
-      setError('Failed to load profile knowledge base.');
-    } finally {
-      setIsLoading(false);
+      await action();
+      setMessage({ kind: 'success', text: success });
+      await reload(true);
+    } catch (err) {
+      setMessage({ kind: 'error', text: err instanceof Error ? err.message : 'Action failed.' });
     }
   };
 
-  const handleEditFact = (fact: any) => {
-    setEditingFact(fact);
-    let initialValue = fact.value;
-    if (typeof initialValue === 'object' && initialValue !== null) {
-      initialValue = Array.isArray(initialValue) ? initialValue.join(', ') : JSON.stringify(initialValue);
-    }
-    setEditValue(initialValue || '');
+  const addValue = (event: FormEvent) => {
+    event.preventDefault();
+    if (!newConcept || !newValue.trim()) return;
+    void run(async () => {
+      await factsApi.add(newConcept, newValue.trim());
+      setNewValue('');
+    }, 'Value saved to your profile.');
   };
 
-  const handleSaveEdit = async () => {
-    if (!editingFact) return;
-    try {
-      await factsApi.updateFact(editingFact.fact_id || editingFact.id, editValue);
-      setEditingFact(null);
-      fetchData();
-    } catch (err: any) {
-      alert(`Error updating fact: ${err.message}`);
-    }
-  };
-
-  const handleDeleteFact = async (fact: any) => {
-    if (confirm(`Are you sure you want to delete ${fact.concept}?`)) {
-      try {
-        await factsApi.deleteFact(fact.fact_id || fact.id);
-        fetchData();
-      } catch (err: any) {
-        alert(`Error deleting fact: ${err.message}`);
-      }
-    }
-  };
-
-  if (isLoading) {
-    return <div className="profile-loading">Loading knowledge base...</div>;
-  }
-
-  if (error) {
-    return (
-      <div className="profile-error">
-        <AlertCircle size={32} />
-        <p>{error}</p>
-        <Button onClick={fetchData}>Retry</Button>
-      </div>
-    );
-  }
+  if (loading && !data) return <LoadingState message="Loading your profile…" />;
+  if (error && !data) return <ErrorState message={error} onRetry={() => reload()} />;
+  if (!data) return null;
 
   return (
-    <div className="profile-page">
+    <div className="page">
       <div className="page-header">
-        <div className="page-title-section">
-          <BookOpen size={28} className="page-icon" />
-          <div>
-            <h1>Knowledge Profile</h1>
-            <p>Your extracted facts and knowledge base for autofilling forms.</p>
-          </div>
+        <div>
+          <h1>My profile</h1>
+          <p className="muted">Values used to fill forms. Confirm the ones that are right and correct the rest.</p>
         </div>
       </div>
-
-      <div className="profile-content">
-        <div className="facts-section">
-          <h2>Extracted Facts</h2>
-          {facts.length === 0 ? (
-            <div className="empty-state">
-              <User size={48} />
-              <h3>No facts extracted yet</h3>
-              <p>Upload documents to start building your knowledge base.</p>
-            </div>
-          ) : (
-            <div className="facts-grid">
-              {facts.map((fact: any) => (
-                <FactCard
-                  key={fact.fact_id || fact.concept}
-                  concept={fact.concept}
-                  value={fact.value}
-                  confidence={fact.confidence}
-                  sourceDocument={fact.source_document_id}
-                  onEdit={() => handleEditFact(fact)}
-                  onDelete={() => handleDeleteFact(fact)}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
-
-      {editingFact && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h3>Edit Fact: {editingFact.concept.replace(/_/g, ' ')}</h3>
-            <div className="form-group" style={{marginTop: '1rem'}}>
-              <input 
-                type="text" 
-                value={editValue} 
-                onChange={(e) => setEditValue(e.target.value)} 
-                className="filter-input"
-                style={{width: '100%', padding: '0.5rem'}}
-              />
-            </div>
-            <div className="modal-actions" style={{display: 'flex', gap: '1rem', marginTop: '1rem', justifyContent: 'flex-end'}}>
-              <Button variant="outline" onClick={() => setEditingFact(null)}>Cancel</Button>
-              <Button onClick={handleSaveEdit}>Save</Button>
-            </div>
-          </div>
+      {message && (
+        <div className={`alert alert-${message.kind}`} role={message.kind === 'error' ? 'alert' : 'status'}>
+          <p>{message.text}</p>
         </div>
       )}
+
+      {sections.length === 0 && (
+        <div className="card empty">
+          <h3>Your profile is empty</h3>
+          <p><Link to="/documents">Upload a document</Link> or add a value below.</p>
+        </div>
+      )}
+
+      {sections.map(([section, fields]) => (
+        <div className="card" key={section}>
+          <h2>{SECTION_TITLES[section] ?? section}</h2>
+          <ul className="list">
+            {fields.map((field) => (
+              <FieldRow key={field.concept} field={field} run={run} />
+            ))}
+          </ul>
+        </div>
+      ))}
+
+      <div className="card">
+        <h2><Plus size={18} /> Add a value</h2>
+        <form className="form-inline" onSubmit={addValue}>
+          <label className="stack small">
+            Field
+            <select className="select" value={newConcept} onChange={(e) => setNewConcept(e.target.value)} required>
+              <option value="">Choose a field…</option>
+              {data.concepts.map((c) => (
+                <option key={c.concept} value={c.concept}>{c.description}</option>
+              ))}
+            </select>
+          </label>
+          <label className="stack small">
+            Value
+            <input className="text-input" value={newValue} onChange={(e) => setNewValue(e.target.value)} required />
+          </label>
+          <Button type="submit">Add value</Button>
+        </form>
+      </div>
+
+      <div className="card">
+        <h2>Saved answers</h2>
+        <p className="muted small">Answers you chose to save while filling forms. They are reused for similar questions.</p>
+        {data.memories.length === 0 ? (
+          <p className="muted">No saved answers.</p>
+        ) : (
+          <ul className="list">
+            {data.memories.map((memory) => (
+              <li key={memory.memory_id} className="list-item list-item-head">
+                <div>
+                  <div className="tiny muted">{memory.label}</div>
+                  <div>{memory.value}</div>
+                </div>
+                <button className="link-button danger" aria-label={`Delete saved answer for ${memory.label}`}
+                  onClick={() => void run(() => profileApi.removeMemory(memory.memory_id), 'Saved answer deleted.')}>
+                  <Trash2 size={16} />
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
     </div>
+  );
+};
+
+const FieldRow = ({ field, run }: {
+  field: ProfileField;
+  run: (action: () => Promise<unknown>, success: string) => Promise<void>;
+}) => {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(formatValue(field.value));
+  const [revealed, setRevealed] = useState(!field.sensitive);
+  const primary = field.sources[0];
+  const shown = field.status === 'multiple' ? field.values.map(formatValue).join(' · ') : formatValue(field.value);
+  const masked = field.sensitive && !revealed ? '•'.repeat(Math.min(12, shown.length || 8)) : shown;
+
+  return (
+    <li className="list-item">
+      <div className="list-item-head">
+        <span className="small"><strong>{field.label}</strong></span>
+        <span className="row">
+          {field.status === 'conflict'
+            ? <span className="pill pill-error">Conflicting values</span>
+            : <OriginPill origin={field.origin} confirmed={field.is_user_confirmed} />}
+          {field.sensitive && <span className="pill pill-info">Sensitive</span>}
+        </span>
+      </div>
+      {field.status === 'conflict' ? (
+        <p className="small no-margin">Your documents disagree. <Link to="/conflicts">Choose the correct value</Link>.</p>
+      ) : editing ? (
+        <form className="form-inline" onSubmit={(e) => {
+          e.preventDefault();
+          void run(() => factsApi.update(primary.fact_id, draft), 'Value updated.').then(() => setEditing(false));
+        }}>
+          <input className="text-input" aria-label={`New value for ${field.label}`} value={draft}
+            onChange={(e) => setDraft(e.target.value)} autoFocus />
+          <Button type="submit"><Check size={16} /> Save</Button>
+          <Button type="button" variant="secondary" onClick={() => setEditing(false)}><X size={16} /> Cancel</Button>
+        </form>
+      ) : (
+        <div className="row">
+          <span>{masked}</span>
+          {field.sensitive && (
+            <button className="link-button" onClick={() => setRevealed(!revealed)} aria-label={revealed ? 'Hide value' : 'Show value'}>
+              {revealed ? <EyeOff size={14} /> : <Eye size={14} />}
+            </button>
+          )}
+          <span className="spacer" />
+          {field.status === 'resolved' && !field.is_user_confirmed && (
+            <Button variant="secondary" onClick={() => void run(() => factsApi.update(primary.fact_id, field.value), 'Value confirmed.')}>
+              <Check size={14} /> Confirm
+            </Button>
+          )}
+          {field.status === 'resolved' && (
+            <Button variant="secondary" onClick={() => { setDraft(formatValue(field.value)); setEditing(true); }}>
+              <Pencil size={14} /> Edit
+            </Button>
+          )}
+          <Button variant="danger" aria-label={`Remove ${field.label}`}
+            onClick={() => void run(async () => {
+              for (const source of field.sources) await factsApi.remove(source.fact_id);
+            }, 'Value removed from your profile.')}>
+            <Trash2 size={14} />
+          </Button>
+        </div>
+      )}
+      <div className="row" style={{ marginTop: 4 }}>
+        {[...new Map(field.sources.map((s) => [`${s.document_id}:${s.page}`, s])).values()].map((source) => (
+          <SourceLabel key={source.fact_id} name={source.document_name} page={source.page} />
+        ))}
+      </div>
+    </li>
   );
 };

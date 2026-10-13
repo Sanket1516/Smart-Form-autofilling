@@ -236,3 +236,15 @@ def test_delete_all_data_removes_everything_but_the_account(harness: Harness) ->
     # the other user's data is untouched
     assert harness.client.get("/api/v1/documents", headers=other).json()["data"]["total"] == 1
     assert harness.vectors.items
+
+
+def test_concept_catalog_requires_auth_and_lists_fillable_concepts(harness: Harness) -> None:
+    assert harness.client.get("/api/v1/profile/concepts").status_code == 401
+    headers = harness.register()
+    concepts = {
+        c["concept"]: c
+        for c in harness.client.get("/api/v1/profile/concepts", headers=headers).json()["data"]
+    }
+    assert concepts["personal.date_of_birth"]["data_type"] == "date"
+    assert concepts["identity.aadhaar_number"]["sensitive"] is True
+    assert "legal.consent" not in concepts

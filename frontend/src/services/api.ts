@@ -1,221 +1,341 @@
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-const getBaseUrl = () => API_BASE_URL;
-
 /**
- * API failures use `{ error: { message } }`.  Preserve that useful message
- * instead of replacing it with a generic client-side error.
+ * Typed client for the Smart Form backend.
+ *
+ * Every response uses the `{ success, data, message }` / `{ success: false, error }`
+ * envelope. Errors become `ApiError` with the server's message; a 401 also
+ * emits `auth:expired` so the app can sign the user out in one place.
  */
-async function getErrorMessage(response: Response, fallback: string): Promise<string> {
-  try {
-    const body = await response.json();
-    return body?.error?.message || body?.detail?.message || body?.detail || fallback;
-  } catch {
-    return fallback;
+
+export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/+$/, '');
+const API = `${API_BASE_URL}/api/v1`;
+const TOKEN_KEY = 'token';
+
+export class ApiError extends Error {
+  constructor(message: string, readonly status: number, readonly code: string) {
+    super(message);
   }
 }
 
-export async function getHealth() {
-  const response = await fetch(`${API_BASE_URL}/api/v1/health`);
-  const body = await response.json();
-  if (!response.ok) {
-    throw new Error(body?.data?.status ?? "Backend health check failed");
-  }
-  return body.data;
-}
-
-const getHeaders = (isFormData = false) => {
-  const token = localStorage.getItem('token');
-  const headers: HeadersInit = {};
-  
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-  
-  if (!isFormData) {
-    headers['Content-Type'] = 'application/json';
-  }
-  
-  return headers;
+export const tokenStore = {
+  get: () => localStorage.getItem(TOKEN_KEY),
+  set: (token: string) => localStorage.setItem(TOKEN_KEY, token),
+  clear: () => localStorage.removeItem(TOKEN_KEY),
 };
 
-export interface DocumentResponse {
+interface Options {
+  method?: string;
+  body?: unknown;
+  form?: FormData;
+  auth?: boolean;
+}
+
+async function raw(path: string, { method = 'GET', body, form, auth = true }: Options = {}): Promise<Response> {
+  const headers: Record<string, string> = {};
+  const token = tokenStore.get();
+  if (auth && token) headers.Authorization = `Bearer ${token}`;
+  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  let response: Response;
+  try {
+    response = await fetch(`${API}${path}`, {
+      method,
+      headers,
+      body: form ?? (body === undefined ? undefined : JSON.stringify(body)),
+    });
+  } catch {
+    throw new ApiError('Cannot reach the server. Check that the backend is running.', 0, 'NETWORK_ERROR');
+  }
+  if (!response.ok) {
+    let code = `HTTP_${response.status}`;
+    let message = `Request failed (${response.status})`;
+    try {
+      const payload = await response.json();
+      code = payload?.error?.code ?? code;
+      message = payload?.error?.message ?? message;
+      const fields = payload?.error?.details?.fields as Array<{ loc: string[]; msg: string }> | undefined;
+      if (code === 'VALIDATION_ERROR' && fields?.length) {
+        message = fields.map((f) => `${f.loc.slice(1).join('.')}: ${f.msg}`).join('; ');
+      }
+    } catch {
+      // keep the generic message
+    }
+    if (response.status === 401 && auth) {
+      tokenStore.clear();
+      window.dispatchEvent(new Event('auth:expired'));
+    }
+    throw new ApiError(message, response.status, code);
+  }
+  return response;
+}
+
+async function request<T>(path: string, options: Options = {}): Promise<T> {
+  const response = await raw(path, options);
+  const payload = await response.json();
+  return payload.data as T;
+}
+
+// ---------------------------------------------------------------------------- types
+
+export interface User {
+  user_id: string;
+  full_name: string;
+  email: string;
+  status?: string;
+}
+
+export type DocumentStatus = 'uploaded' | 'processing' | 'processed' | 'failed' | 'requires_review' | 'deleted';
+
+export interface DocumentData {
   document_id: string;
   file_name: string;
-  document_type: string;
-  status: string;
+  file_type: string;
+  file_size: number;
+  document_type?: string | null;
+  status: DocumentStatus;
+  current_stage?: string | null;
+  progress: number;
+  processing_error?: string | null;
+  warnings: string[];
   uploaded_at: string;
-  processed_at?: string;
-  page_count?: number;
+  processed_at?: string | null;
+  page_count?: number | null;
+  fact_count: number;
+  index_status: 'pending' | 'indexed' | 'failed' | 'empty';
+  chunk_count: number;
+  index_error?: string | null;
 }
 
-export const documentApi = {
-  getDocuments: async (): Promise<DocumentResponse[]> => {
-    const res = await fetch(`${getBaseUrl()}/api/v1/documents`, {
-      headers: getHeaders(),
-    });
-    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to fetch documents'));
-    const json = await res.json();
-    return json.data.documents || [];
-  },
+export interface Fact {
+  fact_id: string;
+  concept: string;
+  value: unknown;
+  raw_value?: unknown;
+  value_type: string;
+  origin: string;
+  status: string;
+  source_document_id: string;
+  document_name?: string | null;
+  source_page?: number | null;
+  evidence_text?: string | null;
+  extraction_method?: string | null;
+  confidence: number;
+  is_user_confirmed: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
-  getDocument: async (id: string): Promise<DocumentResponse> => {
-    const res = await fetch(`${getBaseUrl()}/api/v1/documents/${id}`, {
-      headers: getHeaders(),
-    });
-    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to fetch document'));
-    const json = await res.json();
-    return json.data;
-  },
+export interface FactSource {
+  fact_id: string;
+  document_id: string;
+  document_name?: string | null;
+  page?: number | null;
+  evidence?: string | null;
+  origin: string;
+  confidence: number;
+  is_user_confirmed: boolean;
+}
 
-  uploadDocument: async (file: File): Promise<DocumentResponse> => {
-    const formData = new FormData();
-    formData.append('file', file);
-    
-    const res = await fetch(`${getBaseUrl()}/api/v1/documents`, {
-      method: 'POST',
-      headers: getHeaders(true),
-      body: formData,
-    });
-    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to upload document'));
-    const json = await res.json();
-    return json.data;
-  },
+export interface ConflictCandidate {
+  value: unknown;
+  confidence: number;
+  is_user_confirmed: boolean;
+  document_id: string;
+  document_name?: string | null;
+  page?: number | null;
+  evidence?: string | null;
+  sources: FactSource[];
+}
 
-  processDocument: async (id: string): Promise<void> => {
-    const res = await fetch(`${getBaseUrl()}/api/v1/documents/${id}/process`, {
-      method: 'POST',
-      headers: getHeaders(),
-    });
-    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to process document'));
-  },
+export interface Conflict {
+  id: string;
+  concept: string;
+  label: string;
+  conflict_type: 'CROSS_DOCUMENT' | 'INTRA_DOCUMENT' | 'VERIFIED_VS_NEW';
+  candidates: ConflictCandidate[];
+}
 
-  deleteDocument: async (id: string): Promise<void> => {
-    const res = await fetch(`${getBaseUrl()}/api/v1/documents/${id}`, {
-      method: 'DELETE',
-      headers: getHeaders(),
-    });
-    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to delete document'));
-  },
+export interface ProfileField {
+  concept: string;
+  label: string;
+  status: 'resolved' | 'conflict' | 'multiple';
+  value: unknown;
+  values: unknown[];
+  confidence: number;
+  is_user_confirmed: boolean;
+  origin: string;
+  sensitive: boolean;
+  sources: FactSource[];
+}
 
-  downloadDocument: async (id: string, fileName: string): Promise<void> => {
-    const res = await fetch(`${getBaseUrl()}/api/v1/documents/${id}/download`, {
-      headers: getHeaders(),
-    });
-    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to download document'));
-    const blob = await res.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = fileName;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    window.URL.revokeObjectURL(url);
-  },
+export interface Profile {
+  user_id: string;
+  sections: Record<string, Record<string, unknown>>;
+  fields: ProfileField[];
+}
 
-  getPreviewUrl: (id: string): string => {
-    const token = localStorage.getItem('token') || '';
-    return `${getBaseUrl()}/api/v1/documents/${id}/preview?token=${encodeURIComponent(token)}`;
-  },
-  
-  getDocumentStatus: async (id: string): Promise<{status: string; current_stage: string; progress: number; error: string | null}> => {
-    const res = await fetch(`${getBaseUrl()}/api/v1/documents/${id}/status`, {
-      headers: getHeaders(),
-    });
-    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to fetch document status'));
-    const json = await res.json();
-    return json.data;
-  },
+export interface Concept {
+  concept: string;
+  description: string;
+  data_type: string;
+  sensitive: boolean;
+  single_valued: boolean;
+}
 
-  getDocumentFacts: async (id: string): Promise<any[]> => {
-    const res = await fetch(`${getBaseUrl()}/api/v1/documents/${id}/facts`, {
-      headers: getHeaders(),
-    });
-    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to fetch document facts'));
-    const json = await res.json();
-    return json.data?.facts || [];
-  }
-};
+export interface Memory {
+  memory_id: string;
+  label: string;
+  concept: string;
+  value: string;
+  indexed: boolean;
+  updated_at?: string;
+}
 
-export const profileApi = {
-  getProfile: async () => {
-    const res = await fetch(`${getBaseUrl()}/api/v1/profile`, { headers: getHeaders() });
-    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to fetch profile'));
-    const json = await res.json();
-    return json.data;
-  },
-  updateProfile: async (data: any) => {
-    const res = await fetch(`${getBaseUrl()}/api/v1/profile`, {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify(data),
-    });
-    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to update profile'));
-    const json = await res.json();
-    return json.data;
-  },
-  deleteData: async () => {
-    const res = await fetch(`${getBaseUrl()}/api/v1/profile/data`, {
-      method: 'DELETE',
-      headers: getHeaders(),
-    });
-    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to delete data'));
-  }
-};
+export interface DiscoveredFact {
+  id: string;
+  source_document_id: string;
+  source_page?: number | null;
+  field: string;
+  semantic_type: string;
+  value: unknown;
+  confidence: number;
+  evidence_text: string;
+  ontology?: string | null;
+  origin: string;
+  extraction_method: string;
+  document_type?: string | null;
+}
+
+export interface Review {
+  review_id: string;
+  session_id: string;
+  field_id: string;
+  field_label: string;
+  concept?: string | null;
+  suggested_value: unknown;
+  confidence: number;
+  reason: string;
+  requires_confirmation: boolean;
+  source?: { type: string; document_name?: string | null; page?: number | null; snippet?: string | null } | null;
+  candidates: Array<{ value: unknown; confidence: number; source?: { document_name?: string | null } | null }>;
+}
+
+export interface FormSession {
+  session_id: string;
+  website_origin: string;
+  page_url: string;
+  form_id: string;
+  status: string;
+  started_at?: string | null;
+  total_fields: number;
+  filled_fields: number;
+  reviewed_fields: number;
+  failed_fields: number;
+  counts: Record<string, number>;
+}
+
+export interface Correction {
+  correction_id: string;
+  concept: string;
+  original_value: unknown;
+  corrected_value: unknown;
+  reason: string;
+  created_at: string;
+}
+
+export interface RagAnswer {
+  answer: string;
+  status: 'answered' | 'insufficient_evidence';
+  confidence: number;
+  sources: Array<{ chunk_id: string; document_id: string; document_name: string; page_number: number; similarity: number; snippet: string }>;
+}
+
+export interface ServiceHealth {
+  api: string;
+  mongodb: string;
+  chromadb: string;
+  llm: string;
+  embedding_service: string;
+  details: Record<string, string>;
+}
+
+// ---------------------------------------------------------------------------- endpoints
 
 export const authApi = {
-  deleteAccount: async () => {
-    const res = await fetch(`${getBaseUrl()}/api/v1/auth/me`, {
-      method: 'DELETE',
-      headers: getHeaders(),
-    });
-    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to delete account'));
-  }
+  login: (email: string, password: string) =>
+    request<{ access_token: string; user: User }>('/auth/login', { method: 'POST', body: { email, password }, auth: false }),
+  register: (full_name: string, email: string, password: string, confirm_password: string) =>
+    request<User>('/auth/register', { method: 'POST', body: { full_name, email, password, confirm_password }, auth: false }),
+  me: () => request<User>('/auth/me'),
+  logout: () => request('/auth/logout', { method: 'POST' }),
+  deleteAccount: () => request('/auth/me', { method: 'DELETE' }),
+};
+
+export const documentApi = {
+  list: () => request<{ documents: DocumentData[]; total: number }>('/documents?limit=100'),
+  get: (id: string) => request<DocumentData>(`/documents/${id}`),
+  upload: (file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    return request<DocumentData>('/documents', { method: 'POST', form });
+  },
+  reprocess: (id: string) => request(`/documents/${id}/reprocess`, { method: 'POST' }),
+  remove: (id: string) => request(`/documents/${id}`, { method: 'DELETE' }),
+  facts: (id: string) => request<{ facts: Fact[] }>(`/documents/${id}/facts`).then((d) => d.facts),
+  /** Fetch the file with the Authorization header and return an object URL (caller revokes it). */
+  blobUrl: async (id: string, kind: 'preview' | 'download') => {
+    const response = await raw(`/documents/${id}/${kind}`);
+    return URL.createObjectURL(await response.blob());
+  },
 };
 
 export const factsApi = {
-  getFacts: async (concept?: string) => {
-    const baseUrl = `${getBaseUrl()}/api/v1/profile/facts`;
-    const url = concept ? `${baseUrl}?concept=${encodeURIComponent(concept)}` : baseUrl;
-    const res = await fetch(url, { headers: getHeaders() });
-    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to fetch facts'));
-    const json = await res.json();
-    return json.data.facts || [];
-  },
-  updateFact: async (id: string, value: string) => {
-    const res = await fetch(`${getBaseUrl()}/api/v1/profile/facts/${id}`, {
-      method: 'PUT',
-      headers: getHeaders(),
-      body: JSON.stringify({ value, is_user_confirmed: true }),
-    });
-    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to update fact'));
-    const json = await res.json();
-    return json.data;
-  },
-  deleteFact: async (id: string) => {
-    const res = await fetch(`${getBaseUrl()}/api/v1/profile/facts/${id}`, {
-      method: 'DELETE',
-      headers: getHeaders(),
-    });
-    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to delete fact'));
-  }
+  list: () => request<{ facts: Fact[] }>('/profile/facts').then((d) => d.facts),
+  add: (concept: string, value: string) => request<Fact>('/profile/facts', { method: 'POST', body: { concept, value } }),
+  update: (id: string, value: unknown) =>
+    request<Fact>(`/profile/facts/${id}`, { method: 'PUT', body: { value, is_user_confirmed: true } }),
+  remove: (id: string) => request(`/profile/facts/${id}`, { method: 'DELETE' }),
+  conflicts: () => request<Conflict[]>('/profile/facts/conflicts'),
+  resolve: (concept: string, body: { resolution: 'candidate' | 'custom' | 'reject'; candidate_index?: number; custom_value?: string }) =>
+    request(`/profile/facts/conflicts/${encodeURIComponent(concept)}/resolve`, { method: 'PATCH', body }),
+  discovered: (documentId?: string) =>
+    request<DiscoveredFact[]>(`/profile/discovered-facts${documentId ? `?document_id=${encodeURIComponent(documentId)}` : ''}`),
+};
+
+export const profileApi = {
+  get: () => request<Profile>('/profile'),
+  concepts: () => request<Concept[]>('/profile/concepts'),
+  memories: () => request<{ memories: Memory[] }>('/profile/memories').then((d) => d.memories),
+  removeMemory: (id: string) => request(`/profile/memories/${id}`, { method: 'DELETE' }),
+  corrections: () => request<{ corrections: Correction[] }>('/profile/corrections').then((d) => d.corrections),
+  deleteAllData: () => request('/profile/data', { method: 'DELETE' }),
 };
 
 export const reviewsApi = {
-  getPendingReviews: async () => {
-    const res = await fetch(`${getBaseUrl()}/api/v1/reviews/pending`, { headers: getHeaders() });
-    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to fetch pending reviews'));
-    const json = await res.json();
-    return json.data.reviews || [];
-  },
-  submitDecision: async (id: string, decision: string, value?: string) => {
-    const res = await fetch(`${getBaseUrl()}/api/v1/reviews/${id}/decision`, {
-      method: 'POST',
-      headers: getHeaders(),
-      body: JSON.stringify({ decision, value }),
-    });
-    if (!res.ok) throw new Error(await getErrorMessage(res, 'Failed to submit review decision'));
-    const json = await res.json();
-    return json.data;
-  }
+  pending: () => request<{ reviews: Review[] }>('/reviews/pending').then((d) => d.reviews),
+  decide: (id: string, decision: 'confirm' | 'edit' | 'reject' | 'skip', value?: string, saveForFuture = false) =>
+    request(`/reviews/${id}/decision`, { method: 'POST', body: { decision, value, save_for_future: saveForFuture } }),
 };
+
+export const formsApi = {
+  sessions: () => request<{ sessions: FormSession[] }>('/forms/sessions').then((d) => d.sessions),
+};
+
+export const ragApi = {
+  ask: (question: string) => request<RagAnswer>('/retrieval/rag/answer', { method: 'POST', body: { question } }),
+};
+
+export const healthApi = {
+  services: () => request<ServiceHealth>('/health/services', { auth: false }),
+};
+
+export function formatValue(value: unknown): string {
+  if (value === null || value === undefined) return '';
+  if (Array.isArray(value)) return value.map(formatValue).join(', ');
+  if (typeof value === 'object') return JSON.stringify(value);
+  return String(value);
+}
+
+export function conceptLabel(concept: string): string {
+  const [, key = concept] = concept.split('.', 2);
+  const text = key.replace(/_/g, ' ');
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}

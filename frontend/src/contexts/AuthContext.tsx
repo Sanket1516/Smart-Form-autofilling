@@ -1,74 +1,57 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-
-export interface User {
-  id?: string;
-  user_id?: string;
-  email: string;
-  name?: string;
-  full_name?: string;
-  status?: string;
-}
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
+import { authApi, tokenStore, type User } from '../services/api';
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
   isLoading: boolean;
-  login: (token: string, user: User) => void;
-  logout: () => void;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  /** Forget the session locally (e.g. after deleting the account). */
+  clear: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(() => Boolean(tokenStore.get()));
+
+  const clear = useCallback(() => {
+    tokenStore.clear();
+    setUser(null);
+  }, []);
 
   useEffect(() => {
-    const fetchMe = async () => {
-      if (!token) {
-        setIsLoading(false);
-        return;
-      }
+    if (!tokenStore.get()) return;
+    authApi.me()
+      .then(setUser)
+      .catch(() => clear())
+      .finally(() => setIsLoading(false));
+  }, [clear]);
 
-      try {
-        const baseUrl = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
-        const res = await fetch(`${baseUrl}/api/v1/auth/me`, {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        
-        if (res.ok) {
-          const json = await res.json();
-          setUser(json.data || json);
-        } else {
-          // Token invalid or expired
-          setToken(null);
-          localStorage.removeItem('token');
-        }
-      } catch (err) {
-        console.error("Failed to fetch user:", err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+  useEffect(() => {
+    const onExpired = () => setUser(null);
+    window.addEventListener('auth:expired', onExpired);
+    return () => window.removeEventListener('auth:expired', onExpired);
+  }, []);
 
-    fetchMe();
-  }, [token]);
-
-  const login = (newToken: string, newUser: User) => {
-    setToken(newToken);
-    setUser(newUser);
-    localStorage.setItem('token', newToken);
+  const login = async (email: string, password: string) => {
+    const data = await authApi.login(email, password);
+    tokenStore.set(data.access_token);
+    setUser(data.user);
   };
 
-  const logout = () => {
-    setToken(null);
-    setUser(null);
-    localStorage.removeItem('token');
+  const logout = async () => {
+    try {
+      await authApi.logout();
+    } catch {
+      // the token is discarded locally either way
+    }
+    clear();
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, login, logout }}>
+    <AuthContext.Provider value={{ user, isLoading, login, logout, clear }}>
       {children}
     </AuthContext.Provider>
   );
@@ -76,8 +59,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
+  if (context === undefined) throw new Error('useAuth must be used within an AuthProvider');
   return context;
 };
