@@ -30,6 +30,7 @@ _REDACTIONS = (
     (re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+"), "[EMAIL]"),
     (re.compile(r"(?<!\d)\+?\d[\d -]{7,}\d(?!\d)"), "[NUMBER]"),
 )
+_SENSITIVE_KEY = re.compile(r"(?i)(authorization|api[_-]?key|password|secret|token|credential)")
 _STRUCTURAL_KEYS = {"timestamp", "level", "logger", "request_id", "status_code", "duration_ms"}
 _STANDARD_ATTRS = set(vars(logging.LogRecord("", 0, "", 0, "", (), None))) | {"message", "asctime"}
 
@@ -38,6 +39,20 @@ def redact(text: str) -> str:
     for pattern, replacement in _REDACTIONS:
         text = pattern.sub(replacement, text)
     return text
+
+
+def _redact_value(value: Any) -> Any:
+    """Redact recognizable secrets and values stored under secret keys."""
+    if isinstance(value, dict):
+        return {
+            key: "[REDACTED]" if _SENSITIVE_KEY.search(str(key)) else _redact_value(item)
+            for key, item in value.items()
+        }
+    if isinstance(value, (list, tuple)):
+        return [_redact_value(item) for item in value]
+    if isinstance(value, str):
+        return redact(value)
+    return value
 
 
 class JsonFormatter(logging.Formatter):
@@ -58,11 +73,7 @@ class JsonFormatter(logging.Formatter):
             payload["exception"] = self.formatException(record.exc_info)
         for key, value in payload.items():
             if key not in _STRUCTURAL_KEYS:
-                redacted = redact(json.dumps(value, default=str))
-                try:
-                    payload[key] = json.loads(redacted)
-                except json.JSONDecodeError:
-                    payload[key] = redacted
+                payload[key] = "[REDACTED]" if _SENSITIVE_KEY.search(key) else _redact_value(value)
         return json.dumps(payload, default=str)
 
 
