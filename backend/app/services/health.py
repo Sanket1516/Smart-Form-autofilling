@@ -36,6 +36,9 @@ class HealthService:
             "llm_model": self._llm.model,
             "embedding_model": self._embeddings.model_name,
             "embedding_status": self._embeddings.status,
+            "embedding_dimension": str(
+                self._embeddings.dimension or self._embeddings.expected_dimension or "unknown"
+            ),
             "vector_collection": self._chroma.collection_name,
         }
         chroma_state = "healthy" if chroma_ok else "unhealthy"

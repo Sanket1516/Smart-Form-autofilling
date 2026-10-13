@@ -280,7 +280,11 @@ def harness(monkeypatch: pytest.MonkeyPatch) -> Iterator[Harness]:
     embeddings = FakeEmbeddings()
     monkeypatch.setattr(main, "get_llm_provider", lambda settings: llm)
     monkeypatch.setattr(main, "ChromaClient", lambda settings: vectors)
-    monkeypatch.setattr(main, "SentenceTransformerEmbeddings", lambda name: embeddings)
+    monkeypatch.setattr(
+        main,
+        "SentenceTransformerEmbeddings",
+        lambda name, expected_dimension=384: embeddings,
+    )
     limiter.enabled = False
     with TestClient(main.app) as client:
         yield Harness(client, llm, vectors, embeddings)

@@ -90,7 +90,9 @@ def context_from_settings(settings: Settings, database: Any) -> ProcessingContex
         database=database,
         storage=build_storage(settings),
         llm=get_llm_provider(settings),
-        embeddings=SentenceTransformerEmbeddings(settings.embedding_model_name),
+        embeddings=SentenceTransformerEmbeddings(
+            settings.embedding_model_name, settings.embedding_dimension
+        ),
         vector_store=ChromaClient(settings),
         ontology=FieldOntology(),
     )

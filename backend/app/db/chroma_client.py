@@ -31,6 +31,7 @@ class ChromaClient:
         self.collection_name = settings.chromadb_collection
         self._timeout = settings.chromadb_timeout_seconds
         self._embedding_model = embedding_model or settings.embedding_model_name
+        self._embedding_dimension = settings.embedding_dimension
         self._collection_id: str | None = None
 
     async def _request(self, method: str, path: str, payload: dict[str, Any] | None = None) -> Any:
@@ -58,7 +59,11 @@ class ChromaClient:
             return self._collection_id
         payload = {
             "name": self.collection_name,
-            "metadata": {"hnsw:space": "cosine", "embedding_model": self._embedding_model},
+            "metadata": {
+                "hnsw:space": "cosine",
+                "embedding_model": self._embedding_model,
+                "embedding_dimension": self._embedding_dimension,
+            },
             "get_or_create": True,
         }
         collection = await self._request("POST", f"{self._prefix}/collections", payload)
@@ -71,6 +76,19 @@ class ChromaClient:
                 f"'{stored_model}', but EMBEDDING_MODEL_NAME is '{self._embedding_model}'. "
                 "Use a new CHROMADB_COLLECTION and run the reindex command."
             )
+        stored_dimension = (collection.get("metadata") or {}).get("embedding_dimension")
+        if stored_dimension is not None:
+            try:
+                dimension_matches = int(stored_dimension) == self._embedding_dimension
+            except (TypeError, ValueError):
+                dimension_matches = False
+            if not dimension_matches:
+                raise VectorStoreError(
+                    f"Collection '{self.collection_name}' has embedding dimension "
+                    f"'{stored_dimension}', but EMBEDDING_DIMENSION is "
+                    f"'{self._embedding_dimension}'. Use a new CHROMADB_COLLECTION and run "
+                    "the reindex command."
+                )
         self._collection_id = str(collection["id"])
         logger.info("chroma_collection_ready", extra={"collection": self.collection_name})
         return self._collection_id

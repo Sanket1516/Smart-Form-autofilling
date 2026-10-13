@@ -53,11 +53,12 @@ class Settings(BaseSettings):
 
     # Embeddings
     embedding_model_name: str = "all-MiniLM-L6-v2"
+    embedding_dimension: int = Field(default=384, gt=0)
 
     # Authentication
     jwt_secret_key: str
     jwt_algorithm: str = "HS256"
-    jwt_access_token_expire_minutes: int = Field(default=60, gt=0, le=24 * 60)
+    jwt_access_token_expire_minutes: int = Field(default=30, gt=0, le=24 * 60)
     auth_login_rate_limit_attempts: int = Field(default=5, gt=0)
     auth_login_rate_limit_window_seconds: int = Field(default=60, gt=0)
 

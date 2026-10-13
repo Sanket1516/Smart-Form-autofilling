@@ -77,7 +77,7 @@ async def lifespan(app: FastAPI):
     state.field_ontology = ontology = FieldOntology()
     state.llm_provider = llm = get_llm_provider(settings)
     state.embedding_provider = embeddings = SentenceTransformerEmbeddings(
-        settings.embedding_model_name
+        settings.embedding_model_name, settings.embedding_dimension
     )
     state.chromadb = vector_store = ChromaClient(settings)
     state.storage = storage = build_storage(settings)
