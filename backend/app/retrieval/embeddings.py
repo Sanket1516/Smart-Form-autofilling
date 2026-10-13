@@ -1,89 +1,79 @@
-"""Pluggable embedding provider implementation (SRS §35.5)."""
+"""Sentence-transformer embeddings.
 
-import hashlib
+The model is loaded lazily on first use. A load or encode failure raises
+``EmbeddingUnavailableError``; there is no fallback to non-semantic vectors.
+"""
+
+from __future__ import annotations
+
+import asyncio
 import logging
-from typing import Protocol
-
-from app.core.config import Settings
+import threading
+from typing import Any, Protocol
 
 logger = logging.getLogger(__name__)
 
 
+class EmbeddingUnavailableError(RuntimeError):
+    """The embedding model could not be loaded or failed to encode text."""
+
+
 class EmbeddingProvider(Protocol):
-    """Abstract interface for embedding generation."""
+    model_name: str
 
-    def embed_texts(self, texts: list[str]) -> list[list[float]]: ...
+    async def embed_texts(self, texts: list[str]) -> list[list[float]]: ...
 
-    def embed_query(self, query: str) -> list[float]: ...
+    async def embed_query(self, query: str) -> list[float]: ...
 
 
-class DefaultEmbeddingProvider:
-    """Production embedding provider defaulting to BGE-M3 with deterministic CPU fallback.
-
-    When the real model cannot be loaded, a WARNING is emitted and every
-    subsequent call that uses the hash fallback also logs at WARNING level.
-    Hash vectors are NOT semantic — cosine-similarity search with them is
-    meaningless.  Check logs for 'EMBEDDING_MODEL_UNAVAILABLE' to confirm
-    whether real embeddings are active.
-    """
-
-    def __init__(self, settings: Settings) -> None:
-        self.model_name = (
-            settings.embedding_model_name
-            or settings.embedding_model
-            or "all-MiniLM-L6-v2"
-        )
-        self.dimension = 384
-        self._model = None
-        self._initialized = False
-
-    def _get_model(self):
-        if not self._initialized:
-            self._initialized = True
-            try:
-                from sentence_transformers import SentenceTransformer  # type: ignore
-
-                self._model = SentenceTransformer(self.model_name)
-                if hasattr(self._model, "get_sentence_embedding_dimension"):
-                    self.dimension = self._model.get_sentence_embedding_dimension()
-                logger.info("embedding_model_loaded", extra={"model_name": self.model_name})
-            except Exception as error:
-                logger.warning(
-                    "EMBEDDING_MODEL_UNAVAILABLE: Failed to load '%s'. "
-                    "Falling back to dummy embeddings. Error: %s",
-                    self.model_name,
-                    error,
-                )
-                self._model = None
-        return self._model
+class SentenceTransformerEmbeddings:
+    def __init__(self, model_name: str) -> None:
+        self.model_name = model_name
+        self._model: Any | None = None
+        self._error: str | None = None
+        self._lock = threading.Lock()
 
     @property
-    def is_semantic(self) -> bool:
-        """True when a real sentence-transformer model is loaded."""
-        return self._get_model() is not None
+    def status(self) -> str:
+        if self._model is not None:
+            return "loaded"
+        return f"failed: {self._error}" if self._error else "not_loaded"
 
-    def embed_texts(self, texts: list[str]) -> list[list[float]]:
+    @property
+    def dimension(self) -> int | None:
+        if self._model is None:
+            return None
+        return int(self._model.get_sentence_embedding_dimension())
+
+    def _load(self) -> Any:
+        with self._lock:
+            if self._model is None:
+                try:
+                    from sentence_transformers import SentenceTransformer
+
+                    self._model = SentenceTransformer(self.model_name)
+                    self._error = None
+                    logger.info("embedding_model_loaded", extra={"model_name": self.model_name})
+                except Exception as error:
+                    self._error = f"{type(error).__name__}"
+                    raise EmbeddingUnavailableError(
+                        f"Embedding model '{self.model_name}' could not be loaded"
+                    ) from error
+            return self._model
+
+    def embed_texts_sync(self, texts: list[str]) -> list[list[float]]:
         if not texts:
             return []
-        model = self._get_model()
-        if model is not None:
-            try:
-                embeddings = model.encode(texts, normalize_embeddings=True)
-                return [vec.tolist() for vec in embeddings]
-            except Exception as error:
-                logger.error(
-                    "model_encode_failed",
-                    extra={"error": str(error), "text_count": len(texts)},
-                )
-        # Fallback dummy embedding vectors
-        import hashlib
-        result = []
-        for text in texts:
-            seed = int(hashlib.md5(text.encode('utf-8')).hexdigest(), 16)
-            vec = [(float((seed >> i) & 1) - 0.5) for i in range(self.dimension)]
-            result.append(vec)
-        return result
+        model = self._load()
+        try:
+            vectors = model.encode(texts, normalize_embeddings=True)
+        except Exception as error:
+            raise EmbeddingUnavailableError("Embedding model failed to encode text") from error
+        return [list(map(float, vector)) for vector in vectors]
 
-    def embed_query(self, query: str) -> list[float]:
-        results = self.embed_texts([query])
-        return results[0] if results else [0.0] * self.dimension
+    async def embed_texts(self, texts: list[str]) -> list[list[float]]:
+        return await asyncio.to_thread(self.embed_texts_sync, texts)
+
+    async def embed_query(self, query: str) -> list[float]:
+        vectors = await self.embed_texts([query])
+        return vectors[0]

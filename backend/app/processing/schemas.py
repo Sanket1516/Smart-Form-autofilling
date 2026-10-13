@@ -31,6 +31,7 @@ class NormalizedPage(BaseModel):
 
 class NormalizedDocument(BaseModel):
     pages: list[NormalizedPage] = Field(default_factory=list)
+    warnings: list[str] = Field(default_factory=list)
 
     @property
     def page_count(self) -> int:
