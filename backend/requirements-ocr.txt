@@ -1,0 +1,4 @@
+# Optional OCR engine for scanned PDFs and images (large download).
+# Without it, scanned documents are marked "requires_review".
+paddleocr>=2.7,<3.0
+paddlepaddle>=2.6,<3.0

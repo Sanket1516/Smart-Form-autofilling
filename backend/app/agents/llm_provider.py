@@ -1,310 +1,284 @@
-"""Pluggable LLM Provider interface for the reasoning node (SRS §35.5).
+"""Pluggable LLM providers.
 
-All personal data must be scoped to the current field only. The LLM never
-receives the user's full profile — only the isolated evidence relevant to the
-current field (SRS §27.7, data minimization).
+Providers expose a single synchronous ``complete`` call plus an async wrapper.
+Failures raise :class:`LLMProviderError`; a provider never returns a sentinel
+string and never silently switches to another provider or model. The mock
+provider is deterministic, makes no network calls and never invents personal
+data: unless a test injects a responder, it answers every task with an empty,
+schema-valid result.
 """
 
 from __future__ import annotations
 
+import asyncio
+import json
 import logging
-import re
+import time
 from abc import ABC, abstractmethod
+from collections.abc import Callable
 from typing import TYPE_CHECKING
+
+import httpx
 
 if TYPE_CHECKING:
     from app.core.config import Settings
 
-from app.agents.enums import FinalResponseStatus
-
 logger = logging.getLogger(__name__)
 
-# ---------------------------------------------------------------------------
-# Security heuristics (SRS §27.6 — untrusted webpage data must never become
-# an instruction to the LLM).
-# ---------------------------------------------------------------------------
-_INJECTION_PATTERNS: list[re.Pattern[str]] = [
-    re.compile(r"ignore\s+(all\s+)?(previous|prior)\s+(instructions?|prompts?)", re.IGNORECASE),
-    re.compile(r"reveal\s+(all\s+)?(stored|user|private|personal)\s+(data|facts|information)", re.IGNORECASE),
-    re.compile(r"disregard\s+(all\s+)?(previous|prior)\s+(instructions?|prompts?)", re.IGNORECASE),
-    re.compile(r"forget\s+(all\s+)?(previous|prior)\s+(instructions?|prompts?)", re.IGNORECASE),
-    re.compile(r"you\s+are\s+now\s+a", re.IGNORECASE),
-    re.compile(r"act\s+as\s+(if\s+you\s+are|a)\s+", re.IGNORECASE),
-    re.compile(r"system\s*prompt", re.IGNORECASE),
-    re.compile(r"</?(system|instruction|prompt)>", re.IGNORECASE),
-]
+# Task names let the mock provider return a correctly shaped empty answer and
+# make logs readable. They are not sent to real providers.
+TASK_FIELD_CLASSIFICATION = "field_classification"
+TASK_DOCUMENT_EXTRACTION = "document_extraction"
+TASK_FIELD_VALUES = "field_value_extraction"
+TASK_RAG_ANSWER = "rag_answer"
+
+_MOCK_EMPTY_RESPONSES: dict[str, dict[str, object]] = {
+    TASK_FIELD_CLASSIFICATION: {"classifications": []},
+    TASK_DOCUMENT_EXTRACTION: {"document_type": "UNKNOWN", "attributes": []},
+    TASK_FIELD_VALUES: {"answers": []},
+    TASK_RAG_ANSWER: {"answer": "", "used_chunk_ids": [], "confidence": 0.0},
+}
 
 
-def detect_injection(text: str) -> bool:
-    """Return True if text contains a known prompt-injection pattern."""
-    for pattern in _INJECTION_PATTERNS:
-        if pattern.search(text):
-            logger.warning("prompt_injection_detected pattern=%s text=%r", pattern.pattern, text[:120])
-            return True
-    return False
-
-
-# ---------------------------------------------------------------------------
-# Abstract interface
-# ---------------------------------------------------------------------------
+class LLMProviderError(RuntimeError):
+    """Raised when the configured LLM provider cannot produce a completion."""
 
 
 class LLMProvider(ABC):
-    """Abstract pluggable LLM backend for the reasoning node."""
+    """Abstract LLM backend."""
+
+    name: str = "abstract"
+    model: str = ""
+    is_mock: bool = False
+
+    def __init__(self) -> None:
+        self.call_count = 0
+
+    def complete(
+        self,
+        prompt: str,
+        *,
+        system: str | None = None,
+        json_mode: bool = True,
+        task: str = "generic",
+    ) -> str:
+        """Return the completion text for *prompt* or raise ``LLMProviderError``."""
+        self.call_count += 1
+        started = time.monotonic()
+        try:
+            return self._complete(prompt, system=system, json_mode=json_mode, task=task)
+        finally:
+            logger.info(
+                "llm_call",
+                extra={
+                    "provider": self.name,
+                    "model": self.model,
+                    "task": task,
+                    "duration_ms": int((time.monotonic() - started) * 1000),
+                },
+            )
+
+    async def acomplete(
+        self,
+        prompt: str,
+        *,
+        system: str | None = None,
+        json_mode: bool = True,
+        task: str = "generic",
+    ) -> str:
+        return await asyncio.to_thread(
+            self.complete, prompt, system=system, json_mode=json_mode, task=task
+        )
 
     @abstractmethod
-    def complete(self, prompt: str) -> str:
-        """Return LLM completion for *prompt*.
-
-        Implementations must not fabricate personal values (SRS §17.3).
-        """
-
-
-# ---------------------------------------------------------------------------
-# Mock provider — deterministic, no network calls, suitable for CI.
-# ---------------------------------------------------------------------------
+    def _complete(self, prompt: str, *, system: str | None, json_mode: bool, task: str) -> str: ...
 
 
 class MockLLMProvider(LLMProvider):
-    """Deterministic mock for tests and environments without an API key.
+    """Deterministic offline provider for tests and local development.
 
-    Behaviour:
-    - If *forced_answer* is set, return it verbatim (for happy-path tests).
-    - Otherwise return ``MISSING_INFORMATION`` to honour the no-fabrication rule.
+    ``responder`` (optional) receives ``(task, prompt)`` and returns the raw
+    completion text, which lets tests simulate valid, invalid or failing model
+    output. Without a responder every task gets an empty, schema-valid answer.
     """
 
-    def __init__(self, forced_answer: str | None = None) -> None:
-        self._forced = forced_answer
+    name = "mock"
+    model = "mock"
+    is_mock = True
 
-    def complete(self, prompt: str) -> str:
-        if self._forced is not None:
-            return self._forced
-        
-        # If this is a semantic classifier prompt, return a valid JSON matching the schema
-        if "Universal Form Field Semantic Classifier" in prompt:
-            import json
-            label = ""
-            # Extract label roughly to return the right mock value
-            if '"label": "Name"' in prompt or '"label": "Full Name"' in prompt or '"label": "Applicant Name"' in prompt or '"label": "Name of Candidate"' in prompt:
-                return json.dumps({"ontology": "personal.full_name", "field_type": "STRUCTURED", "confidence": 0.95})
-            elif '"label": "Date of Birth"' in prompt or '"label": "DOB"' in prompt:
-                return json.dumps({"ontology": "personal.date_of_birth", "field_type": "STRUCTURED", "confidence": 0.95})
-            elif '"label": "Contact Email"' in prompt or '"label": "Email Address"' in prompt or "Electronic Mail" in prompt:
-                return json.dumps({"ontology": "personal.email", "field_type": "STRUCTURED", "confidence": 0.95})
-            elif '"label": "Telephone Number"' in prompt or '"label": "Mobile"' in prompt:
-                return json.dumps({"ontology": "personal.phone", "field_type": "STRUCTURED", "confidence": 0.95})
-            elif '"label": "University"' in prompt:
-                return json.dumps({"ontology": "education.institution", "field_type": "STRUCTURED", "confidence": 0.95})
-            elif '"label": "Company"' in prompt:
-                return json.dumps({"ontology": "experience.company", "field_type": "STRUCTURED", "confidence": 0.95})
-            elif '"label": "Field 1"' in prompt:
-                return json.dumps({"ontology": "MISSING", "field_type": "MISSING", "confidence": 0.2})
-            
-            return json.dumps({"ontology": "unknown", "field_type": "MISSING", "confidence": 0.1})
+    def __init__(self, responder: Callable[[str, str], str] | None = None) -> None:
+        super().__init__()
+        self._responder = responder
 
-        if "Document Ontology Extraction Agent" in prompt:
-            import json
-            return json.dumps({
-                "document_status": "PROCESSED",
-                "facts": [],
-                "conflicts": [],
-                "unmapped_items": []
-            })
-
-        return FinalResponseStatus.MISSING_INFORMATION.value
+    def _complete(self, prompt: str, *, system: str | None, json_mode: bool, task: str) -> str:
+        if self._responder is not None:
+            return self._responder(task, prompt)
+        return json.dumps(_MOCK_EMPTY_RESPONSES.get(task, {}))
 
 
-class MockE2EProvider(LLMProvider):
-    """Deterministic mock for E2E tests that successfully generates a recommendation
-    if it sees EVIDENCE in the prompt, simulating a real LLM extraction."""
-    
-    def complete(self, prompt: str) -> str:
-        # Check if prompt contains facts or evidence
-        import json
-        
-        has_evidence = "DOCUMENT_EVIDENCE (similarity-ranked):" in prompt or "STRUCTURED_FACTS (verified first):" in prompt
-        is_missing = "none" in prompt.split("DOCUMENT_EVIDENCE:")[0] if "DOCUMENT_EVIDENCE:" in prompt else False # Very rough heuristic
-        
-        # If it seems we passed in structured facts or document chunks, simulate finding it
-        if "DOCUMENT_EVIDENCE" in prompt and "similarity=" in prompt:
-            return json.dumps({
-                "status": FinalResponseStatus.CONFIDENT_RECOMMENDATION.value,
-                "value": "E2E Test Value",
-                "confidence": 0.95,
-                "reason": "Found in document evidence."
-            })
-        
-        if "STRUCTURED_FACTS" in prompt and "value=" in prompt:
-            return json.dumps({
-                "status": FinalResponseStatus.CONFIDENT_RECOMMENDATION.value,
-                "value": "E2E Test Structured Value",
-                "confidence": 0.99,
-                "reason": "Found in structured facts."
-            })
-            
-        return FinalResponseStatus.MISSING_INFORMATION.value
+class _HTTPProvider(LLMProvider):
+    """Shared retry logic for HTTP-based providers."""
 
-
-# ---------------------------------------------------------------------------
-# OpenAI provider
-# ---------------------------------------------------------------------------
-
-
-class OpenAIProvider(LLMProvider):
-    """LLM provider backed by the OpenAI Chat Completions API."""
-
-    def __init__(self, model: str, api_key: str, timeout: int = 30) -> None:
-        try:
-            import openai  # type: ignore[import]
-        except ImportError as exc:
-            raise RuntimeError(
-                "openai package is required for OpenAIProvider. "
-                "Add 'openai' to requirements.txt."
-            ) from exc
-        self._client = openai.OpenAI(api_key=api_key, timeout=timeout)
-        self._model = model
-
-    def complete(self, prompt: str) -> str:
-        try:
-            response = self._client.chat.completions.create(
-                model=self._model,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0,
-                max_tokens=256,
-            )
-            return (response.choices[0].message.content or "").strip()
-        except Exception as exc:
-            logger.exception("openai_completion_failed model=%s", self._model)
-            return FinalResponseStatus.ERROR.value
-
-
-# ---------------------------------------------------------------------------
-# Anthropic provider
-# ---------------------------------------------------------------------------
-
-
-class AnthropicProvider(LLMProvider):
-    """LLM provider backed by the Anthropic Messages API."""
-
-    def __init__(self, model: str, api_key: str, timeout: int = 30) -> None:
-        try:
-            import anthropic  # type: ignore[import]
-        except ImportError as exc:
-            raise RuntimeError(
-                "anthropic package is required for AnthropicProvider. "
-                "Add 'anthropic' to requirements.txt."
-            ) from exc
-        self._client = anthropic.Anthropic(api_key=api_key, timeout=timeout)
-        self._model = model
-
-    def complete(self, prompt: str) -> str:
-        try:
-            message = self._client.messages.create(
-                model=self._model,
-                max_tokens=256,
-                messages=[{"role": "user", "content": prompt}],
-            )
-            return (message.content[0].text if message.content else "").strip()
-        except Exception as exc:
-            logger.exception("anthropic_completion_failed model=%s", self._model)
-            return FinalResponseStatus.ERROR.value
-
-
-# ---------------------------------------------------------------------------
-# Google (Gemini) provider
-# ---------------------------------------------------------------------------
-
-
-class GoogleProvider(LLMProvider):
-    """LLM provider backed by Google Gemini REST API with automatic model fallback for 429 rate limits."""
-
-    def __init__(self, model: str, api_key: str, timeout: int = 90) -> None:
-        self._primary_model = model or "gemini-3.5-flash-lite"
-        self._fallback_models = ["gemini-3.5-flash-lite", "gemini-3.6-flash"]
+    def __init__(self, model: str, api_key: str, timeout: int, max_tokens: int, retries: int):
+        super().__init__()
+        if not model:
+            raise ValueError(f"LLM_MODEL is required when LLM_PROVIDER={self.name}")
+        self.model = model
         self._api_key = api_key
         self._timeout = timeout
+        self._max_tokens = max_tokens
+        self._retries = retries
 
-    def complete(self, prompt: str) -> str:
-        import json
-        import urllib.request
-        import urllib.error
-
-        models_to_try = [self._primary_model] + [m for m in self._fallback_models if m != self._primary_model]
-
-        for model_name in models_to_try:
-            url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={self._api_key}"
-            payload = {
-                "contents": [
-                    {
-                        "parts": [
-                            {"text": prompt}
-                        ]
-                    }
-                ]
-            }
-            req = urllib.request.Request(
-                url,
-                data=json.dumps(payload).encode("utf-8"),
-                headers={"Content-Type": "application/json"}
-            )
+    def _post(self, url: str, headers: dict[str, str], payload: dict[str, object]) -> dict:
+        last_error: Exception | None = None
+        for attempt in range(self._retries + 1):
             try:
-                with urllib.request.urlopen(req, timeout=self._timeout) as resp:
-                    res_data = json.loads(resp.read().decode("utf-8"))
-                    candidates = res_data.get("candidates", [])
-                    if candidates and "content" in candidates[0] and "parts" in candidates[0]["content"]:
-                        parts = candidates[0]["content"]["parts"]
-                        if parts and "text" in parts[0]:
-                            return parts[0]["text"].strip()
-                    return FinalResponseStatus.ERROR.value
-            except urllib.error.HTTPError as exc:
-                if exc.code == 429:
-                    logger.warning("google_completion_429 model=%s trying_fallback", model_name)
-                    continue
-                logger.exception("google_completion_failed model=%s code=%s", model_name, exc.code)
-            except Exception as exc:
-                logger.exception("google_completion_failed model=%s", model_name)
+                response = httpx.post(url, headers=headers, json=payload, timeout=self._timeout)
+            except httpx.TimeoutException as error:
+                last_error = error
+            except httpx.HTTPError as error:
+                raise LLMProviderError(
+                    f"{self.name} request failed: {type(error).__name__}"
+                ) from error
+            else:
+                if response.status_code == 429 or response.status_code >= 500:
+                    last_error = LLMProviderError(
+                        f"{self.name} returned HTTP {response.status_code}"
+                    )
+                elif response.status_code >= 400:
+                    raise LLMProviderError(
+                        f"{self.name} rejected the request (HTTP {response.status_code}); "
+                        "check LLM_MODEL and LLM_API_KEY"
+                    )
+                else:
+                    try:
+                        return response.json()
+                    except ValueError as error:
+                        raise LLMProviderError(f"{self.name} returned a non-JSON body") from error
+            if attempt < self._retries:
+                time.sleep(min(2**attempt, 8))
+        raise LLMProviderError(
+            f"{self.name} unavailable after {self._retries + 1} attempts"
+        ) from last_error
 
-        return FinalResponseStatus.ERROR.value
+
+class GoogleProvider(_HTTPProvider):
+    """Google Gemini through the Generative Language REST API."""
+
+    name = "google"
+    _BASE = "https://generativelanguage.googleapis.com/v1beta/models"
+
+    def _complete(self, prompt: str, *, system: str | None, json_mode: bool, task: str) -> str:
+        generation: dict[str, object] = {"temperature": 0, "maxOutputTokens": self._max_tokens}
+        if json_mode:
+            generation["responseMimeType"] = "application/json"
+        payload: dict[str, object] = {
+            "contents": [{"role": "user", "parts": [{"text": prompt}]}],
+            "generationConfig": generation,
+        }
+        if system:
+            payload["systemInstruction"] = {"parts": [{"text": system}]}
+        data = self._post(
+            f"{self._BASE}/{self.model}:generateContent",
+            {"Content-Type": "application/json", "x-goog-api-key": self._api_key},
+            payload,
+        )
+        try:
+            parts = data["candidates"][0]["content"]["parts"]
+            text = "".join(part.get("text", "") for part in parts)
+        except (KeyError, IndexError, TypeError) as error:
+            reason = (data.get("candidates") or [{}])[0].get("finishReason", "unknown")
+            raise LLMProviderError(f"google returned no text (finishReason={reason})") from error
+        if not text.strip():
+            raise LLMProviderError("google returned an empty completion")
+        return text.strip()
 
 
+class OpenAIProvider(_HTTPProvider):
+    """OpenAI Chat Completions API."""
 
-# ---------------------------------------------------------------------------
-# Factory
-# ---------------------------------------------------------------------------
+    name = "openai"
+    _URL = "https://api.openai.com/v1/chat/completions"
+
+    def _complete(self, prompt: str, *, system: str | None, json_mode: bool, task: str) -> str:
+        messages = [{"role": "system", "content": system}] if system else []
+        messages.append({"role": "user", "content": prompt})
+        payload: dict[str, object] = {
+            "model": self.model,
+            "messages": messages,
+            "temperature": 0,
+            "max_tokens": self._max_tokens,
+        }
+        if json_mode:
+            payload["response_format"] = {"type": "json_object"}
+        data = self._post(
+            self._URL,
+            {"Content-Type": "application/json", "Authorization": f"Bearer {self._api_key}"},
+            payload,
+        )
+        try:
+            text = data["choices"][0]["message"]["content"] or ""
+        except (KeyError, IndexError, TypeError) as error:
+            raise LLMProviderError("openai returned an unexpected response shape") from error
+        if not text.strip():
+            raise LLMProviderError("openai returned an empty completion")
+        return text.strip()
 
 
-def get_llm_provider(settings: "Settings") -> LLMProvider:
-    """Return an ``LLMProvider`` driven by ``LLM_PROVIDER`` env var.
+class AnthropicProvider(_HTTPProvider):
+    """Anthropic Messages API."""
 
-    Supported values: ``google``, ``gemini``, ``openai``, ``anthropic``, ``mock``, ``""`` (treated as mock).
-    """
-    provider = (settings.llm_provider or "mock").lower().strip()
-    model = settings.llm_model or ""
-    api_key = settings.llm_api_key or ""
-    timeout = settings.llm_reasoning_timeout_seconds
+    name = "anthropic"
+    _URL = "https://api.anthropic.com/v1/messages"
 
-    if provider in ("google", "gemini"):
-        if not api_key:
-            raise ValueError("LLM_API_KEY is required when LLM_PROVIDER=google")
-        logger.info("llm_provider=google model=%s", model)
-        return GoogleProvider(model=model or "gemini-3.6-flash", api_key=api_key, timeout=max(timeout, 120))
+    def _complete(self, prompt: str, *, system: str | None, json_mode: bool, task: str) -> str:
+        payload: dict[str, object] = {
+            "model": self.model,
+            "max_tokens": self._max_tokens,
+            "temperature": 0,
+            "messages": [{"role": "user", "content": prompt}],
+        }
+        if system:
+            payload["system"] = system
+        data = self._post(
+            self._URL,
+            {
+                "Content-Type": "application/json",
+                "x-api-key": self._api_key,
+                "anthropic-version": "2023-06-01",
+            },
+            payload,
+        )
+        try:
+            text = "".join(
+                block.get("text", "") for block in data["content"] if block.get("type") == "text"
+            )
+        except (KeyError, TypeError) as error:
+            raise LLMProviderError("anthropic returned an unexpected response shape") from error
+        if not text.strip():
+            raise LLMProviderError("anthropic returned an empty completion")
+        return text.strip()
 
-    if provider == "openai":
-        if not api_key:
-            raise ValueError("LLM_API_KEY is required when LLM_PROVIDER=openai")
-        logger.info("llm_provider=openai model=%s", model)
-        return OpenAIProvider(model=model or "gpt-4o-mini", api_key=api_key, timeout=timeout)
 
-    if provider == "anthropic":
-        if not api_key:
-            raise ValueError("LLM_API_KEY is required when LLM_PROVIDER=anthropic")
-        logger.info("llm_provider=anthropic model=%s", model)
-        return AnthropicProvider(model=model or "claude-3-haiku-20240307", api_key=api_key, timeout=timeout)
-
-    if provider == "mock-e2e":
-        logger.info("llm_provider=mock-e2e (Simulating successful extraction for tests)")
-        return MockE2EProvider()
-
-    logger.info("llm_provider=mock (no API key required)")
-    return MockLLMProvider()
-
+def get_llm_provider(settings: Settings) -> LLMProvider:
+    """Build the provider selected by ``LLM_PROVIDER`` (validated in Settings)."""
+    provider = settings.llm_provider
+    if provider == "mock":
+        logger.warning("llm_provider_mock: AI extraction and classification return empty results")
+        return MockLLMProvider()
+    providers: dict[str, type[_HTTPProvider]] = {
+        "google": GoogleProvider,
+        "openai": OpenAIProvider,
+        "anthropic": AnthropicProvider,
+    }
+    instance = providers[provider](
+        model=settings.llm_model,
+        api_key=settings.llm_api_key,
+        timeout=settings.llm_timeout_seconds,
+        max_tokens=settings.llm_max_output_tokens,
+        retries=settings.llm_max_retries,
+    )
+    logger.info(
+        "llm_provider_configured", extra={"provider": provider, "model": settings.llm_model}
+    )
+    return instance
