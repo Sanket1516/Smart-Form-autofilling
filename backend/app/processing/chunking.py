@@ -26,13 +26,16 @@ class TextChunker:
         user_id: str,
         document_id: str,
         document_name: str,
+        document_type: str = "UNKNOWN",
         language: str = "en",
     ) -> list[DocumentChunk]:
         chunks: list[DocumentChunk] = []
         global_chunk_index = 0
 
         for page in normalized.pages:
-            page_text = " ".join(span.text.strip() for span in page.spans if span.text.strip()).strip()
+            page_text = " ".join(
+                span.text.strip() for span in page.spans if span.text.strip()
+            ).strip()
             if not page_text:
                 continue
 
@@ -42,12 +45,16 @@ class TextChunker:
                 metadata = {
                     "user_id": user_id,
                     "document_id": document_id,
-                    "document_name": document_name,
+                    "document_name": document_name or "document",
+                    "document_type": document_type or "UNKNOWN",
+                    "source_type": "document",
                     "page_number": page.page_number,
                     "language": language,
                     "chunk_index": global_chunk_index,
                 }
-                chunks.append(DocumentChunk(chunk_id=chunk_id, text=text_segment, metadata=metadata))
+                chunks.append(
+                    DocumentChunk(chunk_id=chunk_id, text=text_segment, metadata=metadata)
+                )
                 global_chunk_index += 1
 
         return chunks

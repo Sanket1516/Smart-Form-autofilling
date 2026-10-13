@@ -1,24 +1,56 @@
-"""Structured candidate fact persistence and presentation."""
+"""Structured facts: listing, review, conflicts and the resolved profile view.
+
+Facts are stored per source (one record per document value, plus user-provided
+records). This service computes, from the *active* facts:
+
+* the resolved value of each concept (``resolve_view``),
+* conflicts: a single-valued concept with two or more distinct values,
+* resolution: confirming one candidate supersedes the others; a custom value
+  becomes a user-provided fact; rejecting marks every candidate rejected.
+
+Because conflicts are computed rather than stored, deleting or re-processing a
+document can never leave a stale conflict behind.
+"""
 
 from __future__ import annotations
 
+from collections import defaultdict
 from datetime import UTC, datetime
 from typing import Any
 
+from bson import ObjectId
+
 from app.core.api_errors import APIError
-from app.models.documents import Correction
+from app.extraction.normalize import comparison_key, normalize_value
+from app.models.documents import Correction, StructuredFact
+from app.ontology.loader import FieldOntology
 from app.repositories.collections import CorrectionsRepository, StructuredFactsRepository
-from app.schemas.facts import FactData, FactsData, FactUpdateRequest
+from app.schemas.facts import (
+    ConceptView,
+    ConflictCandidate,
+    ConflictData,
+    ConflictResolutionRequest,
+    FactData,
+    FactsData,
+    FactSource,
+    FactUpdateRequest,
+)
+
+USER_SOURCE = "user"
 
 
 class FactService:
     def __init__(
         self,
         repository: StructuredFactsRepository,
+        ontology: FieldOntology,
         corrections_repository: CorrectionsRepository | None = None,
     ) -> None:
         self.repository = repository
+        self.ontology = ontology
         self.corrections_repository = corrections_repository
+
+    # ------------------------------------------------------------------ listing
 
     async def list(
         self,
@@ -27,113 +59,314 @@ class FactService:
         source_document_id: str | None = None,
         confirmed: bool | None = None,
     ) -> FactsData:
-        records = await self.repository.list_filtered(
-            user_id, concept, source_document_id, confirmed
-        )
-        deduped = self._deduplicate_facts(records)
-        return FactsData(facts=[self._data(record) for record in deduped])
+        records = await self.repository.list_active(user_id, concept)
+        if source_document_id:
+            records = [r for r in records if r.get("source_document_id") == source_document_id]
+        if confirmed is not None:
+            records = [r for r in records if bool(r.get("is_user_confirmed")) == confirmed]
+        return FactsData(facts=[fact_data(record) for record in records])
 
     async def list_for_document(self, user_id: str, document_id: str) -> FactsData:
         records = await self.repository.list_for_document(user_id, document_id)
-        deduped = self._deduplicate_facts(records)
-        return FactsData(facts=[self._data(record) for record in deduped])
+        records = [r for r in records if r.get("status", "active") == "active"]
+        return FactsData(facts=[fact_data(record) for record in records])
 
-    @staticmethod
-    def _deduplicate_facts(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        SINGLETON_PREFIXES = (
-            "personal.",
-            "identity.",
-            "contact.",
-            "demographics.",
-            "address.",
-            "passport.",
-            "visa.",
-        )
-        grouped: dict[str, dict[str, Any]] = {}
-        for r in records:
-            c = r.get("concept", "")
-            v = str(r.get("value", "") or "").strip().lower()
-
-            if any(c.startswith(prefix) for prefix in SINGLETON_PREFIXES):
-                key = f"singleton:{c}"
-            else:
-                key = f"multi:{c}:{v}"
-
-            existing = grouped.get(key)
-            if existing is None:
-                grouped[key] = r
-            else:
-                cur_confirmed = existing.get("is_user_confirmed", False)
-                new_confirmed = r.get("is_user_confirmed", False)
-                if new_confirmed and not cur_confirmed:
-                    grouped[key] = r
-                elif new_confirmed == cur_confirmed:
-                    cur_conf = existing.get("confidence", 0.0)
-                    new_conf = r.get("confidence", 0.0)
-                    if new_conf > cur_conf:
-                        grouped[key] = r
-                    elif new_conf == cur_conf:
-                        if str(r.get("updated_at", "")) > str(existing.get("updated_at", "")):
-                            grouped[key] = r
-        return list(grouped.values())
+    # ------------------------------------------------------------------ edits
 
     async def update(self, user_id: str, fact_id: str, request: FactUpdateRequest) -> FactData:
-        record = await self.repository.get(user_id, fact_id)
-        if record is None:
-            raise APIError("RESOURCE_NOT_FOUND", "Fact not found", 404)
-
-        if self.corrections_repository is not None and record["value"] != request.value:
-            correction = Correction(
-                user_id=user_id,
-                session_id=None,
-                field_id=fact_id,
-                concept=record["concept"],
-                original_value=record["value"],
-                corrected_value=request.value,
-                reason=request.reason or "User fact edit",
-                created_at=datetime.now(UTC),
-            )
-            await self.corrections_repository.create(user_id, correction)
-
-        now = datetime.now(UTC)
-        await self.repository.update(
-            user_id,
-            fact_id,
-            {
-                "value": request.value,
-                "is_user_confirmed": request.is_user_confirmed,
-                "updated_at": now,
-            },
+        record = await self._get(user_id, fact_id)
+        concept = record["concept"]
+        data_type = self.ontology.data_type(concept)
+        new_value, _ = normalize_value(data_type, request.value)
+        if new_value in (None, ""):
+            raise APIError("INVALID_VALUE", "A value is required", 422)
+        same = comparison_key(data_type, new_value) == comparison_key(
+            data_type, record.get("value")
         )
-        updated = await self.repository.get(user_id, fact_id)
-        if updated is None:
-            raise APIError("RESOURCE_NOT_FOUND", "Fact not found", 404)
-        return self._data(updated)
+        now = datetime.now(UTC)
+        if same:
+            await self.repository.update(
+                user_id,
+                fact_id,
+                {"is_user_confirmed": request.is_user_confirmed, "updated_at": now},
+            )
+            if request.is_user_confirmed:
+                await self._supersede_others(
+                    user_id, concept, keep_key=comparison_key(data_type, new_value)
+                )
+            return fact_data(await self._get(user_id, fact_id))
+        await self._record_correction(
+            user_id, concept, record.get("value"), new_value, request.reason
+        )
+        created = await self.add_user_fact(user_id, concept, new_value)
+        await self.repository.set_status(user_id, [record["_id"]], "superseded")
+        return created
+
+    async def add_user_fact(self, user_id: str, concept: str, value: Any) -> FactData:
+        if not self.ontology.is_known(concept):
+            raise APIError("UNKNOWN_CONCEPT", f"Unknown concept: {concept}", 422)
+        data_type = self.ontology.data_type(concept)
+        normalized, _ = normalize_value(data_type, value)
+        if normalized in (None, ""):
+            raise APIError("INVALID_VALUE", "A value is required", 422)
+        now = datetime.now(UTC)
+        fact = StructuredFact(
+            user_id=user_id,
+            concept=concept,
+            value=normalized,
+            raw_value=value,
+            value_type=data_type,
+            origin="user_provided",
+            source_document_id=USER_SOURCE,
+            document_name="Entered by you",
+            extraction_method="user",
+            confidence=1.0,
+            is_user_confirmed=True,
+            created_at=now,
+            updated_at=now,
+        )
+        created = await self.repository.create(user_id, fact)
+        if self.ontology.is_single_valued(concept):
+            await self._supersede_others(
+                user_id,
+                concept,
+                keep_key=comparison_key(data_type, normalized),
+                keep_id=created["_id"],
+            )
+        return fact_data(created)
 
     async def delete(self, user_id: str, fact_id: str) -> None:
-        record = await self.repository.get(user_id, fact_id)
-        if record is None:
-            raise APIError("RESOURCE_NOT_FOUND", "Fact not found", 404)
-        # Using the base collection to delete the fact
-        await self.repository.collection.delete_one(
-            {"_id": __import__("bson").ObjectId(fact_id), "user_id": user_id}
+        record = await self._get(user_id, fact_id)
+        if record.get("source_document_id") == USER_SOURCE:
+            await self.repository.delete(user_id, fact_id)
+        else:
+            await self.repository.set_status(user_id, [record["_id"]], "rejected")
+
+    # ------------------------------------------------------------------ resolved view
+
+    async def resolve_view(self, user_id: str) -> dict[str, ConceptView]:
+        records = await self.repository.list_active(user_id)
+        by_concept: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        for record in records:
+            if record.get("value") not in (None, ""):
+                by_concept[record["concept"]].append(record)
+        return {concept: self._view(concept, items) for concept, items in by_concept.items()}
+
+    def _view(self, concept: str, records: list[dict[str, Any]]) -> ConceptView:
+        data_type = self.ontology.data_type(concept)
+        groups: dict[str, list[dict[str, Any]]] = defaultdict(list)
+        for record in records:
+            groups[comparison_key(data_type, record["value"])].append(record)
+        candidates = [_candidate(items) for items in groups.values()]
+        candidates.sort(key=lambda c: (c.is_user_confirmed, c.confidence), reverse=True)
+        label = self.ontology.description(concept)
+        if len(candidates) == 1:
+            best = candidates[0]
+            return ConceptView(
+                concept=concept,
+                label=label,
+                status="resolved",
+                value=best.value,
+                values=[best.value],
+                confidence=best.confidence,
+                is_user_confirmed=best.is_user_confirmed,
+                origin=_best_origin(best.sources),
+                sources=best.sources,
+                candidates=candidates,
+            )
+        if not self.ontology.is_single_valued(concept):
+            return ConceptView(
+                concept=concept,
+                label=label,
+                status="multiple",
+                values=[c.value for c in candidates],
+                confidence=max(c.confidence for c in candidates),
+                sources=[s for c in candidates for s in c.sources],
+                candidates=candidates,
+            )
+        return ConceptView(
+            concept=concept,
+            label=label,
+            status="conflict",
+            confidence=max(c.confidence for c in candidates),
+            sources=[s for c in candidates for s in c.sources],
+            candidates=candidates,
         )
 
-    @staticmethod
-    def _data(record: dict[str, Any]) -> FactData:
-        doc_id = record["source_document_id"]
-        page = record["source_page"]
-        return FactData(
-            fact_id=str(record["_id"]),
-            concept=record["concept"],
-            value=record["value"],
-            value_type=record["value_type"],
-            source_document_id=doc_id,
-            source_page=page,
-            confidence=record["confidence"],
-            provenance=record.get("provenance", {}),
-            is_user_confirmed=record["is_user_confirmed"],
-            created_at=record["created_at"],
-            updated_at=record["updated_at"],
-            source={"document_id": doc_id, "page": page},
+    # ------------------------------------------------------------------ conflicts
+
+    async def list_conflicts(self, user_id: str) -> list[ConflictData]:
+        views = await self.resolve_view(user_id)
+        conflicts = []
+        for concept, view in sorted(views.items()):
+            if view.status != "conflict":
+                continue
+            documents = {s.document_id for c in view.candidates for s in c.sources}
+            if any(c.is_user_confirmed for c in view.candidates):
+                conflict_type = "VERIFIED_VS_NEW"
+            elif len(documents) > 1:
+                conflict_type = "CROSS_DOCUMENT"
+            else:
+                conflict_type = "INTRA_DOCUMENT"
+            short = concept.split(".", 1)[-1]
+            conflicts.append(
+                ConflictData(
+                    id=concept,
+                    concept=concept,
+                    ontology=concept,
+                    field=short,
+                    semantic_type=short.upper(),
+                    label=view.label,
+                    conflict_type=conflict_type,  # type: ignore[arg-type]
+                    candidates=view.candidates,
+                )
+            )
+        return conflicts
+
+    async def resolve_conflict(
+        self, user_id: str, concept: str, request: ConflictResolutionRequest
+    ) -> ConceptView | None:
+        views = await self.resolve_view(user_id)
+        view = views.get(concept)
+        if view is None or view.status != "conflict":
+            raise APIError("RESOURCE_NOT_FOUND", "Conflict not found", 404)
+        all_ids = [
+            ObjectId(s.fact_id) if ObjectId.is_valid(s.fact_id) else s.fact_id for s in view.sources
+        ]
+        if request.resolution == "reject":
+            await self.repository.set_status(user_id, all_ids, "rejected")
+            await self._record_correction(
+                user_id, concept, None, None, request.reason or "Rejected all values"
+            )
+            return None
+        if request.resolution == "custom":
+            if request.custom_value in (None, ""):
+                raise APIError(
+                    "INVALID_VALUE", "custom_value is required for a custom resolution", 422
+                )
+            await self.add_user_fact(user_id, concept, request.custom_value)
+            await self.repository.set_status(user_id, all_ids, "superseded")
+        else:
+            index = {"candidate_a": 0, "candidate_b": 1}.get(
+                request.resolution, request.candidate_index
+            )
+            if index is None or index >= len(view.candidates):
+                raise APIError("INVALID_CANDIDATE", "Choose one of the listed candidates", 422)
+            chosen = view.candidates[index]
+            chosen_ids = [
+                ObjectId(s.fact_id) for s in chosen.sources if ObjectId.is_valid(s.fact_id)
+            ]
+            await self.repository.collection.update_many(
+                {"user_id": user_id, "_id": {"$in": chosen_ids}},
+                {"$set": {"is_user_confirmed": True, "updated_at": datetime.now(UTC)}},
+            )
+            await self.repository.set_status(
+                user_id, [i for i in all_ids if i not in chosen_ids], "superseded"
+            )
+        return (await self.resolve_view(user_id)).get(concept)
+
+    # ------------------------------------------------------------------ helpers
+
+    async def _get(self, user_id: str, fact_id: str) -> dict[str, Any]:
+        if not ObjectId.is_valid(fact_id):
+            raise APIError("RESOURCE_NOT_FOUND", "Fact not found", 404)
+        record = await self.repository.get(user_id, fact_id)
+        if record is None or record.get("status", "active") != "active":
+            raise APIError("RESOURCE_NOT_FOUND", "Fact not found", 404)
+        return record
+
+    async def _supersede_others(
+        self, user_id: str, concept: str, keep_key: str, keep_id: Any = None
+    ) -> None:
+        if not self.ontology.is_single_valued(concept):
+            return
+        data_type = self.ontology.data_type(concept)
+        others = [
+            record["_id"]
+            for record in await self.repository.list_active(user_id, concept)
+            if record["_id"] != keep_id
+            and comparison_key(data_type, record.get("value")) != keep_key
+        ]
+        await self.repository.set_status(user_id, others, "superseded")
+
+    async def _record_correction(
+        self, user_id: str, concept: str, original: Any, corrected: Any, reason: str | None
+    ) -> None:
+        if self.corrections_repository is None:
+            return
+        await self.corrections_repository.create(
+            user_id,
+            Correction(
+                user_id=user_id,
+                concept=concept,
+                original_value=original,
+                corrected_value=corrected,
+                reason=reason or "User correction",
+                created_at=datetime.now(UTC),
+            ),
         )
+
+
+def fact_data(record: dict[str, Any]) -> FactData:
+    document_id = str(record.get("source_document_id", ""))
+    page = record.get("source_page")
+    return FactData(
+        fact_id=str(record["_id"]),
+        concept=record["concept"],
+        value=record.get("value"),
+        raw_value=record.get("raw_value"),
+        value_type=record.get("value_type", "string"),
+        origin=record.get("origin", "extracted"),
+        status=record.get("status", "active"),
+        source_document_id=document_id,
+        document_name=record.get("document_name"),
+        source_page=page,
+        evidence_text=record.get("evidence_text"),
+        extraction_method=record.get("extraction_method"),
+        confidence=float(record.get("confidence", 0.0)),
+        provenance=record.get("provenance", {}),
+        is_user_confirmed=bool(record.get("is_user_confirmed", False)),
+        created_at=record.get("created_at") or datetime.now(UTC),
+        updated_at=record.get("updated_at") or datetime.now(UTC),
+        source={"document_id": document_id, "page": page},
+    )
+
+
+def _source(record: dict[str, Any]) -> FactSource:
+    return FactSource(
+        fact_id=str(record["_id"]),
+        document_id=str(record.get("source_document_id", "")),
+        document_name=record.get("document_name"),
+        page=record.get("source_page"),
+        evidence=record.get("evidence_text"),
+        origin=record.get("origin", "extracted"),
+        confidence=float(record.get("confidence", 0.0)),
+        is_user_confirmed=bool(record.get("is_user_confirmed", False)),
+    )
+
+
+def _candidate(records: list[dict[str, Any]]) -> ConflictCandidate:
+    ordered = sorted(
+        records,
+        key=lambda r: (bool(r.get("is_user_confirmed")), float(r.get("confidence", 0.0))),
+        reverse=True,
+    )
+    best = ordered[0]
+    sources = [_source(record) for record in ordered]
+    return ConflictCandidate(
+        value=best.get("value"),
+        confidence=1.0 if best.get("is_user_confirmed") else float(best.get("confidence", 0.0)),
+        is_user_confirmed=any(s.is_user_confirmed for s in sources),
+        document_id=sources[0].document_id,
+        document_name=sources[0].document_name,
+        page=sources[0].page,
+        evidence=sources[0].evidence,
+        sources=sources,
+    )
+
+
+def _best_origin(sources: list[FactSource]) -> str:
+    rank = {"user_provided": 0, "extracted": 1, "normalized": 2, "derived": 3, "inferred": 4}
+    return min(
+        (s.origin for s in sources), key=lambda origin: rank.get(origin, 5), default="extracted"
+    )
