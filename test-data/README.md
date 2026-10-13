@@ -1,4 +1,4 @@
 # Test Data
 
-Only anonymized, authorized test fixtures may be added here in later phases. No personal documents are included in Phase 1.
+Do not check in uploaded documents here. The active automated tests build synthetic PDF, DOCX and TXT inputs from code in `backend/tests/factories.py`. `create_test_resume.py` is an optional synthetic fixture generator; its generated PDF is ignored by Git.
 

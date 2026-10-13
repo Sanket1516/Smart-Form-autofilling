@@ -49,7 +49,8 @@ MONGO_INDEXES: dict[str, list[IndexModel]] = {
     "recommendations": [
         IndexModel(
             [("user_id", ASCENDING), ("session_id", ASCENDING), ("field_id", ASCENDING)],
-            name="recommendations_user_session_field",
+            unique=True,
+            name="recommendations_user_session_field_unique",
         ),
         IndexModel(
             [("user_id", ASCENDING), ("status", ASCENDING)],
