@@ -35,9 +35,13 @@ Markers:
 Commands:
 
 ```bash
-.venv/Scripts/python -m pytest -m "not real_llm"     # default suite
-RUN_REAL_LLM_TESTS=1 .venv/Scripts/python -m pytest -m real_llm   # opt-in, costs API calls
+python -m pytest -m "not real_llm"  # default suite; activate the project venv first
+RUN_REAL_LLM_TESTS=1 python -m pytest -m real_llm  # Unix-like shells; costs API calls
 ```
+
+In PowerShell, opt in with `$env:RUN_REAL_LLM_TESTS="1"`, run
+`python -m pytest -m real_llm`, then clear it with
+`Remove-Item Env:RUN_REAL_LLM_TESTS`.
 
 Coverage areas:
 
@@ -70,7 +74,7 @@ Run with `npm --prefix frontend test`. The tests stub `fetch`. They cover:
   - autofill: text, textarea, select, checkbox, radio, date, React-controlled inputs, verification results;
   - API client: timeouts, 401 handling, retry policy;
   - recommendation validation.
-- **E2E (Playwright, real Chromium with the built extension):** `npx playwright test` inside `extension/`. Needs the backend running against a test database with the mock LLM. The test:
+- **E2E (Playwright, real Chromium with the built extension):** `make test-e2e`. It starts the isolated `smart-form-autofilling-test` Compose project, builds the extension bundle, and exercises the Compose backend with its mock LLM and test database. The test:
   1. uploads a synthetic document;
   2. opens `tests/fixtures/sample-application-form.html`;
   3. drives the popup;
@@ -84,11 +88,4 @@ Run with `npm --prefix frontend test`. The tests stub `fetch`. They cover:
 
 ## CI
 
-`.github/workflows/ci.yml` runs:
-
-- ruff and black;
-- backend pytest with a MongoDB service container;
-- frontend type-check, tests and build;
-- extension type-check, tests and build.
-
-Real-provider tests never run in CI.
+`.github/workflows/ci.yml` runs ruff and black, the mocked backend suite with MongoDB, the Chroma integration suite with ChromaDB, frontend and extension type-check/tests/builds, Compose configuration validation, and a separate Playwright browser E2E job. Real-provider tests never run in CI.
