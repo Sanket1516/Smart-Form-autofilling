@@ -15,6 +15,7 @@ test doubles here; ``tests/integration`` exercises the real services.
 
 from __future__ import annotations
 
+import hashlib
 import math
 import os
 import re
@@ -65,7 +66,7 @@ class FakeEmbeddings:
 
     model_name = "test-bag-of-words"
     status = "loaded"
-    dimension = 256
+    dimension = 1024
 
     def __init__(self) -> None:
         self.fail = False
@@ -73,7 +74,8 @@ class FakeEmbeddings:
     def _vector(self, text: str) -> list[float]:
         vector = [0.0] * self.dimension
         for token in re.findall(r"[a-z0-9]+", text.lower()):
-            vector[hash(token) % self.dimension] += 1.0
+            index = int(hashlib.md5(token.encode()).hexdigest(), 16) % self.dimension
+            vector[index] += 1.0
         norm = math.sqrt(sum(v * v for v in vector)) or 1.0
         return [v / norm for v in vector]
 

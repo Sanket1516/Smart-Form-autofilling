@@ -17,7 +17,7 @@ from app.schemas.retrieval import (
     RAGChunkMetadata,
     RAGSearchResult,
 )
-from app.security.prompt_safety import sanitize_untrusted, wrap_untrusted
+from app.security.prompt_safety import detect_injection, sanitize_untrusted, wrap_untrusted
 
 logger = logging.getLogger(__name__)
 
@@ -71,6 +71,16 @@ class RAGRetrievalService:
         return results
 
 
+def safe_for_llm(chunks: list[RAGSearchResult]) -> list[RAGSearchResult]:
+    """Drop retrieved chunks that contain prompt-injection patterns before LLM use."""
+    kept = [chunk for chunk in chunks if not detect_injection(chunk.text)]
+    if len(kept) != len(chunks):
+        logger.warning(
+            "rag_chunks_dropped_for_injection", extra={"dropped": len(chunks) - len(kept)}
+        )
+    return kept
+
+
 class _AnswerOutput(BaseModel):
     answer: str = Field(default="", max_length=4000)
     used_chunk_ids: list[str] = Field(default_factory=list, max_length=20)
@@ -90,7 +100,7 @@ class RAGAnswerService:
         self.llm = llm
 
     async def answer(self, user_id: str, question: str, top_k: int) -> RAGAnswerData:
-        chunks = await self.retrieval.search(user_id, question, top_k)
+        chunks = safe_for_llm(await self.retrieval.search(user_id, question, top_k))
         if not chunks:
             return RAGAnswerData(answer="", status="insufficient_evidence", confidence=0.0)
         labelled = {f"C{index + 1}": chunk for index, chunk in enumerate(chunks)}
