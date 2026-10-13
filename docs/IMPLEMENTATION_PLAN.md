@@ -19,6 +19,7 @@ The status table at the end is updated as each phase finishes.
 | D10 | The dashboard keeps its token in `localStorage`, mitigated by a CSP and short expiry. | Switching to cookies would change the auth architecture shared with the extension. Residual risk is documented. |
 | D11 | The extension injects its content script on demand (`activeTab` + `scripting`). Host permission covers only the backend origin. | Minimal permissions (P0-5). |
 | D12 | A deterministic regex extraction track (the existing `CandidateFactExtractor`) runs alongside the LLM tracks. Facts record `origin` (`extracted`, `normalized` or `inferred`) and `extraction_method`. | Works without an LLM, and keeps explicit facts separate from inferred ones. |
+| D13 | Conflicts are computed from active `structured_facts`; there is no separate conflict collection in the current write path. | Avoids maintaining a second source of truth; conflict resolution updates fact lifecycle state. |
 
 ## Required database changes
 
@@ -30,8 +31,8 @@ The status table at the end is updated as each phase finishes.
   - upsert key `(user_id, session_id, field_id)`;
   - new fields `reason`, `source`, `requires_confirmation`, `candidates`, `fill_result`.
 - `form_sessions`: `fill_results` and the verification counters.
-- New indexes on `discovered_facts`, `discovered_conflicts`, `user_memories` and `recommendations`.
-- Vector store: new collection `user_document_chunks_v2` (cosine distance, model metadata). The old collection is left untouched; `python -m app.scripts.reindex` rebuilds the new one.
+- Indexes on `discovered_facts` and `user_memories`, plus a unique recommendation key `(user_id, session_id, field_id)`. There is no `discovered_conflicts` index because conflicts are derived from `structured_facts` (D13).
+- Vector store: new collection `user_document_chunks_v2` (cosine distance, embedding model and dimension metadata). The old collection is left untouched; `python -m app.scripts.reindex` rebuilds the configured collection from processed source documents.
 
 All schema changes are additive. Nothing existing is dropped.
 
@@ -47,6 +48,13 @@ All schema changes are additive. Nothing existing is dropped.
 | `?token=` query parameter | Removed. Downloads and previews use a header-authenticated blob fetch. |
 | `DELETE /auth/me`, `DELETE /profile/data` | Cascade across every user-owned store. |
 | `GET /health/services` | Reports the real LLM, embedding and vector-store state. |
+
+## Progress notes
+
+- Phases 2–8 were implemented in commits `8ace0ed`, `45ab5a4`, `b1757b4`, `2d6ce47`, `11aa47c`, `cc7bdd7` and `05e5d2b`; the later LLM-safety change is `b7256c3`.
+- Phase 3 cleanup found additional legacy user-specific fixtures and scripts that were still tracked. These were removed from the working tree during the remaining security work; history remains unchanged per D1.
+- Phases 9–12 were completed in this worktree. Backend, frontend, extension, real-Chroma and Playwright results are recorded in `docs/TEST_RESULTS.md`.
+- Acceptance rows below are marked complete only after the corresponding checks have been run.
 
 ## Phases and acceptance criteria
 
@@ -71,14 +79,14 @@ All schema changes are additive. Nothing existing is dropped.
 |---|---|---|
 | 0 Baseline | done | Pending working-tree changes committed as `a03f513`. |
 | 1 Docs | done | |
-| 2 Environment | pending | |
-| 3 API and data | pending | |
-| 4 Extraction | pending | |
-| 5 RAG | pending | |
-| 6 Semantic pipeline | pending | |
-| 7 Extension | pending | |
-| 8 Dashboard | pending | |
-| 9 Security | pending | |
-| 10 Tests | pending | |
-| 11 Docker | pending | |
-| 12 Docs | pending | |
+| 2 Environment | done | `8ace0ed`: strict config, providers and isolated test settings. |
+| 3 API and data | done | `45ab5a4` plus working-tree cleanup: auth, ownership, deletion, query-token removal and CORS. |
+| 4 Extraction | done | `b1757b4`: deterministic/LLM extraction, provenance and review states. |
+| 5 RAG | done | `b1757b4`: Chroma HTTP client, user scoping and grounded answer behavior; dimension metadata/reindex completed in this round. |
+| 6 Semantic pipeline | done | `2d6ce47` and `b7256c3`: shared batch graph and prompt-safety filtering. |
+| 7 Extension | done | `11aa47c`: on-demand permissions, private token handling and review-before-fill. |
+| 8 Dashboard | done | `05e5d2b`: live data, profile review, conflicts, memories and Q&A. |
+| 9 Security | done | Security guide, log redaction, Compose secret fail-fast, CSP configuration and removal of tracked personal fixtures/scripts. |
+| 10 Tests | done | `docs/TEST_RESULTS.md`: backend 146 passed, frontend 22, extension 24, Chroma 3, Playwright 1; CI waits for Chroma readiness. |
+| 11 Docker | done | Dev/test Compose configs validate; isolated images built and the full browser flow passed. |
+| 12 Docs | done | README, API/database/security guides, testing strategy and results align with the implementation. |

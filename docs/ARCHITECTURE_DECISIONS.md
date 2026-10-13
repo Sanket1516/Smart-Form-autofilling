@@ -1,59 +1,20 @@
-# Architecture Decisions
+# Architecture decisions
 
-## AD-001 Source specification authority
+These decisions describe the implemented system. The original product specifications remain unchanged in `docs/specifications/` and `Specifications/`.
 
-- **Problem:** The request named `PRD.md` and `SRS.md`, but the workspace contains a PRD DOCX and detailed SRS Markdown file.
-- **Selected option:** Preserve all files in `Specifications/` unchanged; the supplied PRD DOCX and detailed SRS are authoritative source artifacts.
-- **Reason and impact:** Requirements stay immutable and traceable; implementation references actual filenames.
-- **Related requirement:** SRS section 41 and project source-of-truth instruction.
-
-## AD-002 Canonical fact lifecycle
-
-- **Problem:** The SRS names extracted/profile facts while the database design defines `structured_facts` and `profiles`.
-- **Options considered:** Duplicate fact stores; profile-only data; lifecycle metadata on structured facts.
-- **Selected option:** Use `structured_facts` as the provenance-preserving store with candidate, verified, superseded, and disputed states; use `profiles` as a usable projection.
-- **Reason and impact:** Preserves multiple candidates without competing canonical stores. No collections are created in Phase 1.
-- **Related requirement:** SRS 9–10 and 22; Database Design 6–9.
-
-## AD-003 Final agent response ordering
-
-- **Problem:** Some diagrams place Final Response before review; the SRS/API also describe it as incorporating user decisions.
-- **Selected option:** Final Response Node creates the final validated recommendation after conflict resolution and required HITL. Pre-HITL results are provisional.
-- **Reason and impact:** Unapproved values cannot become fill-ready. The five mandatory nodes remain unchanged.
-- **Related requirement:** SRS 17–19 and 30; API Specification 31–35.
-
-## AD-004 Background processing boundary
-
-- **Problem:** Long work is asynchronous, but no worker technology is specified.
-- **Selected option:** Keep one FastAPI service with future processing-service boundaries; defer durable queue selection until document processing.
-- **Reason and impact:** Avoids unnecessary microservices. Phase 1 Compose includes only frontend, backend, MongoDB, and ChromaDB.
-- **Related requirement:** SRS 26 and 35; API Specification 54.
-
-## AD-005 Visual context scope
-
-- **Problem:** Visual context is optional but appears in future evaluation variants.
-- **Selected option:** Treat screenshots as optional future enrichment; begin future Field Objects with DOM and accessibility context.
-- **Reason and impact:** No screenshot permissions, capture, or analysis is claimed in Phase 1.
-- **Related requirement:** SRS 11 and 33; System Architecture 13.
-
-## AD-006 Authentication direction
-
-- **Problem:** Bearer authentication and logout invalidation are required but the mechanism is unspecified.
-- **Selected option:** Implement configurable JWT bearer auth with server-side invalidation support in the authentication phase.
-- **Reason and impact:** Supports the documented contract and extension compatibility. No auth code exists in Phase 1.
-- **Related requirement:** SRS 6 and 27; API Specification 5 and 8–11.
-
-## AD-007 Configuration and providers
-
-- **Problem:** LLM, embedding, security, and deployment settings require configuration but no provider/model is selected.
-- **Selected option:** Use environment-only configuration and provider-neutral boundaries.
-- **Reason and impact:** No secrets, provider, model, or AI service is hard-coded or initialized in Phase 1.
-- **Related requirement:** SRS 24, 26, 27, and 35.
-
-## AD-008 Document storage and retention
-
-- **Problem:** Requirements contain a document storage reference but no provider or retention policy.
-- **Selected option:** Defer original-document storage and retention policy to Document Management while retaining an abstraction boundary.
-- **Reason and impact:** No storage provider, upload endpoint, or original document handling is invented in Phase 1.
-- **Related requirement:** SRS 7 and 27; Database Design 7 and 28.
-
+| ID | Decision | Reason |
+|---|---|---|
+| AD-001 | MongoDB `structured_facts` is the provenance-preserving fact store; the profile and conflict views are computed from active facts. | Keeps source values and verification state without a second canonical profile store. |
+| AD-002 | `/forms/sessions/{id}/analyze`, `/forms/recommend(ations)` and `/agent/run` use one batch LangGraph pipeline. | Avoids separate recommendation behavior across clients. |
+| AD-003 | Local API development defaults to `PROCESSING_MODE=inline`; Compose uses Celery with Redis and a worker. | Local work does not require a queue, while Docker processing survives API request completion. |
+| AD-004 | `all-MiniLM-L6-v2` at 384 dimensions is the default embedding model. Chroma collection metadata records the model and configured dimension. | Provides a small CPU-friendly default and makes model/dimension mismatches visible. |
+| AD-005 | Chroma is accessed through its raw HTTP v2 API. Unavailability raises an error; there is no in-memory vector fallback. | Retrieval and deletion must not silently diverge across API processes. |
+| AD-006 | The application writes to `user_document_chunks_v2`; reindexing processes source documents into the configured collection and leaves other collections untouched. | Supports rebuilding and checking a replacement index before retiring an older one. |
+| AD-007 | The automated suite uses the mock LLM and synthetic data. Real-provider tests are opt-in. | Keeps default runs deterministic and avoids unexpected API costs or real user data. |
+| AD-008 | PaddleOCR is optional. Scanned documents that cannot be read without OCR enter `requires_review`. | Avoids a heavyweight dependency and avoids treating unreadable pages as facts. |
+| AD-009 | Authentication uses bearer JWTs in the `Authorization` header. Extension tokens stay in extension storage/popup/background; they never enter the page content script. | Supports the dashboard and extension clients while keeping credentials out of untrusted page scripts. |
+| AD-010 | The dashboard stores its token in `localStorage`, protected by a restrictive production CSP and short token expiry. | Preserves the existing shared authentication architecture; the residual XSS risk is documented in `SECURITY.md`. |
+| AD-011 | The extension requests page access on demand with `activeTab` and `scripting`; its default host permission is limited to the backend origin. | Reduces default access to unrelated sites. |
+| AD-012 | Personal files are removed from the current tree but Git history is not rewritten. | Rewriting commit history is disruptive; the coordinated cleanup procedure is documented in `SECURITY.md`. |
+| AD-013 | Conflict lists are derived from active `structured_facts`; the application does not persist a separate conflict collection. | Keeps resolution state on the candidate facts and avoids a duplicate source of truth. |
+| AD-014 | Only synthetic PDFs, DOCX and text are used in automated tests; generated fixtures are not checked in. | Keeps test data reproducible and prevents personal files from entering the repository. |
