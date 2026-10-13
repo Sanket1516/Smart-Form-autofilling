@@ -1,162 +1,127 @@
-"""End-to-End Integration Test for Minimal API Set (Phase 15)."""
+"""End-to-end acceptance flow through the HTTP API (real MongoDB, mock LLM, vector double).
+
+Create account -> upload synthetic document -> process -> review facts -> resolve
+conflict -> open session for the sample form -> analyze -> review -> approved
+values -> report fill results -> complete.
+"""
 
 import pytest
-from fastapi.testclient import TestClient
-import json
-import time
-import uuid
-from unittest.mock import patch
 
-from app.main import app
+from tests.conftest import Harness
+from tests.factories import ID_CARD_LINES, RESUME_LINES, pdf_bytes, txt_bytes
 
-def test_end_to_end_minimal_api_flow():
-    """
-    Integration test walking the entire minimal API set:
-    1. Register
-    2. Login (via register usually, but we'll do explicit login if needed, or just use the token from register)
-    3. Upload document
-    4. Process document
-    5. Create Form Session
-    6. Analyze fields
-    7. Recommendations fetch
-    8. Complete session
-    """
-    
-    with TestClient(app) as test_client, patch("app.main.AutofillAgent.run") as mock_agent_run, patch("app.services.documents.DocumentService.start_processing") as mock_start_processing:
-        # Make the mock agent do nothing and return quickly
-        async def fake_run(*args, **kwargs):
-            return {"status": "completed"}
-        mock_agent_run.side_effect = fake_run
-        async def fake_start_processing(user_id, document_id):
-            return {"document_id": document_id, "processing_status": "processing"}
-        mock_start_processing.side_effect = fake_start_processing
-        
-        suffix = uuid.uuid4().hex[:6]
-        email = f"e2e_user_{suffix}@example.com"
-        
-        print(f"Step 1: Register User {email}")
-        # 1. Register User
-        reg_response = test_client.post(
-            "/api/v1/auth/register",
-            json={
-                "full_name": "E2E User",
-                "email": email,
-                "password": "StrongPassword123!",
-                "confirm_password": "StrongPassword123!"
-            }
-        )
-        # The fake auth might not actually save passwords, but it works.
-        assert reg_response.status_code == 201
-    
-        print("Step 2: Login")
-        # 2. Login User
-        login_response = test_client.post(
-            "/api/v1/auth/login",
-            json={
-                "email": email,
-                "password": "StrongPassword123!"
-            }
-        )
-        assert login_response.status_code == 200
-        token = login_response.json()["data"]["access_token"]
-        headers = {"Authorization": f"Bearer {token}"}
-    
-        print("Step 3: Upload Document")
-        # 3. Upload Document
-        # Create a dummy pdf file content with unique suffix to avoid checksum collision
-        content = f"%PDF-1.4 dummy pdf {suffix}".encode("utf-8")
-        files = {"file": (f"e2e_test_{suffix}.pdf", content, "application/pdf")}
-        upload_response = test_client.post(
-            "/api/v1/documents",
-            files=files,
-            headers=headers
-        )
-        assert upload_response.status_code == 201
-        doc_id = upload_response.json()["data"]["document_id"]
-    
-        print(f"Step 4: Process Document {doc_id}")
-        # 4. Process Document
-        process_response = test_client.post(
-            f"/api/v1/documents/{doc_id}/process",
-            headers=headers
-        )
-        assert process_response.status_code in [200, 202]
-        
-        # Wait slightly to let background task finish (in our fake system it's fast)
-        time.sleep(0.5)
-    
-        print("Step 5: Create Form Session")
-        # 5. Create Form Session
-        session_response = test_client.post(
-            "/api/v1/forms/sessions",
-            json={
-                "website_origin": "https://e2e-test.com",
-                "page_url": "https://e2e-test.com/form",
-                "form_id": "form_e2e"
-            },
-            headers=headers
-        )
-        assert session_response.status_code == 200
-        session_id = session_response.json()["data"]["session_id"]
-    
-        print(f"Step 6: Analyze Form Fields {session_id}")
-        # 6. Analyze Form Fields
-        fields_payload = {
-            "fields": [
-                {
-                    "field_id": "fname",
-                    "label": "First Name",
-                    "input_type": "text"
-                },
-                {
-                    "field_id": "address",
-                    "label": "Current Address",
-                    "input_type": "text"
-                }
-            ]
-        }
-        analyze_response = test_client.post(
+pytestmark = pytest.mark.mongo
+
+SAMPLE_FORM_FIELDS = [
+    {
+        "field_id": "full_legal_name",
+        "label": "Full legal name",
+        "input_type": "text",
+        "required": True,
+    },
+    {
+        "field_id": "email_address",
+        "label": "Email address",
+        "input_type": "email",
+        "required": True,
+    },
+    {"field_id": "phone_number", "label": "Phone number", "input_type": "tel"},
+    {"field_id": "date_of_birth", "label": "Date of birth", "input_type": "date", "required": True},
+    {"field_id": "postal_code", "label": "Postal code", "input_type": "text"},
+    {"field_id": "education", "label": "Highest qualification", "input_type": "text"},
+]
+
+
+def test_complete_acceptance_flow(harness: Harness) -> None:
+    client = harness.client
+    headers = harness.register("Avery Quinn Example")
+
+    resume = harness.upload(
+        headers, "resume.pdf", pdf_bytes(RESUME_LINES), "application/pdf"
+    ).json()["data"]
+    id_card = harness.upload(headers, "id-card.txt", txt_bytes(ID_CARD_LINES)).json()["data"]
+    assert harness.wait_processed(headers, resume["document_id"])["status"] == "processed"
+    assert harness.wait_processed(headers, id_card["document_id"])["index_status"] == "indexed"
+
+    # Review extracted facts: confirm the heuristic name, resolve the DOB conflict.
+    facts = client.get("/api/v1/profile/facts", headers=headers).json()["data"]["facts"]
+    name = next(
+        f for f in facts if f["concept"] == "personal.full_name" and f["origin"] == "inferred"
+    )
+    client.put(
+        f"/api/v1/profile/facts/{name['fact_id']}", headers=headers, json={"value": name["value"]}
+    )
+    conflict = next(
+        c
+        for c in client.get("/api/v1/profile/facts/conflicts", headers=headers).json()["data"]
+        if c["concept"] == "personal.date_of_birth"
+    )
+    chosen = next(
+        i for i, c in enumerate(conflict["candidates"]) if c["document_id"] == resume["document_id"]
+    )
+    resolved = client.patch(
+        "/api/v1/profile/facts/conflicts/personal.date_of_birth/resolve",
+        headers=headers,
+        json={"resolution": "candidate", "candidate_index": chosen},
+    )
+    assert resolved.json()["data"]["value"] == "1996-02-14"
+
+    # The extension opens a session for the sample form and requests analysis.
+    session_id = client.post(
+        "/api/v1/forms/sessions",
+        headers=headers,
+        json={
+            "website_origin": "http://127.0.0.1:8765",
+            "page_url": "http://127.0.0.1:8765/sample-form.html",
+            "form_id": "application",
+        },
+    ).json()["data"]["session_id"]
+    assert (
+        client.post(
             f"/api/v1/forms/sessions/{session_id}/analyze",
-            json=fields_payload,
-            headers=headers
+            headers=headers,
+            json={"fields": SAMPLE_FORM_FIELDS},
+        ).status_code
+        == 202
+    )
+    recs = {
+        r["field_id"]: r
+        for r in client.get(
+            f"/api/v1/forms/sessions/{session_id}/recommendations", headers=headers
+        ).json()["data"]["recommendations"]
+    }
+    assert recs["full_legal_name"]["recommended_value"] == "Avery Quinn Example"
+    assert recs["email_address"]["recommended_value"] == "avery.example@example.com"
+    assert recs["phone_number"]["recommended_value"] == "+15550104477"
+    assert recs["date_of_birth"]["recommended_value"] == "1996-02-14"
+    assert recs["postal_code"]["recommended_value"] == "560001"
+    assert recs["education"]["recommended_value"] == "Bachelor of Technology in Computer Science"
+    for rec in recs.values():
+        assert rec["reason"] and 0.0 <= rec["confidence"] <= 1.0
+
+    # The user approves everything that still needs review.
+    pending = [r["field_id"] for r in recs.values() if r["status"] == "needs_review"]
+    if pending:
+        client.post(
+            f"/api/v1/forms/sessions/{session_id}/decisions",
+            headers=headers,
+            json={"decisions": [{"field_id": f, "decision": "approve"} for f in pending]},
         )
-        assert analyze_response.status_code == 200
-        assert analyze_response.json()["data"]["status"] == "processing"
-        
-        # In a real async test we would wait for analysis to finish. Let's sleep for 0.5s for gather to complete
-        time.sleep(0.5)
-    
-        print("Step 7: Recommendations Fetch")
-        # 7. Recommendations Fetch
-        recs_response = test_client.get(
-            f"/api/v1/forms/sessions/{session_id}/recommendations",
-            headers=headers
-        )
-        assert recs_response.status_code == 200
-        recs_data = recs_response.json()["data"]["recommendations"]
-        assert len(recs_data) >= 0  # Depending on mocked agent, might be empty or populated
-    
-        print("Step 8: Complete Session")
-        # 8. Complete Session
-        complete_response = test_client.post(
-            f"/api/v1/forms/sessions/{session_id}/complete",
-            json={
-                "total_fields": 2,
-                "filled_fields": 1,
-                "reviewed_fields": 0,
-                "failed_fields": 1,
-                "submission_status": "user_submitted"
-            },
-            headers=headers
-        )
-        assert complete_response.status_code == 200
-        assert complete_response.json()["data"]["status"] == "completed"
-    
-        print("Step 9: Verify Session GET")
-        # Verify session status update via GET
-        get_session_response = test_client.get(
-            f"/api/v1/forms/sessions/{session_id}",
-            headers=headers
-        )
-        assert get_session_response.status_code == 200
-        assert get_session_response.json()["data"]["status"] == "completed"
+    approved = client.get(
+        f"/api/v1/forms/sessions/{session_id}/approved-values", headers=headers
+    ).json()["data"]
+    values = {v["field_id"]: v["value"] for v in approved["approved_values"]}
+    assert set(values) == {f["field_id"] for f in SAMPLE_FORM_FIELDS}
+
+    # The extension fills the page, verifies, and reports back; nothing is submitted.
+    results = [{"field_id": f, "applied": True, "verified": True} for f in values]
+    verify = client.post(
+        f"/api/v1/forms/sessions/{session_id}/verify", headers=headers, json={"results": results}
+    )
+    assert verify.json()["data"]["filled_fields"] == len(values)
+    complete = client.post(
+        f"/api/v1/forms/sessions/{session_id}/complete",
+        headers=headers,
+        json={"submission_status": "not_submitted"},
+    )
+    assert complete.json()["data"]["status"] == "closed"
