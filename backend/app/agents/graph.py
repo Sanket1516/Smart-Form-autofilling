@@ -38,7 +38,7 @@ from app.schemas.facts import ConceptView
 from app.schemas.form_sessions import FieldObject
 from app.security.prompt_safety import detect_injection, sanitize_untrusted, wrap_untrusted
 from app.services.facts import FactService
-from app.services.retrieval import RAGRetrievalService
+from app.services.retrieval import RAGRetrievalService, safe_for_llm
 
 logger = logging.getLogger(__name__)
 
@@ -370,8 +370,8 @@ class FormFillGraph:
                 if part
             )
             try:
-                chunks = await self.retrieval.search(
-                    state["user_id"], query, self.settings.rag_top_k
+                chunks = safe_for_llm(
+                    await self.retrieval.search(state["user_id"], query, self.settings.rag_top_k)
                 )
             except APIError as error:
                 item["status"] = "error"
