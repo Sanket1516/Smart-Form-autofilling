@@ -30,6 +30,7 @@ _REDACTIONS = (
     (re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+"), "[EMAIL]"),
     (re.compile(r"(?<!\d)\+?\d[\d -]{7,}\d(?!\d)"), "[NUMBER]"),
 )
+_STRUCTURAL_KEYS = {"timestamp", "level", "logger", "request_id", "status_code", "duration_ms"}
 _STANDARD_ATTRS = set(vars(logging.LogRecord("", 0, "", 0, "", (), None))) | {"message", "asctime"}
 
 
@@ -55,7 +56,14 @@ class JsonFormatter(logging.Formatter):
                 payload[key] = value
         if record.exc_info:
             payload["exception"] = self.formatException(record.exc_info)
-        return redact(json.dumps(payload, default=str))
+        for key, value in payload.items():
+            if key not in _STRUCTURAL_KEYS:
+                redacted = redact(json.dumps(value, default=str))
+                try:
+                    payload[key] = json.loads(redacted)
+                except json.JSONDecodeError:
+                    payload[key] = redacted
+        return json.dumps(payload, default=str)
 
 
 def configure_logging(level: str) -> None:

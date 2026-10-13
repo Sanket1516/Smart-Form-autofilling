@@ -1,12 +1,13 @@
 {
   "name": "smart-form-extension",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -b && vite build",
-    "test": "vitest run"
+    "build": "tsc -b && vite build && vite build -c vite.content.config.ts",
+    "typecheck": "tsc -b",
+    "test": "vitest run",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "lucide-react": "^0.439.0",
@@ -14,7 +15,6 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
-    "@crxjs/vite-plugin": "^2.0.0-beta.26",
     "@playwright/test": "^1.63.0",
     "@types/chrome": "^0.0.270",
     "@types/node": "^22.5.4",

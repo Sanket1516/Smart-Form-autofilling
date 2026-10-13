@@ -283,3 +283,50 @@ button {
   font: inherit;
   font-size: 12px;
 }
+
+/* ---- Review flow (v0.2) ---- */
+body { width: 380px; }
+.header-actions { display: flex; gap: 4px; }
+.center { display: block; margin: 12px auto; }
+.center-text { text-align: center; }
+.w-full { width: 100%; }
+.btn-outline {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px;
+  background: var(--bg); color: var(--text); font-size: 14px; cursor: pointer;
+}
+.btn-outline:hover:not(:disabled) { background: var(--bg-secondary); }
+.btn-outline:disabled { opacity: 0.6; cursor: not-allowed; }
+.link-button {
+  background: none; border: none; padding: 0; color: var(--primary);
+  cursor: pointer; font-size: 13px; text-decoration: underline;
+}
+.alert-box.success { background: #ecfdf5; color: #065f46; border-color: #a7f3d0; }
+.review { display: flex; flex-direction: column; gap: 8px; }
+.review-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; max-height: 380px; overflow-y: auto; }
+.review-row { border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px; display: flex; flex-direction: column; gap: 6px; }
+.review-row.status-security_blocked, .review-row.status-skipped { background: var(--bg-secondary); }
+.row-head { display: flex; align-items: center; gap: 8px; }
+.row-label { flex: 1; font-size: 13px; font-weight: 600; }
+.review-row input:not([type="checkbox"]):not([type="radio"]), .review-row select, .review-row textarea {
+  width: 100%; box-sizing: border-box; padding: 6px 8px; border: 1px solid var(--border);
+  border-radius: 6px; font-size: 13px; font-family: inherit;
+}
+.row-reason { margin: 0; font-size: 11px; color: var(--text-secondary); }
+.row-source { font-style: italic; }
+.save-toggle { font-size: 12px; display: flex; align-items: center; gap: 6px; color: var(--text-secondary); }
+.candidates { display: flex; flex-direction: column; gap: 4px; font-size: 13px; }
+.candidate { display: flex; align-items: center; gap: 6px; }
+.badge { font-size: 10px; font-weight: 600; padding: 2px 6px; border-radius: 999px; background: var(--bg-secondary); color: var(--text-secondary); }
+.badge-ready, .badge-approved, .badge-edited { background: #dcfce7; color: #166534; }
+.badge-needs_review { background: #fef3c7; color: #92400e; }
+.badge-missing_information, .badge-error { background: #fee2e2; color: #991b1b; }
+.badge-security_blocked { background: #e0e7ff; color: #3730a3; }
+.sticky-actions { display: flex; gap: 8px; position: sticky; bottom: 0; background: var(--bg); padding-top: 4px; }
+.sticky-actions .btn-primary { flex: 1; }
+.failures { list-style: none; margin: 0; padding: 0; font-size: 12px; display: flex; flex-direction: column; gap: 4px; }
+.ok { color: #16a34a; vertical-align: middle; }
+.bad { color: var(--error); vertical-align: middle; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--primary); outline-offset: 1px;
+}
