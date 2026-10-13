@@ -1,82 +1,104 @@
-"""Repository for the recommendations collection (DATABASE_DESIGN §10)."""
+"""Repository for field recommendations (one per user, session and field)."""
 
-from typing import Any
-from datetime import datetime, timezone
+from __future__ import annotations
+
 import uuid
+from datetime import UTC, datetime
+from typing import Any
+
 from motor.motor_asyncio import AsyncIOMotorDatabase
-from pydantic import BaseModel
+
+# Statuses that may be filled into the page.
+FILLABLE_STATUSES = ("ready", "approved", "edited")
+REVIEW_STATUSES = ("needs_review",)
+# Values written by earlier versions, normalised on read.
+_LEGACY_STATUS = {
+    "READY_TO_FILL": "ready",
+    "pending_review": "needs_review",
+    "PENDING_REVIEW": "needs_review",
+    "MISSING_INFORMATION": "missing_information",
+}
+
+
+def normalize_status(status: str | None) -> str:
+    return _LEGACY_STATUS.get(status or "", status or "missing_information")
 
 
 class RecommendationsRepository:
-    """Handles CRUD for the recommendations collection."""
-    
     def __init__(self, db: AsyncIOMotorDatabase) -> None:
         self.collection = db["recommendations"]
 
-    async def create_recommendation(
-        self,
-        user_id: str,
-        session_id: str,
-        field_id: str,
-        field_label: str,
-        concept: str,
-        recommended_value: str,
-        confidence: float,
-        retrieval_type: str,
-        source_fact_ids: list[str],
-        status: str,
-        decision_reason: str = "",
-        required: bool = False,
-        input_type: str = "text",
-        field_options: list[dict[str, str]] | None = None,
+    async def upsert(
+        self, user_id: str, session_id: str, field_id: str, data: dict[str, Any]
     ) -> str:
-        """Creates a new recommendation document."""
-        rec_id = f"rec_{uuid.uuid4().hex[:12]}"
-        doc = {
-            "_id": rec_id,
-            "user_id": user_id,
-            "session_id": session_id,
-            "field_id": field_id,
-            "field_label": field_label,
-            "required": required,
-            "input_type": input_type,
-            "field_options": field_options or [],
-            "concept": concept,
-            "recommended_value": recommended_value,
-            "confidence": confidence,
-            "retrieval_type": retrieval_type,
-            "source_fact_ids": source_fact_ids,
-            "status": status,
-            "reason": decision_reason,
-            "created_at": datetime.now(timezone.utc).isoformat(),
-            "updated_at": datetime.now(timezone.utc).isoformat(),
-        }
-        await self.collection.insert_one(doc)
+        """Create or replace the recommendation for one field, keeping its id stable."""
+        now = datetime.now(UTC)
+        query = {"user_id": user_id, "session_id": session_id, "field_id": field_id}
+        existing = await self.collection.find_one(query, {"_id": 1})
+        rec_id = existing["_id"] if existing else f"rec_{uuid.uuid4().hex[:16]}"
+        document = {**data, **query, "_id": rec_id, "updated_at": now}
+        document.setdefault("created_at", now)
+        await self.collection.replace_one(
+            {"_id": rec_id, "user_id": user_id}, document, upsert=True
+        )
         return rec_id
 
-    async def get_pending_reviews(self, user_id: str) -> list[dict[str, Any]]:
-        """Gets all recommendations in pending_review status for a user."""
-        cursor = self.collection.find({"user_id": user_id, "status": "pending_review"})
-        results = []
-        async for doc in cursor:
-            results.append(doc)
-        return results
+    async def list_for_session(self, user_id: str, session_id: str) -> list[dict[str, Any]]:
+        cursor = self.collection.find({"user_id": user_id, "session_id": session_id}).sort(
+            "order", 1
+        )
+        return [_normalized(doc) async for doc in cursor]
+
+    async def get_for_field(
+        self, user_id: str, session_id: str, field_id: str
+    ) -> dict[str, Any] | None:
+        doc = await self.collection.find_one(
+            {"user_id": user_id, "session_id": session_id, "field_id": field_id}
+        )
+        return _normalized(doc) if doc else None
 
     async def get_recommendation(self, user_id: str, rec_id: str) -> dict[str, Any] | None:
-        """Gets a single recommendation by ID, enforcing user_id scope."""
-        return await self.collection.find_one({"_id": rec_id, "user_id": user_id})
+        doc = await self.collection.find_one({"_id": rec_id, "user_id": user_id})
+        return _normalized(doc) if doc else None
 
-    async def update_status(self, user_id: str, rec_id: str, status: str, value: str | None = None) -> bool:
-        """Updates the status (and optionally value) of a recommendation."""
-        update_doc: dict[str, Any] = {
-            "status": status,
-            "updated_at": datetime.now(timezone.utc).isoformat()
+    async def get_pending_reviews(
+        self, user_id: str, session_id: str | None = None
+    ) -> list[dict[str, Any]]:
+        query: dict[str, Any] = {
+            "user_id": user_id,
+            "status": {"$in": [*REVIEW_STATUSES, "pending_review"]},
         }
-        if value is not None:
-            update_doc["recommended_value"] = value
-            
+        if session_id:
+            query["session_id"] = session_id
+        cursor = self.collection.find(query).sort("updated_at", -1)
+        return [_normalized(doc) async for doc in cursor]
+
+    async def update_fields(self, user_id: str, rec_id: str, updates: dict[str, Any]) -> bool:
         result = await self.collection.update_one(
             {"_id": rec_id, "user_id": user_id},
-            {"$set": update_doc}
+            {"$set": {**updates, "updated_at": datetime.now(UTC)}},
         )
-        return result.modified_count > 0
+        return result.matched_count == 1
+
+    async def count_by_status(self, user_id: str, session_id: str) -> dict[str, int]:
+        counts: dict[str, int] = {}
+        async for doc in self.collection.find(
+            {"user_id": user_id, "session_id": session_id}, {"status": 1, "required": 1}
+        ):
+            status = normalize_status(doc.get("status"))
+            counts[status] = counts.get(status, 0) + 1
+            if status == "missing_information" and doc.get("required"):
+                counts["missing_required"] = counts.get("missing_required", 0) + 1
+        return counts
+
+    async def delete_for_document(self, user_id: str, document_id: str) -> int:
+        result = await self.collection.delete_many(
+            {"user_id": user_id, "source.document_id": document_id}
+        )
+        return result.deleted_count
+
+
+def _normalized(doc: dict[str, Any]) -> dict[str, Any]:
+    doc = dict(doc)
+    doc["status"] = normalize_status(doc.get("status"))
+    return doc

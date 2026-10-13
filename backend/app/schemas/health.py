@@ -4,12 +4,13 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
-ServiceState = Literal["healthy", "unhealthy", "not_configured"]
+ServiceState = Literal["healthy", "unhealthy", "not_loaded", "configured", "mock"]
 
 
 class HealthData(BaseModel):
-    status: Literal["healthy"] = "healthy"
+    status: Literal["healthy", "degraded"] = "healthy"
     application_version: str
+    database: Literal["healthy", "unhealthy"] = "healthy"
 
 
 class ServiceHealthData(BaseModel):

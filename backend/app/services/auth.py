@@ -18,6 +18,8 @@ from app.core.security import (
 )
 from app.schemas.auth import CurrentUser, LoginData, PublicUser, RegisterData, RegisterRequest
 
+_DUMMY_HASH = hash_password("timing-equaliser-not-a-real-password")
+
 
 class AuthError(Exception):
     def __init__(
@@ -115,7 +117,11 @@ class AuthService:
         if not await self.rate_limiter.allow(rate_key):
             raise AuthError("RATE_LIMITED", "Too many login attempts", 429)
         user = await self.users.get_by_email(email.lower())
-        if user is None or not verify_password(password, user.get("password_hash", "")):
+        # Always run one bcrypt comparison so response time does not reveal
+        # whether the email is registered.
+        stored_hash = user.get("password_hash", "") if user else _DUMMY_HASH
+        password_ok = verify_password(password, stored_hash)
+        if user is None or not password_ok:
             raise AuthError("INVALID_CREDENTIALS", "Invalid email or password", 401)
         if user.get("status") != "active":
             raise AuthError("INVALID_CREDENTIALS", "Invalid email or password", 401)
@@ -148,7 +154,3 @@ class AuthService:
     async def logout(self, payload: dict[str, Any]) -> None:
         expires_at = datetime.fromtimestamp(payload["exp"], tz=UTC)
         await self.revocations.revoke(payload["jti"], expires_at)
-
-    async def delete_account(self, user_id: str) -> None:
-        # Delete user
-        await getattr(self.users, 'collection').delete_one({"_id": __import__("bson").ObjectId(user_id)})
