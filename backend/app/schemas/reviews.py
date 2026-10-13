@@ -1,34 +1,33 @@
+"""Review (human-in-the-loop) schemas."""
+
+from typing import Any, Literal
+
 from pydantic import BaseModel, Field
-from typing import Any
 
-
-class ReviewSource(BaseModel):
-    document_id: str
+from app.schemas.form_sessions import RecommendationCandidate, RecommendationSource
 
 
 class PendingReviewItem(BaseModel):
     review_id: str
     session_id: str
     field_id: str
-    concept: str
-    suggested_value: str
+    field_label: str = ""
+    concept: str | None = None
+    suggested_value: Any = None
     confidence: float
     reason: str
-    sources: list[ReviewSource]
+    requires_confirmation: bool = False
+    source: RecommendationSource | None = None
+    candidates: list[RecommendationCandidate] = Field(default_factory=list)
 
 
 class PendingReviewsResponseData(BaseModel):
     reviews: list[PendingReviewItem]
 
 
-class PendingReviewsResponse(BaseModel):
-    success: bool = True
-    data: PendingReviewsResponseData
-
-
 class ReviewDecisionRequest(BaseModel):
-    decision: str = Field(..., pattern="^(confirm|edit|reject|skip)$")
-    value: str | None = None
+    decision: Literal["confirm", "edit", "reject", "skip"]
+    value: str | None = Field(default=None, max_length=10000)
     save_for_future: bool = False
 
 
@@ -36,8 +35,3 @@ class ReviewDecisionResponseData(BaseModel):
     review_id: str
     decision: str
     status: str
-
-
-class ReviewDecisionResponse(BaseModel):
-    success: bool = True
-    data: ReviewDecisionResponseData

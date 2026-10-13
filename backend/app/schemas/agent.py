@@ -1,38 +1,28 @@
-"""API schemas for LangGraph agent workflow per API_SPECIFICATION §31-33."""
+"""Schemas for the asynchronous agent-run API (a wrapper over a form session)."""
 
 from typing import Any
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from app.schemas.forms import FieldObject
+from app.schemas.form_sessions import FieldObject, RecommendationOutput
 
 
 class AgentRunRequest(BaseModel):
-    """Request schema to start a new agent run."""
-
     model_config = ConfigDict(extra="ignore")
 
-    workflow_id: str = Field(..., description="Unique ID for this form filling workflow")
-    page_context: dict[str, Any] = Field(
-        default_factory=dict, description="Metadata about the page being filled"
-    )
-    field_objects: list[FieldObject] = Field(
-        ..., description="List of fields to be analyzed and filled"
-    )
+    workflow_id: str = Field(min_length=1, max_length=200)
+    page_context: dict[str, Any] = Field(default_factory=dict)
+    field_objects: list[FieldObject] = Field(min_length=1, max_length=300)
 
 
 class AgentRunResponse(BaseModel):
-    """Response schema when starting a run."""
-
-    run_id: str = Field(..., description="Unique identifier for the created run")
-    status: str = Field(default="started", description="Current status of the agent run")
+    run_id: str
+    session_id: str
+    status: str
 
 
 class AgentStatusResponse(BaseModel):
-    """Response schema for retrieving run status."""
-
-    run_id: str = Field(..., description="Run identifier")
-    status: str = Field(..., description="Current status")
-    state: dict[str, Any] = Field(..., description="Current AgentState dump")
-    created_at: str | None = None
-    updated_at: str | None = None
+    run_id: str
+    session_id: str
+    status: str
+    recommendations: list[RecommendationOutput] = Field(default_factory=list)
