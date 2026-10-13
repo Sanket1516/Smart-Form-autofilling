@@ -11,7 +11,7 @@ test-extension:
 
 test-e2e:
 	docker compose -f docker-compose.test.yml up --build -d
-	cd extension && npx playwright test tests/e2e.spec.ts || (docker compose -f docker-compose.test.yml down && exit 1)
-	docker compose -f docker-compose.test.yml down
+	cd extension && E2E_BACKEND_URL=http://127.0.0.1:8011 npm run test:e2e || (docker compose -f docker-compose.test.yml down --volumes --remove-orphans && exit 1)
+	docker compose -f docker-compose.test.yml down --volumes --remove-orphans
 
 test-all: test-backend test-frontend test-extension test-e2e

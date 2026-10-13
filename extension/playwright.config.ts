@@ -39,6 +39,12 @@ export default defineConfig({
       reuseExistingServer: true,
       timeout: 120_000,
       env: {
+        MONGODB_URL: process.env.E2E_MONGODB_URL
+          ?? process.env.MONGODB_URL
+          ?? 'mongodb://127.0.0.1:27017',
+        CHROMADB_URL: process.env.E2E_CHROMADB_URL
+          ?? process.env.CHROMADB_URL
+          ?? 'http://127.0.0.1:8001',
         APP_ENV: 'test',
         JWT_SECRET_KEY: 'e2e-secret-key-that-is-long-enough-0123456789',
         MONGODB_DATABASE: 'smart_form_e2e',
