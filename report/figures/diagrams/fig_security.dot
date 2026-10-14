@@ -1,0 +1,13 @@
+digraph G {
+  graph [fontname="Arial", fontsize=16, pad=0.2, rankdir=TB, nodesep=0.2, ranksep=0.2];
+  node  [fontname="Arial", fontsize=16, style="filled,rounded", shape=box, penwidth=1.5, margin="0.14,0.08"];
+  edge  [fontname="Arial", fontsize=14, penwidth=1.4, arrowsize=0.8];
+  l1 [label="1. Edge: Nginx CSP and security headers; CORS limited to\ndashboard origin; TLS at deployment edge", fillcolor="#F8DCDC", color="#A33A3A", shape=box, style="filled,rounded"];
+  l2 [label="2. Identity: bcrypt; JWT HS256, 30 min, Authorization\nheader; jti revocation (TTL); login limiter 5 per 60 s;\nSlowAPI route limits", fillcolor="#F8DCDC", color="#A33A3A", shape=box, style="filled,rounded"];
+  l3 [label="3. Tenant isolation: every MongoDB and Chroma query or\ndelete filtered by user_id", fillcolor="#F8DCDC", color="#A33A3A", shape=box, style="filled,rounded"];
+  l4 [label="4. Input handling: extension, magic-byte and size checks;\nvalidation errors never echo values", fillcolor="#F8DCDC", color="#A33A3A", shape=box, style="filled,rounded"];
+  l5 [label="5. LLM safety: UNTRUSTED blocks, bracket escaping, 6\ninjection patterns, quarantine, quote verification, JSON\nvalidation", fillcolor="#F8DCDC", color="#A33A3A", shape=box, style="filled,rounded"];
+  l6 [label="6. Browser safety: activeTab, on-demand injection,\nsensitive fields skipped, values never read, token kept\nout of page, no auto-submit", fillcolor="#F8DCDC", color="#A33A3A", shape=box, style="filled,rounded"];
+  l7 [label="7. Observability: JSON logs with request ID; redaction of\ntokens, emails, long digit runs", fillcolor="#F8DCDC", color="#A33A3A", shape=box, style="filled,rounded"];
+  l1 -> l2 -> l3 -> l4 -> l5 -> l6 -> l7 [style=invis];
+}

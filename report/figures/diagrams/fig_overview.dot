@@ -1,0 +1,21 @@
+digraph G {
+  graph [fontname="Arial", fontsize=16, pad=0.2, rankdir=TB, nodesep=0.3, ranksep=0.7, newrank=true];
+  node  [fontname="Arial", fontsize=16, style="filled,rounded", shape=box, penwidth=1.5, margin="0.14,0.08"];
+  edge  [fontname="Arial", fontsize=14, penwidth=1.4, arrowsize=0.8];
+  subgraph cluster_A { label="Phase A: prepare the profile (once per document)"; labeljust=l; fontsize=16; fontname="Arial Bold"; style="rounded,filled"; fillcolor="#EEEEEE"; color="#555555"; penwidth=1.6;
+  a1 [label="1. Upload PDF,\nDOCX, TXT, image", fillcolor="#DCE9F8", color="#2F5D9B", shape=box, style="filled,rounded"];
+  a2 [label="2. Parse text\n(OCR if scanned)", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  a3 [label="3. Extract\nfacts: rules +\noptional LLM", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  a4 [label="4. Merge,\nnormalise, keep\nprovenance", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  }
+  subgraph cluster_B { label="Phase B: assist a form (every page)"; labeljust=l; fontsize=16; fontname="Arial Bold"; style="rounded,filled"; fillcolor="#EEEEEE"; color="#555555"; penwidth=1.6;
+  b1 [label="5. Scan page:\nfield\ndescriptors only", fillcolor="#DCE9F8", color="#2F5D9B", shape=box, style="filled,rounded"];
+  b2 [label="6. Classify each\nfield to an\nontology concept", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  b3 [label="7. Resolve\nvalue: profile\nfacts, else RAG\nevidence", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  b4 [label="8. User reviews\nevery value", fillcolor="#DCE9F8", color="#2F5D9B", shape=box, style="filled,rounded"];
+  b5 [label="9. Fill approved\nfields and\nverify; never\nsubmit", fillcolor="#DCE9F8", color="#2F5D9B", shape=box, style="filled,rounded"];
+  }
+  db [label="Fact store (MongoDB) +\nvector index (ChromaDB)", fillcolor="#FBEBCB", color="#A8741A", shape=cylinder, style="filled"];
+  a1 -> a2 -> a3 -> a4; b1 -> b2 -> b3 -> b4 -> b5;
+  a4 -> db [label=" store"]; db -> b3 [label=" read", constraint=false];
+}

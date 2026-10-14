@@ -1,0 +1,21 @@
+digraph G {
+  graph [fontname="Arial", fontsize=16, pad=0.2, rankdir=TB, nodesep=0.3, ranksep=0.3];
+  node  [fontname="Arial", fontsize=16, style="filled,rounded", shape=box, penwidth=1.5, margin="0.14,0.08"];
+  edge  [fontname="Arial", fontsize=14, penwidth=1.4, arrowsize=0.8];
+  s [label="", shape=circle, style=filled, fillcolor="#333333", width=0.22, fixedsize=true];
+  a [label="User selects a file on the\nDocuments page", fillcolor="#DCE9F8", color="#2F5D9B", shape=box, style="filled,rounded"];
+  b [label="Valid extension,\nmagic bytes, size 10\nMB or less?", fillcolor="#EEEEEE", color="#555555", shape=diamond, style="filled"];
+  c [label="Reject with 400 / 413 / 422", fillcolor="#F8DCDC", color="#A33A3A", shape=box, style="filled,rounded"];
+  d [label="Store file, create document\n(uploaded), dispatch job", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  e [label="Parse text (OCR if needed)", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  f [label="Text readable?", fillcolor="#EEEEEE", color="#555555", shape=diamond, style="filled"];
+  g [label="failed or requires_review", fillcolor="#F8DCDC", color="#A33A3A", shape=box, style="filled,rounded"];
+  h [label="Extract (deterministic +\noptional LLM), merge, replace\nfacts", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  i [label="Chunk, embed, index in\nChromaDB", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  j [label="Index succeeded?", fillcolor="#EEEEEE", color="#555555", shape=diamond, style="filled"];
+  k [label="processed, index_status\nindexed", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  l [label="processed, index_status failed\n(facts kept)", fillcolor="#FBEBCB", color="#A8741A", shape=box, style="filled,rounded"];
+  z [label="", shape=doublecircle, style=filled, fillcolor="#333333", width=0.22, fixedsize=true];
+  s -> a -> b; b -> c [label=" no"]; b -> d [label=" yes"]; d -> e -> f; f -> g [label=" no"]; f -> h [label=" yes"]; h -> i -> j;
+  j -> k [label=" yes"]; j -> l [label=" no"]; k -> z; l -> z; c -> z; g -> z;
+}

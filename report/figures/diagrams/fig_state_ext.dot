@@ -1,0 +1,15 @@
+digraph G {
+  graph [fontname="Arial", fontsize=16, pad=0.2, rankdir=TB, nodesep=0.6, ranksep=0.5];
+  node  [fontname="Arial", fontsize=16, style="filled,rounded", shape=box, penwidth=1.5, margin="0.14,0.08"];
+  edge  [fontname="Arial", fontsize=14, penwidth=1.4, arrowsize=0.8];
+  start [label="", shape=circle, style=filled, fillcolor="#333333", width=0.22, fixedsize=true];
+  idle [label="idle", fillcolor="#EEEEEE", color="#555555", shape=box, style="filled,rounded"];
+  sc [label="scanned", fillcolor="#DCE9F8", color="#2F5D9B", shape=box, style="filled,rounded"];
+  an [label="analyzing", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  rv [label="review", fillcolor="#DCE9F8", color="#2F5D9B", shape=box, style="filled,rounded"];
+  fl [label="filling", fillcolor="#DCE9F8", color="#2F5D9B", shape=box, style="filled,rounded"];
+  dn [label="done", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  start -> idle; idle -> sc [label=" Scan this page"]; sc -> an [label=" Suggest values"]; an -> rv [label=" recommendations returned"];
+  rv -> fl [label=" Fill approved"]; fl -> dn [label=" results verified"]; dn -> idle [label=" Start over", style=dashed, constraint=false];
+  an -> idle [label=" error / 401", style=dashed, color="#A33A3A", constraint=false];
+}

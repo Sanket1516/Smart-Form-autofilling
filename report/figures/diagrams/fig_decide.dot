@@ -1,0 +1,20 @@
+digraph G {
+  graph [fontname="Arial", fontsize=16, pad=0.2, rankdir=TB, nodesep=0.3, ranksep=0.35];
+  node  [fontname="Arial", fontsize=16, style="filled,rounded", shape=box, penwidth=1.5, margin="0.14,0.08"];
+  edge  [fontname="Arial", fontsize=14, penwidth=1.4, arrowsize=0.8];
+  a [label="Field with\ncandidate value", fillcolor="#EEEEEE", color="#555555", shape=ellipse, style="filled", style="filled"];
+  b [label="Already blocked,\nskipped, error\nor review?", fillcolor="#EEEEEE", color="#555555", shape=diamond, style="filled"];
+  c [label="Keep status", fillcolor="#EEEEEE", color="#555555", shape=box, style="filled,rounded"];
+  d [label="Value is None?", fillcolor="#EEEEEE", color="#555555", shape=diamond, style="filled"];
+  e [label="missing_information", fillcolor="#FBEBCB", color="#A8741A", shape=box, style="filled,rounded"];
+  f [label="Format for field type (date,\noption, radio, length)", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  g [label="Formatting failed?", fillcolor="#EEEEEE", color="#555555", shape=diamond, style="filled"];
+  h [label="needs_review (value shown as\ncandidate)", fillcolor="#FBEBCB", color="#A8741A", shape=box, style="filled,rounded"];
+  i [label="Sensitive or\ninferred?", fillcolor="#EEEEEE", color="#555555", shape=diamond, style="filled"];
+  j [label="requires_confirmation = true", fillcolor="#F8DCDC", color="#A33A3A", shape=box, style="filled,rounded"];
+  k [label="Confidence >=\n0.85, no\nconfirmation?", fillcolor="#EEEEEE", color="#555555", shape=diamond, style="filled"];
+  l [label="ready", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  m [label="needs_review", fillcolor="#FBEBCB", color="#A8741A", shape=box, style="filled,rounded"];
+  a -> b; b -> c [label=" yes"]; b -> d [label=" no"]; d -> e [label=" yes"]; d -> f [label=" no"]; f -> g; g -> h [label=" yes"]; g -> i [label=" no"];
+  i -> j [label=" yes"]; i -> k [label=" no"]; j -> k; k -> l [label=" yes"]; k -> m [label=" no"];
+}

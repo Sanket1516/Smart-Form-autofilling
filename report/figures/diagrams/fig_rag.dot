@@ -1,0 +1,12 @@
+digraph G {
+  graph [fontname="Arial", fontsize=16, pad=0.2, rankdir=TB, nodesep=0.3, ranksep=0.3];
+  node  [fontname="Arial", fontsize=16, style="filled,rounded", shape=box, penwidth=1.5, margin="0.14,0.08"];
+  edge  [fontname="Arial", fontsize=14, penwidth=1.4, arrowsize=0.8];
+  q [label="Question or field text", fillcolor="#DCE9F8", color="#2F5D9B", shape=box, style="filled,rounded"];
+  e [label="Embed query (MiniLM, 384-dim)", fillcolor="#E9E1F2", color="#6B4E9B", shape=box, style="filled,rounded"];
+  c [label="Chroma query: filter\nuser_id, cosine, top-k 4", fillcolor="#FBEBCB", color="#A8741A", shape=cylinder, style="filled"];
+  t [label="Similarity at least 0.35;\nsafe_for_llm filter", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  l [label="LLM answer with used_chunk_ids", fillcolor="#E9E1F2", color="#6B4E9B", shape=box, style="filled,rounded"];
+  a [label="Answer with cited sources, or\ninsufficient_evidence", fillcolor="#DCE9F8", color="#2F5D9B", shape=box, style="filled,rounded"];
+  q -> e -> c -> t -> l -> a; t -> a [style=dashed, label=" no evidence"];
+}

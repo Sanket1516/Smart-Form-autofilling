@@ -1,0 +1,15 @@
+digraph G {
+  graph [fontname="Arial", fontsize=16, pad=0.2, rankdir=TB, nodesep=0.9, ranksep=0.85];
+  node  [fontname="Arial", fontsize=16, style="filled,rounded", shape=box, penwidth=1.5, margin="0.14,0.08"];
+  edge  [fontname="Arial", fontsize=14, penwidth=1.4, arrowsize=0.8];
+  user [label="User (dashboard and extension)", fillcolor="#DCE9F8", color="#2F5D9B", shape=box, style="filled,rounded", style="filled"];
+  sys [label="0 Smart Form\nAuto-Filling\nSystem", fillcolor="#DDEFE0", color="#3C7A4B", shape=circle, style="filled", width=2.4];
+  llm [label="LLM provider (optional)", fillcolor="#E9E1F2", color="#6B4E9B", shape=box, style="filled,rounded", style="filled"];
+  web [label="Web form (page DOM)", fillcolor="#EEEEEE", color="#555555", shape=box, style="filled,rounded", style="filled"];
+  user -> sys [label=" credentials, documents,\n fact edits, questions,\n review decisions"];
+  sys -> user [label=" facts, conflicts, recommendations,\n grounded answers, status"];
+  sys -> llm [label=" sanitised prompts"]; llm -> sys [label=" JSON results"];
+  web -> user [label=" field descriptors (no values)", style=dashed, constraint=false];
+  user -> web [label=" approved values", style=dashed, constraint=false];
+  {rank=same; user; web}
+}

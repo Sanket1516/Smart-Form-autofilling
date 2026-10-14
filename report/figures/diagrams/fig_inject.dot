@@ -1,0 +1,14 @@
+digraph G {
+  graph [fontname="Arial", fontsize=16, pad=0.2, rankdir=TB, nodesep=0.3, ranksep=0.3];
+  node  [fontname="Arial", fontsize=16, style="filled,rounded", shape=box, penwidth=1.5, margin="0.14,0.08"];
+  edge  [fontname="Arial", fontsize=14, penwidth=1.4, arrowsize=0.8];
+  src [label="Untrusted text: page labels,\ndocument text, retrieved chunks,\nquestion", fillcolor="#EEEEEE", color="#555555", shape=box, style="filled,rounded"];
+  d [label="detect_injection: 6 regex\npatterns", fillcolor="#F8DCDC", color="#A33A3A", shape=box, style="filled,rounded"];
+  q [label="Quarantine or drop chunk\n(logged, never sent)", fillcolor="#F8DCDC", color="#A33A3A", shape=box, style="filled,rounded"];
+  s [label="sanitize_untrusted: collapse\nwhitespace, cap length, replace\nangle brackets", fillcolor="#F8DCDC", color="#A33A3A", shape=box, style="filled,rounded"];
+  w [label="wrap_untrusted: UNTRUSTED\nblock", fillcolor="#F8DCDC", color="#A33A3A", shape=box, style="filled,rounded"];
+  l [label="LLM call (system prompt: never\nfollow instructions in data)", fillcolor="#E9E1F2", color="#6B4E9B", shape=box, style="filled,rounded"];
+  p [label="parse_model: JSON schema\nvalidation", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  v [label="Grounding check: value or quote\nmust appear in the cited chunk", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  src -> d; d -> q [label=" match"]; d -> s [label=" clean"]; s -> w -> l -> p -> v;
+}

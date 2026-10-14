@@ -1,0 +1,29 @@
+def d_architecture():
+    s = HEAD.format(graph='rankdir=TB, nodesep=0.25, ranksep=0.45, newrank=true')
+    s += cluster("clients", "Presentation tier", "blue",
+                 n("dash", "React 19 dashboard (served by Nginx)", "blue", width=20) +
+                 n("popup", "Extension popup (React 18)", "blue", width=20) +
+                 n("content", "Content script (detector, autofill)", "blue", width=20))
+    s += cluster("api", "Application tier: FastAPI (Python 3.11)", "green",
+                 n("mw", "Middleware: CORS, redacted logs, rate limits, JWT auth", "red", width=60) +
+                 n("svc", "11 routers and services", "green", width=16) +
+                 n("pipe", "Document pipeline", "green", width=16) +
+                 n("lg", "Form-fill LangGraph (7 nodes)", "green", width=16) +
+                 n("onto", "Field ontology (91 concepts)", "green", width=16))
+    s += cluster("data", "Data tier", "amber",
+                 n("mongo", "MongoDB 8", "amber", "cylinder") + n("chroma", "ChromaDB", "amber", "cylinder") +
+                 n("store", "File storage", "amber", "cylinder") + n("redis", "Redis 7", "amber", "cylinder"))
+    s += cluster("ext", "External / optional services", "violet",
+                 n("llm", "LLM provider (mock by default)", "violet", width=16) + n("emb", "MiniLM-L6 embeddings", "violet", width=16) +
+                 n("ocr", "PaddleOCR (optional)", "violet", width=16) + n("worker", "Celery worker", "violet", width=16))
+    s += ('  {rank=same; dash; popup; content}\n  {rank=same; svc; pipe; lg; onto}\n  {rank=same; mongo; chroma; store; redis}\n  {rank=same; llm; emb; ocr; worker}\n'
+          '  dash -> mw [label=" HTTPS + Bearer JWT"]; popup -> mw; content -> popup [dir=both, style=dashed, constraint=false];\n'
+          '  mw -> svc; mw -> pipe [style=invis]; mw -> lg [style=invis]; mw -> onto [style=invis];\n'
+          '  svc -> pipe [style=invis]; pipe -> lg [style=invis]; lg -> onto [style=invis];\n'
+          '  svc -> mongo; svc -> chroma; pipe -> store; svc -> redis;\n'
+          '  mongo -> llm [style=invis]; chroma -> emb [style=invis]; store -> ocr [style=invis]; redis -> worker [style=invis];\n'
+          '  lg -> llm [style=dashed]; pipe -> emb [style=dashed]; pipe -> ocr [style=dashed]; redis -> worker [dir=none, constraint=false];\n'
+          '  lg -> onto [style=dashed, constraint=false];\n}\n')
+    render("fig_architecture", s)
+
+

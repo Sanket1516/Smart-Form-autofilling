@@ -1,0 +1,40 @@
+digraph G {
+  graph [fontname="Arial", fontsize=16, pad=0.2, rankdir=TB, nodesep=0.25, ranksep=0.45, newrank=true];
+  node  [fontname="Arial", fontsize=16, style="filled,rounded", shape=box, penwidth=1.5, margin="0.14,0.08"];
+  edge  [fontname="Arial", fontsize=14, penwidth=1.4, arrowsize=0.8];
+  subgraph cluster_clients { label="Presentation tier"; labeljust=l; fontsize=16; fontname="Arial Bold"; style="rounded,filled"; fillcolor="#DCE9F8"; color="#2F5D9B"; penwidth=1.6;
+  dash [label="React 19 dashboard\n(served by Nginx)", fillcolor="#DCE9F8", color="#2F5D9B", shape=box, style="filled,rounded"];
+  popup [label="Extension popup\n(React 18)", fillcolor="#DCE9F8", color="#2F5D9B", shape=box, style="filled,rounded"];
+  content [label="Content script\n(detector, autofill)", fillcolor="#DCE9F8", color="#2F5D9B", shape=box, style="filled,rounded"];
+  }
+  subgraph cluster_api { label="Application tier: FastAPI (Python 3.11)"; labeljust=l; fontsize=16; fontname="Arial Bold"; style="rounded,filled"; fillcolor="#DDEFE0"; color="#3C7A4B"; penwidth=1.6;
+  mw [label="Middleware: CORS, redacted logs, rate limits, JWT auth", fillcolor="#F8DCDC", color="#A33A3A", shape=box, style="filled,rounded"];
+  svc [label="11 routers and\nservices", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  pipe [label="Document\npipeline", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  lg [label="Form-fill\nLangGraph (7\nnodes)", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  onto [label="Field ontology\n(91 concepts)", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  }
+  subgraph cluster_data { label="Data tier"; labeljust=l; fontsize=16; fontname="Arial Bold"; style="rounded,filled"; fillcolor="#FBEBCB"; color="#A8741A"; penwidth=1.6;
+  mongo [label="MongoDB 8", fillcolor="#FBEBCB", color="#A8741A", shape=cylinder, style="filled"];
+  chroma [label="ChromaDB", fillcolor="#FBEBCB", color="#A8741A", shape=cylinder, style="filled"];
+  store [label="File storage", fillcolor="#FBEBCB", color="#A8741A", shape=cylinder, style="filled"];
+  redis [label="Redis 7", fillcolor="#FBEBCB", color="#A8741A", shape=cylinder, style="filled"];
+  }
+  subgraph cluster_ext { label="External / optional services"; labeljust=l; fontsize=16; fontname="Arial Bold"; style="rounded,filled"; fillcolor="#E9E1F2"; color="#6B4E9B"; penwidth=1.6;
+  llm [label="LLM provider\n(mock by\ndefault)", fillcolor="#E9E1F2", color="#6B4E9B", shape=box, style="filled,rounded"];
+  emb [label="MiniLM-L6\nembeddings", fillcolor="#E9E1F2", color="#6B4E9B", shape=box, style="filled,rounded"];
+  ocr [label="PaddleOCR\n(optional)", fillcolor="#E9E1F2", color="#6B4E9B", shape=box, style="filled,rounded"];
+  worker [label="Celery worker", fillcolor="#E9E1F2", color="#6B4E9B", shape=box, style="filled,rounded"];
+  }
+  {rank=same; dash; popup; content}
+  {rank=same; svc; pipe; lg; onto}
+  {rank=same; mongo; chroma; store; redis}
+  {rank=same; llm; emb; ocr; worker}
+  dash -> mw [label=" HTTPS + Bearer JWT"]; popup -> mw; content -> popup [dir=both, style=dashed, constraint=false];
+  mw -> svc; mw -> pipe [style=invis]; mw -> lg [style=invis]; mw -> onto [style=invis];
+  svc -> pipe [style=invis]; pipe -> lg [style=invis]; lg -> onto [style=invis];
+  svc -> mongo; svc -> chroma; pipe -> store; svc -> redis;
+  mongo -> llm [style=invis]; chroma -> emb [style=invis]; store -> ocr [style=invis]; redis -> worker [style=invis];
+  lg -> llm [style=dashed]; pipe -> emb [style=dashed]; pipe -> ocr [style=dashed]; redis -> worker [dir=none, constraint=false];
+  lg -> onto [style=dashed, constraint=false];
+}
