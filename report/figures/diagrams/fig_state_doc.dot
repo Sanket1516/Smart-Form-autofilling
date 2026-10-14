@@ -1,0 +1,15 @@
+digraph G {
+  graph [fontname="Arial", fontsize=16, pad=0.2, rankdir=TB, nodesep=0.5, ranksep=0.5];
+  node  [fontname="Arial", fontsize=16, style="filled,rounded", shape=box, penwidth=1.5, margin="0.14,0.08"];
+  edge  [fontname="Arial", fontsize=14, penwidth=1.4, arrowsize=0.8];
+  start [label="", shape=circle, style=filled, fillcolor="#333333", width=0.22, fixedsize=true];
+  up [label="uploaded", fillcolor="#EEEEEE", color="#555555", shape=box, style="filled,rounded"];
+  pr [label="processing", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  ok [label="processed", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  fa [label="failed", fillcolor="#F8DCDC", color="#A33A3A", shape=box, style="filled,rounded"];
+  rr [label="requires_review", fillcolor="#FBEBCB", color="#A8741A", shape=box, style="filled,rounded"];
+  de [label="deleted", fillcolor="#EEEEEE", color="#555555", shape=box, style="filled,rounded"];
+  start -> up; up -> pr [label=" job starts"]; pr -> ok [label=" stages complete"]; pr -> fa [label=" read error /\n internal error"];
+  pr -> rr [label=" OCR needed,\n not installed"]; fa -> pr [label=" reprocess", style=dashed]; rr -> pr [label=" reprocess", style=dashed];
+  ok -> de [label=" delete"]; fa -> de; rr -> de; up -> de;
+}

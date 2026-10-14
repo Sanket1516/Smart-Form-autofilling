@@ -1,0 +1,19 @@
+digraph G {
+  graph [fontname="Arial", fontsize=16, pad=0.2, rankdir=TB, nodesep=0.3, ranksep=0.35];
+  node  [fontname="Arial", fontsize=16, style="filled,rounded", shape=box, penwidth=1.5, margin="0.14,0.08"];
+  edge  [fontname="Arial", fontsize=14, penwidth=1.4, arrowsize=0.8];
+  a [label="Field descriptor", fillcolor="#EEEEEE", color="#555555", shape=ellipse, style="filled", style="filled"];
+  b [label="autocomplete token\nmaps to a concept?", fillcolor="#EEEEEE", color="#555555", shape=diamond, style="filled"];
+  c [label="confidence 0.97, method\nautocomplete", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  d [label="Match aliases on question, label,\naria-label (1.0), placeholder\n(0.95), name/id (0.9), nearby text\n(0.85)", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  e [label="Top two scores\nwithin 0.05?", fillcolor="#EEEEEE", color="#555555", shape=diamond, style="filled"];
+  f [label="Break tie with name or id\n(0.8), else ambiguous", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  g [label="Fallback: input type email\n(0.95) or tel (0.9)", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  h [label="Owner concept inside\nfather / spouse /\nemergency section?", fillcolor="#EEEEEE", color="#555555", shape=diamond, style="filled"];
+  i [label="Do not use own value; send to\nLLM", fillcolor="#E9E1F2", color="#6B4E9B", shape=box, style="filled,rounded"];
+  j [label="confidence at\nleast 0.75 and not\nambiguous?", fillcolor="#EEEEEE", color="#555555", shape=diamond, style="filled"];
+  k [label="Resolved", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  l [label="Batched LLM call (known\nconcept, confidence at least\n0.6)", fillcolor="#E9E1F2", color="#6B4E9B", shape=box, style="filled,rounded"];
+  a -> b; b -> c [label=" yes"]; b -> d [label=" no"]; d -> e; e -> f [label=" yes"]; e -> g [label=" no"];
+  f -> h; g -> h; h -> i [label=" yes"]; h -> j [label=" no"]; j -> k [label=" yes"]; j -> l [label=" no"]; i -> l; c -> k;
+}

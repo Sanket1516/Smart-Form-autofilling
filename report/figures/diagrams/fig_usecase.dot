@@ -1,0 +1,37 @@
+digraph G {
+  graph [fontname="Arial", fontsize=16, pad=0.2, rankdir=LR, nodesep=0.1, ranksep=0.7];
+  node  [fontname="Arial", fontsize=16, style="filled,rounded", shape=box, penwidth=1.5, margin="0.14,0.08"];
+  edge  [fontname="Arial", fontsize=14, penwidth=1.4, arrowsize=0.8];
+  user [label="User", fillcolor="#DCE9F8", color="#2F5D9B", shape=box, style="filled,rounded", style="filled"];
+  llm [label="LLM provider (external actor)", fillcolor="#E9E1F2", color="#6B4E9B", shape=box, style="filled,rounded", style="filled"];
+  subgraph cluster_sys { label="Smart Form Auto-Filling System"; labeljust=l; fontsize=16; fontname="Arial Bold"; style="rounded,filled"; fillcolor="#EEEEEE"; color="#555555"; penwidth=1.6;
+  u0 [label="Register, log in, log\nout", fillcolor="#DDEFE0", color="#3C7A4B", shape=ellipse, style="filled", style="filled"];
+  u1 [label="Upload document", fillcolor="#DDEFE0", color="#3C7A4B", shape=ellipse, style="filled", style="filled"];
+  u2 [label="Monitor processing\nstatus", fillcolor="#DDEFE0", color="#3C7A4B", shape=ellipse, style="filled", style="filled"];
+  u3 [label="Reprocess or delete\ndocument", fillcolor="#DDEFE0", color="#3C7A4B", shape=ellipse, style="filled", style="filled"];
+  u4 [label="View and edit profile\nfacts", fillcolor="#DDEFE0", color="#3C7A4B", shape=ellipse, style="filled", style="filled"];
+  u5 [label="Resolve fact conflicts", fillcolor="#DDEFE0", color="#3C7A4B", shape=ellipse, style="filled", style="filled"];
+  u6 [label="Ask question about\ndocuments", fillcolor="#DDEFE0", color="#3C7A4B", shape=ellipse, style="filled", style="filled"];
+  u7 [label="Scan page for fields", fillcolor="#DDEFE0", color="#3C7A4B", shape=ellipse, style="filled", style="filled"];
+  u8 [label="Review recommendations", fillcolor="#DDEFE0", color="#3C7A4B", shape=ellipse, style="filled", style="filled"];
+  u9 [label="Fill approved values", fillcolor="#DDEFE0", color="#3C7A4B", shape=ellipse, style="filled", style="filled"];
+  u10 [label="Save answer for future", fillcolor="#DDEFE0", color="#3C7A4B", shape=ellipse, style="filled", style="filled"];
+  u11 [label="View activity and\nservice health", fillcolor="#DDEFE0", color="#3C7A4B", shape=ellipse, style="filled", style="filled"];
+  u12 [label="Delete all data or\naccount", fillcolor="#DDEFE0", color="#3C7A4B", shape=ellipse, style="filled", style="filled"];
+  }
+  user -> u0 [arrowhead=none];
+  user -> u1 [arrowhead=none];
+  user -> u2 [arrowhead=none];
+  user -> u3 [arrowhead=none];
+  user -> u4 [arrowhead=none];
+  user -> u5 [arrowhead=none];
+  user -> u6 [arrowhead=none];
+  user -> u7 [arrowhead=none];
+  user -> u8 [arrowhead=none];
+  user -> u9 [arrowhead=none];
+  user -> u10 [arrowhead=none];
+  user -> u11 [arrowhead=none];
+  user -> u12 [arrowhead=none];
+  u1 -> llm [arrowhead=none, style=dashed]; u6 -> llm [arrowhead=none, style=dashed]; u8 -> llm [arrowhead=none, style=dashed];
+  u9 -> u8 [label="include", style=dashed, fontsize=12, constraint=false]; u7 -> u8 [label="include", style=dashed, fontsize=12, constraint=false]; u5 -> u4 [label="extend", style=dashed, fontsize=12, constraint=false];
+}

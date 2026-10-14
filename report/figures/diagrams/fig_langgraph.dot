@@ -1,0 +1,21 @@
+digraph G {
+  graph [fontname="Arial", fontsize=16, pad=0.2, rankdir=TB, nodesep=0.45, ranksep=0.4];
+  node  [fontname="Arial", fontsize=16, style="filled,rounded", shape=box, penwidth=1.5, margin="0.14,0.08"];
+  edge  [fontname="Arial", fontsize=14, penwidth=1.4, arrowsize=0.8];
+  start [label="START", fillcolor="#EEEEEE", color="#555555", shape=ellipse, style="filled", style="filled"];
+  san [label="sanitize: block password, payment,\nOTP, hidden; quarantine injection-\nlike text", fillcolor="#F8DCDC", color="#A33A3A", shape=box, style="filled,rounded"];
+  det [label="deterministic_classify:\nautocomplete, ontology phrase match,\ninput type", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  llm [label="llm_classify: one batched call for\nunresolved fields only", fillcolor="#E9E1F2", color="#6B4E9B", shape=box, style="filled,rounded"];
+  prof [label="resolve_profile: resolved / conflict\n/ multiple view; derived first and\nlast name", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  doc [label="resolve_documents: ChromaDB top-k +\none batched LLM call; value must\nappear in evidence", fillcolor="#E9E1F2", color="#6B4E9B", shape=box, style="filled,rounded"];
+  dec [label="decide: format to field, apply\nthresholds and sensitivity rules", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  per [label="persist: upsert recommendations", fillcolor="#FBEBCB", color="#A8741A", shape=box, style="filled,rounded"];
+  end [label="END", fillcolor="#EEEEEE", color="#555555", shape=ellipse, style="filled", style="filled"];
+  start -> san -> det;
+  det -> llm [label=" a field is unresolved"];
+  det -> prof [label=" all resolved"];
+  llm -> prof;
+  prof -> doc [label=" empty, non-sensitive fields"];
+  prof -> dec [label=" none"];
+  doc -> dec -> per -> end;
+}

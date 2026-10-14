@@ -1,0 +1,26 @@
+digraph G {
+  graph [fontname="Arial", fontsize=16, pad=0.2, rankdir=TB, nodesep=0.3, ranksep=0.55];
+  node  [fontname="Arial", fontsize=16, style="filled,rounded", shape=box, penwidth=1.5, margin="0.14,0.08"];
+  edge  [fontname="Arial", fontsize=14, penwidth=1.4, arrowsize=0.8];
+  subgraph cluster_host { label="User machine"; labeljust=l; fontsize=16; fontname="Arial Bold"; style="rounded,filled"; fillcolor="#DCE9F8"; color="#2F5D9B"; penwidth=1.6;
+  chrome [label="Chrome 120+: extension (MV3) and\ndashboard tab", fillcolor="#DCE9F8", color="#2F5D9B", shape=box, style="filled,rounded"];
+  }
+  subgraph cluster_compose { label="Docker Compose project (network smart-form-internal)"; labeljust=l; fontsize=16; fontname="Arial Bold"; style="rounded,filled"; fillcolor="#EEEEEE"; color="#555555"; penwidth=1.6;
+  fe [label="frontend: Nginx, host 5173\nto 80, CSP headers", fillcolor="#DCE9F8", color="#2F5D9B", shape=box, style="filled,rounded"];
+  be [label="backend: Uvicorn +\nFastAPI, port 8000", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  wk [label="worker: Celery\n(PROCESSING_MODE=celery)", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  eb [label="extension-builder: builds\nextension bundle", fillcolor="#EEEEEE", color="#555555", shape=box, style="filled,rounded"];
+  mg [label="mongodb: mongo:8.0 +\nvolume", fillcolor="#FBEBCB", color="#A8741A", shape=cylinder, style="filled"];
+  ch [label="chromadb: host 8001\nto 8000 + volume", fillcolor="#FBEBCB", color="#A8741A", shape=cylinder, style="filled"];
+  rd [label="redis:\nredis:7-alpine +\nvolume", fillcolor="#FBEBCB", color="#A8741A", shape=cylinder, style="filled"];
+  }
+  subgraph cluster_cloud { label="Optional external services"; labeljust=l; fontsize=16; fontname="Arial Bold"; style="rounded,filled"; fillcolor="#E9E1F2"; color="#6B4E9B"; penwidth=1.6;
+  llm [label="LLM provider API (HTTPS)", fillcolor="#E9E1F2", color="#6B4E9B", shape=box, style="filled,rounded"];
+  cld [label="Cloudinary storage", fillcolor="#E9E1F2", color="#6B4E9B", shape=box, style="filled,rounded"];
+  }
+  chrome -> fe [label=" dashboard"]; chrome -> be [label=" REST + JWT"];
+  fe -> be [style=dashed];
+  be -> mg; be -> ch; be -> rd; rd -> wk; wk -> mg [constraint=false]; wk -> ch [constraint=false];
+  be -> llm [style=dashed]; be -> cld [style=dashed]; eb -> chrome [style=dotted, constraint=false];
+  fe -> eb [style=invis]; ch -> cld [style=invis];
+}

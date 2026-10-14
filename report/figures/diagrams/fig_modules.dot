@@ -1,0 +1,17 @@
+digraph G {
+  graph [fontname="Arial", fontsize=16, pad=0.2, rankdir=TB, nodesep=0.3, ranksep=0.5];
+  node  [fontname="Arial", fontsize=16, style="filled,rounded", shape=box, penwidth=1.5, margin="0.14,0.08"];
+  edge  [fontname="Arial", fontsize=14, penwidth=1.4, arrowsize=0.8];
+  api [label="app/api/v1: HTTP routers", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  svc [label="app/services: auth, documents,\nfacts, profile, form_filling,\nretrieval, user_data, user_memories", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  agents [label="app/agents: graph,\nfield_classifier,\nllm_provider, value_formatting", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  proc [label="app/processing: extractor,\npipeline, chunking, runner", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  ext [label="app/extraction: deterministic,\nllm_extraction, merge,\nnormalize", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  onto [label="app/ontology: loader + YAML", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  sec [label="app/security + app/core:\nprompt_safety, JWT/bcrypt, config,\nlogging, rate limit", fillcolor="#F8DCDC", color="#A33A3A", shape=box, style="filled,rounded"];
+  repo [label="app/repositories + app/db: Mongo\nrepositories, ChromaClient,\nindexes", fillcolor="#FBEBCB", color="#A8741A", shape=box, style="filled,rounded"];
+  store [label="app/storage: local /\nCloudinary", fillcolor="#FBEBCB", color="#A8741A", shape=box, style="filled,rounded"];
+  tasks [label="app/tasks: Celery tasks", fillcolor="#E9E1F2", color="#6B4E9B", shape=box, style="filled,rounded"];
+  api -> svc; svc -> agents; svc -> proc; svc -> repo; svc -> store; agents -> onto; proc -> ext; ext -> onto;
+  agents -> sec [style=dashed]; api -> sec [style=dashed]; tasks -> proc; proc -> repo; agents -> repo [style=dashed];
+}

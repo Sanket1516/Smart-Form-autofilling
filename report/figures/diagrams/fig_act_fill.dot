@@ -1,0 +1,19 @@
+digraph G {
+  graph [fontname="Arial", fontsize=16, pad=0.2, rankdir=TB, nodesep=0.3, ranksep=0.3];
+  node  [fontname="Arial", fontsize=16, style="filled,rounded", shape=box, penwidth=1.5, margin="0.14,0.08"];
+  edge  [fontname="Arial", fontsize=14, penwidth=1.4, arrowsize=0.8];
+  s [label="", shape=circle, style=filled, fillcolor="#333333", width=0.22, fixedsize=true];
+  a [label="User opens popup; content script\ninjected on demand", fillcolor="#DCE9F8", color="#2F5D9B", shape=box, style="filled,rounded"];
+  b [label="Detector lists eligible fields;\nskips sensitive, hidden, disabled", fillcolor="#DCE9F8", color="#2F5D9B", shape=box, style="filled,rounded"];
+  c [label="Create form session; POST analyze\n(202)", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  d [label="LangGraph pipeline runs; popup\npolls recommendations", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  e [label="Review list: ready, needs_review,\nmissing, blocked", fillcolor="#DCE9F8", color="#2F5D9B", shape=box, style="filled,rounded"];
+  f [label="User ticks, edits or skips each\nfield", fillcolor="#DCE9F8", color="#2F5D9B", shape=box, style="filled,rounded"];
+  g [label="Submit decisions; GET approved\nvalues", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  h [label="Content script writes values\n(native setter + events)", fillcolor="#DCE9F8", color="#2F5D9B", shape=box, style="filled,rounded"];
+  i [label="DOM kept each\nvalue?", fillcolor="#EEEEEE", color="#555555", shape=diamond, style="filled"];
+  j [label="POST verify results (applied,\nverified, reason)", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  k [label="Show result; nothing is submitted", fillcolor="#DCE9F8", color="#2F5D9B", shape=box, style="filled,rounded"];
+  z [label="", shape=doublecircle, style=filled, fillcolor="#333333", width=0.22, fixedsize=true];
+  s -> a -> b -> c -> d -> e -> f -> g -> h -> i; i -> j [label=" yes or no (both reported)"]; j -> k -> z;
+}

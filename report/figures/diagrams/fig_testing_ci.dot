@@ -1,0 +1,10 @@
+digraph G {
+  graph [fontname="Arial", fontsize=16, pad=0.2, rankdir=TB, nodesep=0.4, ranksep=0.4];
+  node  [fontname="Arial", fontsize=16, style="filled,rounded", shape=box, penwidth=1.5, margin="0.14,0.08"];
+  edge  [fontname="Arial", fontsize=14, penwidth=1.4, arrowsize=0.8];
+  c [label="git push / pull\nrequest", fillcolor="#EEEEEE", color="#555555", shape=ellipse, style="filled", style="filled"];
+  j1 [label="CI job 1: ruff, black, pytest (mock LLM,\nMongoDB service), Chroma integration,\nfrontend + extension typecheck/test/build,\nCompose config", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  j2 [label="CI job 2: Playwright browser E2E with real\nChromium on an isolated Compose stack", fillcolor="#DCE9F8", color="#2F5D9B", shape=box, style="filled,rounded"];
+  r [label="Real-provider tests: opt-in,\nnever in CI", fillcolor="#E9E1F2", color="#6B4E9B", shape=box, style="filled,rounded"];
+  c -> j1 -> j2; c -> r [style=dotted, label=" manual"];
+}

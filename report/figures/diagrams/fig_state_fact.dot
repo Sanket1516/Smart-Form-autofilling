@@ -1,0 +1,11 @@
+digraph G {
+  graph [fontname="Arial", fontsize=16, pad=0.2, rankdir=TB, nodesep=0.8, ranksep=0.9];
+  node  [fontname="Arial", fontsize=16, style="filled,rounded", shape=box, penwidth=1.5, margin="0.14,0.08"];
+  edge  [fontname="Arial", fontsize=14, penwidth=1.4, arrowsize=0.8];
+  start [label="", shape=circle, style=filled, fillcolor="#333333", width=0.22, fixedsize=true];
+  ac [label="active", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  su [label="superseded", fillcolor="#FBEBCB", color="#A8741A", shape=box, style="filled,rounded"];
+  rj [label="rejected", fillcolor="#F8DCDC", color="#A33A3A", shape=box, style="filled,rounded"];
+  start -> ac [label=" extracted or user entered"]; ac -> su [label=" other candidate confirmed /\n value edited / custom value"];
+  ac -> rj [label=" user rejects"]; ac -> ac [label=" confirm"];
+}

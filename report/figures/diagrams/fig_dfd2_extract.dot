@@ -1,0 +1,20 @@
+digraph G {
+  graph [fontname="Arial", fontsize=16, pad=0.2, rankdir=TB, nodesep=0.35, ranksep=0.4];
+  node  [fontname="Arial", fontsize=16, style="filled,rounded", shape=box, penwidth=1.5, margin="0.14,0.08"];
+  edge  [fontname="Arial", fontsize=14, penwidth=1.4, arrowsize=0.8];
+  f [label="Stored file (PDF, DOCX, TXT,\nimage)", fillcolor="#FBEBCB", color="#A8741A", shape=cylinder, style="filled"];
+  a [label="3.1 Parse text (pdfplumber,\npypdfium2, python-docx, Pillow;\nOCR if scanned)", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  b [label="3.2 Deterministic extraction\n(regex + ontology alias labels)", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  c [label="3.3 LLM extraction (optional,\nJSON mode)", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  d [label="3.4 Merge candidates (same\nconcept and value combined;\ndifferent values kept)", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  e [label="3.5 Replace this document's\nfacts", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  g [label="3.6 Chunk (500/50), embed,\nupsert", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  o [label="Field ontology", fillcolor="#DDEFE0", color="#3C7A4B", shape=box, style="filled,rounded"];
+  mf [label="D3 facts", fillcolor="#FBEBCB", color="#A8741A", shape=cylinder, style="filled"];
+  ch [label="D5 ChromaDB", fillcolor="#FBEBCB", color="#A8741A", shape=cylinder, style="filled"];
+  llm [label="LLM provider", fillcolor="#E9E1F2", color="#6B4E9B", shape=box, style="filled,rounded", style="filled"];
+  err [label="requires_review or failed", fillcolor="#F8DCDC", color="#A33A3A", shape=box, style="filled,rounded"];
+  f -> a -> b -> c -> d -> e -> g;
+  o -> b [style=dashed, constraint=false]; c -> llm [dir=both, style=dashed, constraint=false];
+  e -> mf; g -> ch; a -> err [style=dashed, label=" unreadable /\n no OCR"];
+}
