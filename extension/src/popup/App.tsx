@@ -1,5 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
-import { AlertCircle, Loader2, LogIn, LogOut, Settings as SettingsIcon, Sparkles } from 'lucide-react';
+import { FileCheck2, Loader2, LogIn, LogOut, RefreshCw, Settings as SettingsIcon } from 'lucide-react';
 import { api, ApiError } from '../shared/api';
 import {
   clearAuth,
@@ -13,6 +13,8 @@ import {
   type StoredAuth,
 } from '../shared/storage';
 import { AutofillFlow } from './AutofillFlow';
+import { Notice } from './ui';
+import { useConnection, type ConnectionState } from './useConnection';
 import './App.css';
 
 type View = 'loading' | 'login' | 'main' | 'settings';
@@ -21,6 +23,16 @@ export const App = () => {
   const [view, setView] = useState<View>('loading');
   const [auth, setAuth] = useState<StoredAuth | null>(null);
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
+
+  const { state: connection, recheck } = useConnection(auth?.token ?? null);
+
+  useEffect(() => {
+    if (connection.kind === 'auth_required' && auth && view === 'main') {
+      void clearAuth();
+      setAuth(null);
+      setView('login');
+    }
+  }, [connection.kind, auth, view]);
 
   useEffect(() => {
     Promise.all([getAuth(), getSettings()]).then(([storedAuth, storedSettings]) => {
@@ -47,12 +59,15 @@ export const App = () => {
     setView('login');
   };
 
+  const usable = connection.kind === 'connected' || connection.kind === 'loading';
+
   return (
     <div className="popup-container">
-      <div className="header flex-between">
-        <div className="logo-group">
-          <Sparkles className="icon-logo" aria-hidden="true" />
-          <h2>Smart Autofill</h2>
+      <header className="header">
+        <div className="brand">
+          <span className="brand-mark" aria-hidden="true"><FileCheck2 size={15} /></span>
+          <h1>Smart Form</h1>
+          <StatusChip state={connection} />
         </div>
         <div className="header-actions">
           <button
@@ -69,7 +84,18 @@ export const App = () => {
             </button>
           )}
         </div>
-      </div>
+      </header>
+
+      {view === 'main' && connection.kind === 'backend_unavailable' && (
+        <Notice kind="error" action={<button className="btn-text" onClick={recheck}><RefreshCw size={12} /> Retry</button>}>
+          The backend is not responding. Check that it is running at {settings.backendUrl}.
+        </Notice>
+      )}
+      {view === 'main' && connection.kind === 'config_incomplete' && (
+        <Notice kind="warning" action={<button className="btn-text" onClick={() => setView('settings')}>Settings</button>}>
+          Permission to contact the backend has not been granted.
+        </Notice>
+      )}
 
       {view === 'loading' && <Loader2 className="spin center" aria-label="Loading" />}
       {view === 'settings' && (
@@ -78,6 +104,7 @@ export const App = () => {
           onSaved={(next) => {
             setSettings(next);
             setView(auth ? 'main' : 'login');
+            recheck();
           }}
         />
       )}
@@ -90,10 +117,23 @@ export const App = () => {
           }}
         />
       )}
-      {view === 'main' && auth && (
+      {view === 'main' && auth && usable && (
         <AutofillFlow settings={settings} onSessionExpired={onSessionExpired} />
       )}
     </div>
+  );
+};
+
+const StatusChip = ({ state }: { state: ConnectionState }) => {
+  const text = {
+    loading: 'Checking…', connected: 'Connected', auth_required: 'Sign-in required',
+    backend_unavailable: 'Backend offline', config_incomplete: 'Setup incomplete',
+  }[state.kind];
+  const tone = state.kind === 'connected' ? 'ok' : state.kind === 'loading' ? 'muted' : state.kind === 'auth_required' ? 'warn' : 'bad';
+  return (
+    <span className={`chip chip-${tone}`} title={state.kind === 'connected' ? state.email : undefined}>
+      <span className="dot" aria-hidden="true" />{text}
+    </span>
   );
 };
 
@@ -124,9 +164,7 @@ const LoginView = ({ settings, onSignedIn }: { settings: Settings; onSignedIn: (
   return (
     <form onSubmit={submit} className="login-form">
       {error && (
-        <div className="alert-box error" role="alert">
-          <AlertCircle size={16} /> {error}
-        </div>
+        <Notice kind="error">{error}</Notice>
       )}
       <div className="form-group">
         <label htmlFor="sfa-email">Email</label>
@@ -204,9 +242,7 @@ const SettingsView = ({ settings, onSaved }: { settings: Settings; onSaved: (set
         <input id="sfa-dashboard" value={dashboardUrl} onChange={(e) => setDashboardUrl(e.target.value)} required />
       </div>
       {message && (
-        <div className={`alert-box ${message.kind}`} role="status">
-          <AlertCircle size={16} /> {message.text}
-        </div>
+        <Notice kind={message.kind}>{message.text}</Notice>
       )}
       <button type="submit" className="btn-primary" disabled={busy}>
         {busy ? <Loader2 size={16} className="spin" /> : null} Save and test connection

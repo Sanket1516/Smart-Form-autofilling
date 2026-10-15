@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildDecisions, initialEdit } from './AutofillFlow';
+import { buildDecisions, formSignature, initialEdit } from './AutofillFlow';
 import type { Recommendation } from '../types';
 
 const rec = (field_id: string, status: Recommendation['status'], recommended_value: unknown): Recommendation => ({
@@ -36,5 +36,28 @@ describe('review decisions', () => {
       { field_id: 'changed', decision: 'edit', value: 'new', save_for_future: true },
       { field_id: 'typed', decision: 'edit', value: 'typed value', save_for_future: false },
     ]);
+  });
+});
+
+describe('review guards', () => {
+  const field = (has_value: boolean) => ({
+    field_id: 'a', tag: 'input', input_type: 'text', label: 'a', required: false, has_value, options: [],
+  });
+
+  it('never pre-ticks a value that would replace what is already on the page', () => {
+    expect(initialEdit(rec('a', 'ready', 'x'), field(true)).selected).toBe(false);
+    expect(initialEdit(rec('a', 'ready', 'x'), field(false)).selected).toBe(true);
+  });
+
+  it('never pre-ticks sensitive fields, even when the backend is confident', () => {
+    const aadhaar = { ...rec('a', 'ready', '1234'), field_label: 'Aadhaar number' };
+    expect(initialEdit(aadhaar).selected).toBe(false);
+    expect(initialEdit(aadhaar).value).toBe('1234');
+  });
+
+  it('fingerprints the detected form so an unchanged form is not re-analysed', () => {
+    const a = formSignature([field(false)], []);
+    expect(formSignature([field(true)], [])).toBe(a); // typing into a field does not change the form
+    expect(formSignature([field(false), { ...field(false), field_id: 'b' }], [])).not.toBe(a);
   });
 });

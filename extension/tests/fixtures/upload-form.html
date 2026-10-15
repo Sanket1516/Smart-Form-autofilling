@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>NEET (UG) 2026 Application Form (synthetic test fixture)</title>
+  <style>
+    body { font-family: sans-serif; max-width: 640px; margin: 2rem auto; }
+    .form-group { display: flex; flex-direction: column; margin-bottom: 1rem; }
+    .styled-upload input { display: none; }
+    .styled-upload label.btn { border: 1px solid #888; padding: 6px 10px; display: inline-block; }
+  </style>
+</head>
+<body>
+  <h1>NEET (UG) 2026 Application</h1>
+  <form id="application" action="/should-never-be-called" method="post">
+    <h2>Candidate details</h2>
+    <div class="form-group">
+      <label for="cand_name">Candidate name</label>
+      <input id="cand_name" name="cand_name" value="Typed by the candidate">
+    </div>
+    <h2>Upload documents</h2>
+    <div class="form-group">
+      <label for="photo">Upload Photograph</label>
+      <input type="file" id="photo" name="photo" accept=".png,.jpg,.jpeg" required>
+      <small>PNG or JPG, up to 200 KB. Recent passport size photograph.</small>
+    </div>
+    <div class="form-group">
+      <label for="sign">Candidate Signature</label>
+      <input type="file" id="sign" name="signature" accept=".png,.jpg,.jpeg">
+    </div>
+    <div class="form-group">
+      <label for="hsc">HSC marksheet</label>
+      <input type="file" id="hsc" name="hsc_marksheet" accept=".pdf">
+    </div>
+    <div class="form-group">
+      <label for="cvc">Caste validity certificate</label>
+      <input type="file" id="cvc" name="caste_validity" accept=".pdf">
+    </div>
+    <div class="form-group styled-upload">
+      <label class="btn" for="cv">Upload Resume</label>
+      <input type="file" id="cv" name="resume" accept=".pdf,.doc,.docx">
+    </div>
+    <button type="submit">Submit application</button>
+  </form>
+  <script>
+    window.submitted = false;
+    document.getElementById('application').addEventListener('submit', (event) => {
+      event.preventDefault();
+      window.submitted = true;
+    });
+    window.addExtraUpload = () => {
+      const div = document.createElement('div');
+      div.className = 'form-group';
+      div.innerHTML = '<label for="ews">EWS Certificate</label><input type="file" id="ews" name="ews" accept=".pdf">';
+      document.getElementById('application').prepend(div);
+    };
+  </script>
+</body>
+</html>

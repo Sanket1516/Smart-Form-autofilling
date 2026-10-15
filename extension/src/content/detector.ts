@@ -1,4 +1,4 @@
-import type { FieldObject, FieldOption } from '../types';
+import type { FieldObject, FieldOption, UploadField } from '../types';
 
 /**
  * Detects fillable form controls and describes them for semantic matching.
@@ -30,9 +30,11 @@ interface Registered {
 }
 
 let registry = new Map<string, Registered>();
+let uploadRegistry = new Map<string, HTMLInputElement>();
 
 export interface Extraction {
   fields: FieldObject[];
+  uploads: UploadField[];
   skipped: number;
 }
 
@@ -42,7 +44,9 @@ export function extractFieldObjects(root: ParentNode = document): FieldObject[] 
 }
 
 export function extractFields(root: ParentNode = document): Extraction {
-  const all = collect(root);
+  const everything = collect(root);
+  const fileInputs = everything.filter(isFileInput);
+  const all = everything.filter((element) => !isFileInput(element));
   const eligible = all.filter(isEligible);
   const usedIds = new Set<string>();
   const nextRegistry = new Map<string, Registered>();
@@ -65,8 +69,34 @@ export function extractFields(root: ParentNode = document): Extraction {
     nextRegistry.set(field.field_id, { elements: [element], isRadioGroup: false });
   }
 
+  const uploads: UploadField[] = [];
+  const nextUploads = new Map<string, HTMLInputElement>();
+  for (const input of fileInputs.filter(isUploadEligible)) {
+    const upload = describeUpload(input, unique(`file:${baseId(input)}`, usedIds));
+    uploads.push(upload);
+    nextUploads.set(upload.field_id, input);
+  }
+
   registry = nextRegistry;
-  return { fields, skipped: all.length - eligible.length };
+  uploadRegistry = nextUploads;
+  return { fields, uploads, skipped: all.length - eligible.length };
+}
+
+/** File input for an upload field ID from the latest extraction (re-extracts once if unknown). */
+export function getUploadByFieldId(fieldId: string, root: ParentNode = document): HTMLInputElement | null {
+  if (!uploadRegistry.has(fieldId)) extractFields(root);
+  return uploadRegistry.get(fieldId) ?? null;
+}
+
+/** Cheap fingerprint of the form controls, used to notice dynamically added or removed fields. */
+export function controlSignature(root: ParentNode = document): string {
+  const parts: string[] = [];
+  root.querySelectorAll?.(FIELD_SELECTOR).forEach((element) => {
+    if (isFieldElement(element) && !(element instanceof HTMLInputElement && element.type === 'hidden')) {
+      parts.push(`${element.tagName}:${element.id}:${element.getAttribute('name') ?? ''}`);
+    }
+  });
+  return `${parts.length}|${parts.join(',')}`;
 }
 
 /** Element for a field ID from the latest extraction (re-extracts once if unknown). */
@@ -96,6 +126,10 @@ function isFieldElement(element: Element): element is FieldElement {
     || element instanceof HTMLTextAreaElement;
 }
 
+function isFileInput(element: FieldElement): element is HTMLInputElement {
+  return element instanceof HTMLInputElement && element.type.toLowerCase() === 'file';
+}
+
 function isRadio(element: FieldElement): element is HTMLInputElement {
   return element instanceof HTMLInputElement && element.type.toLowerCase() === 'radio';
 }
@@ -113,6 +147,14 @@ export function isEligible(element: FieldElement): boolean {
   ].join(' ');
   if (SENSITIVE_TEXT.test(describing)) return false;
   return isVisible(element);
+}
+
+/** File inputs are often hidden behind a styled button, so a visible label or container is enough. */
+function isUploadEligible(input: HTMLInputElement): boolean {
+  if (input.disabled) return false;
+  if (isVisible(input)) return true;
+  const labelled = Array.from(input.labels ?? []).some((label) => isVisible(label));
+  return labelled || (input.parentElement ? isVisible(input.parentElement) : false);
 }
 
 export function isVisible(element: Element): boolean {
@@ -166,6 +208,42 @@ function describeControl(element: FieldElement, fieldId: string): FieldObject {
     max_length: maxLength,
     options: options.filter((option) => option.value !== '' || option.label !== ''),
   };
+}
+
+const GENERIC_UPLOAD_LABEL = /^(choose|browse|select|upload|attach|add)?\s*(a\s+|the\s+)?(file|files|document)?\.{0,3}$/i;
+
+function describeUpload(input: HTMLInputElement, fieldId: string): UploadField {
+  const own = labelText(input) || clean(input.getAttribute('aria-label')) || '';
+  const generic = own === '' || GENERIC_UPLOAD_LABEL.test(own);
+  const label = generic
+    ? nearbyText(input) || clean(input.getAttribute('placeholder')) || sectionText(input) || own
+    : own;
+  return {
+    field_id: fieldId,
+    label,
+    name: attr(input, 'name'),
+    id: attr(input, 'id'),
+    placeholder: attr(input, 'placeholder'),
+    accept: attr(input, 'accept'),
+    multiple: input.multiple,
+    required: input.required || input.getAttribute('aria-required') === 'true',
+    section: sectionText(input),
+    nearby_text: nearbyText(input),
+    instructions: instructionText(input),
+    has_file: (input.files?.length ?? 0) > 0,
+  };
+}
+
+/** Text of the smallest ancestor that holds only this control: its label plus any size/format hints. */
+function instructionText(input: HTMLInputElement): string | undefined {
+  let best: Element | null = null;
+  let node: Element | null = input.parentElement;
+  for (let depth = 0; node && depth < 3; depth += 1, node = node.parentElement) {
+    if (node.querySelectorAll(FIELD_SELECTOR).length > 1) break;
+    best = node;
+  }
+  const described = describedBy(input);
+  return clean([best?.textContent, described].filter(Boolean).join(' '));
 }
 
 function describeRadioGroup(radios: HTMLInputElement[], fieldId: string): FieldObject {

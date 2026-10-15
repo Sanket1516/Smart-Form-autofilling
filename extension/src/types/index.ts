@@ -27,16 +27,56 @@ export interface FieldObject {
   options: FieldOption[];
 }
 
+/** A file-upload control. Describes the control only; never any file contents. */
+export interface UploadField {
+  field_id: string;
+  label: string;
+  name?: string;
+  id?: string;
+  placeholder?: string;
+  accept?: string;
+  multiple: boolean;
+  required: boolean;
+  section?: string;
+  nearby_text?: string;
+  /** Short helper text next to the control (size limits, formats, instructions). */
+  instructions?: string;
+  has_file: boolean;
+}
+
 export interface PageInfo {
   origin: string;
   url: string;
   title: string;
+  /** First top-level heading, used only to recognise the application (e.g. an exam). */
+  heading?: string;
 }
 
 export interface ExtractResponse {
   fields: FieldObject[];
+  uploads: UploadField[];
   skipped: number;
   page: PageInfo;
+}
+
+/** A document in the user's library, as returned by GET /documents. */
+export interface DocumentRecord {
+  document_id: string;
+  file_name: string;
+  file_type: string;
+  file_size: number;
+  document_type: string | null;
+  document_type_confidence: number | null;
+  status: string;
+  uploaded_at: string;
+  fact_count: number;
+}
+
+export interface AttachResult {
+  field_id: string;
+  attached: boolean;
+  verified: boolean;
+  reason?: string;
 }
 
 export interface SelectedOption {
@@ -94,6 +134,8 @@ export interface ApprovedValue {
   input_type: string;
   field_label?: string;
   selected_option?: SelectedOption | null;
+  /** The user explicitly agreed to replace a value already present on the page. */
+  overwrite?: boolean;
 }
 
 export interface FillResult {
@@ -106,4 +148,10 @@ export interface FillResult {
 export type ContentRequest =
   | { type: 'SFA_PING' }
   | { type: 'SFA_EXTRACT' }
-  | { type: 'SFA_FILL'; values: ApprovedValue[] };
+  | { type: 'SFA_FILL'; values: ApprovedValue[] }
+  | { type: 'SFA_ATTACH_FILE'; field_id: string; file_name: string; mime: string; data_base64: string; replace?: boolean };
+
+/** Sent by the content script (debounced) when controls were added or removed. */
+export interface FormChangedMessage {
+  type: 'SFA_FORM_CHANGED';
+}

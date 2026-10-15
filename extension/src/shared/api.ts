@@ -1,4 +1,4 @@
-import type { ApprovedValue, FieldObject, FillResult, Recommendation } from '../types';
+import type { ApprovedValue, DocumentRecord, FieldObject, FillResult, Recommendation } from '../types';
 import { clearAuth, getAuth, getSettings } from './storage';
 
 /** Error carrying the backend's machine-readable code and a user-facing message. */
@@ -91,6 +91,81 @@ async function send<T>(
   return payload?.data as T;
 }
 
+/** Keep only well-formed document records; the backend response is validated, not trusted. */
+export function parseDocuments(payload: unknown): DocumentRecord[] {
+  const list = (payload as { documents?: unknown })?.documents;
+  if (!Array.isArray(list)) return [];
+  return list.flatMap((item: any): DocumentRecord[] => {
+    if (!item || typeof item.document_id !== 'string' || typeof item.file_name !== 'string') return [];
+    return [{
+      document_id: item.document_id,
+      file_name: item.file_name,
+      file_type: typeof item.file_type === 'string' ? item.file_type : '',
+      file_size: Number.isFinite(item.file_size) ? item.file_size : 0,
+      document_type: typeof item.document_type === 'string' ? item.document_type : null,
+      document_type_confidence: typeof item.document_type_confidence === 'number' ? item.document_type_confidence : null,
+      status: typeof item.status === 'string' ? item.status : 'unknown',
+      uploaded_at: typeof item.uploaded_at === 'string' ? item.uploaded_at : '',
+      fact_count: Number.isFinite(item.fact_count) ? item.fact_count : 0,
+    }];
+  });
+}
+
+/** Download a stored original through the authenticated endpoint. Nothing is written to disk. */
+export async function downloadDocument(documentId: string, maxBytes = 10 * 1024 * 1024): Promise<Blob> {
+  const { backendUrl } = await getSettings();
+  const stored = await getAuth();
+  if (!stored) throw new ApiError('Please sign in again.', 401, 'UNAUTHORIZED');
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 30_000);
+  try {
+    const response = await fetch(`${apiBase(backendUrl)}/documents/${encodeURIComponent(documentId)}/download`, {
+      headers: { Authorization: `Bearer ${stored.token}` }, signal: controller.signal,
+    });
+    if (response.status === 401) {
+      await clearAuth();
+      throw new ApiError('Your session has expired. Please sign in again.', 401, 'UNAUTHORIZED');
+    }
+    if (!response.ok) {
+      throw new ApiError(
+        response.status === 404
+          ? 'The original file is not stored. Upload it again on the website.'
+          : `The file could not be retrieved (${response.status}).`,
+        response.status, 'DOWNLOAD_FAILED',
+      );
+    }
+    const blob = await response.blob();
+    if (blob.size > maxBytes) throw new ApiError('The file is larger than 10 MB.', 413, 'FILE_TOO_LARGE');
+    return blob;
+  } catch (error) {
+    if (error instanceof ApiError) throw error;
+    throw new ApiError('Cannot reach the server to retrieve the file.', 0, 'NETWORK_ERROR');
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+export interface ExamUploadRequirement {
+  id: string;
+  label: string;
+  required: boolean | null;
+  reason?: string | null;
+  formats: string[];
+  min_kb: number | null;
+  max_kb: number | null;
+  verified: boolean;
+  note?: string | null;
+}
+
+export interface ExamReadiness {
+  exam_id: string;
+  name: string;
+  last_reviewed?: string | null;
+  verified_against_official_bulletin: boolean;
+  note?: string | null;
+  uploads: ExamUploadRequirement[];
+}
+
 // ---------------------------------------------------------------------------- endpoints
 
 export interface SessionData {
@@ -108,6 +183,9 @@ export const api = {
     request<{ access_token: string; user: { full_name: string; email: string } }>('/auth/login', {
       method: 'POST', body: { email, password }, auth: false,
     }),
+  me: () => request<{ email: string; full_name?: string }>('/auth/me', { timeoutMs: 8000 }),
+  documents: () => request<unknown>('/documents?limit=100').then(parseDocuments),
+  examReadiness: (examId: string) => request<ExamReadiness>(`/exams/${examId}/readiness`),
   logout: () => request('/auth/logout', { method: 'POST' }),
   health: () => request<{ status: string }>('/health', { auth: false, timeoutMs: 5000 }),
   createSession: (website_origin: string, page_url: string, form_id: string) =>
