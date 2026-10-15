@@ -122,7 +122,7 @@ test('review, approve and fill a form from an uploaded document', async () => {
   await popup.getByLabel('Password').fill(password);
   await popup.getByRole('button', { name: 'Sign in' }).click();
 
-  await popup.getByRole('button', { name: 'Scan this page' }).click();
+  // The form is detected as soon as the popup opens.
   await expect(popup.locator('.field-count')).toHaveText('6');  // password + honeypot ignored
   await popup.getByRole('button', { name: 'Suggest values' }).click();
   await expect(popup.locator('.review-row')).toHaveCount(6, { timeout: 120_000 });
@@ -145,5 +145,5 @@ test('review, approve and fill a form from an uploaded document', async () => {
   expect(await page.evaluate(() => (window as unknown as { submitted: boolean }).submitted)).toBe(false);
 
   await popup.getByRole('button', { name: 'Done without submitting' }).click();
-  await expect(popup.getByRole('button', { name: 'Scan this page' })).toBeVisible();
+  await expect(popup.getByRole('button', { name: 'Suggest values' })).toBeVisible();
 });
