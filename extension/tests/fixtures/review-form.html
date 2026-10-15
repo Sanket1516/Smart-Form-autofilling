@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>MHT CET 2026 Online Application (synthetic test fixture)</title>
+  <style>
+    body { font-family: sans-serif; max-width: 640px; margin: 2rem auto; }
+    .form-group { display: flex; flex-direction: column; margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>MHT CET 2026 Application</h1>
+  <form id="application" action="/should-never-be-called" method="post">
+    <h2>Personal details</h2>
+    <div class="form-group"><label for="legal_name">Candidate full name</label><input id="legal_name" name="legal_name" required></div>
+    <div class="form-group"><label for="father_name">Father's name</label><input id="father_name" name="father_name" required></div>
+    <div class="form-group"><label for="dob">Date of birth</label><input id="dob" name="dob" type="date" required></div>
+    <div class="form-group"><label for="email">Email address</label><input id="email" name="email" type="email"></div>
+    <div class="form-group"><label for="cand_display">Name as it should appear on the admit card</label><input id="cand_display" name="cand_display" value="Typed by the candidate"></div>
+    <h2>Qualifying examination</h2>
+    <div class="form-group">
+      <label for="institution">Name of the institution from which the qualifying examination was passed (as printed on the certificate)</label>
+      <input id="institution" name="institution">
+    </div>
+    <h2>Category and preferences</h2>
+    <div class="form-group">
+      <label for="category">Social category</label>
+      <select id="category" name="category"><option value="">Select</option><option value="OPEN">Open</option><option value="OBC">OBC</option><option value="SC">SC</option></select>
+    </div>
+    <div class="form-group"><label for="exam_city">Preferred examination city</label><input id="exam_city" name="exam_city" required></div>
+    <div class="form-group"><label for="aadhaar">Aadhaar number</label><input id="aadhaar" name="aadhaar"></div>
+    <h2>Documents</h2>
+    <div class="form-group">
+      <label for="photo">Upload Photograph</label>
+      <input type="file" id="photo" name="photo" accept=".png,.jpg,.jpeg" required>
+      <small>PNG or JPG, up to 200 KB.</small>
+    </div>
+    <div class="form-group"><label for="sign">Upload Signature</label><input type="file" id="sign" name="sign" accept=".png,.jpg"></div>
+    <div class="form-group"><label for="hsc">HSC marksheet</label><input type="file" id="hsc" name="hsc" accept=".pdf"></div>
+    <div class="form-group">
+      <label><input type="checkbox" id="declare" name="declare"> I declare that the information given above is true and correct</label>
+    </div>
+    <button type="submit">Submit</button>
+  </form>
+  <script>
+    window.submitted = false;
+    document.getElementById('application').addEventListener('submit', (e) => { e.preventDefault(); window.submitted = true; });
+  </script>
+</body>
+</html>

@@ -8,7 +8,7 @@ import { FIXTURE_ORIGIN } from './playwright.config';
  */
 export default defineConfig({
   testDir: './tests',
-  testMatch: /uploads\.spec\.ts/,
+  testMatch: /(uploads|visual)\.spec\.ts/,
   timeout: 60_000,
   workers: 1,
   reporter: [['list']],

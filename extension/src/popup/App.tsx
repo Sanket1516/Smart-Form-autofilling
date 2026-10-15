@@ -1,5 +1,5 @@
-import { useEffect, useState, type FormEvent } from 'react';
-import { FileCheck2, Loader2, LogIn, LogOut, RefreshCw, Settings as SettingsIcon } from 'lucide-react';
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react';
+import { ArrowLeft, FolderOpen, LogOut, RefreshCw, Settings as SettingsIcon, UserRound, WifiOff } from 'lucide-react';
 import { api, ApiError } from '../shared/api';
 import {
   clearAuth,
@@ -13,7 +13,7 @@ import {
   type StoredAuth,
 } from '../shared/storage';
 import { AutofillFlow } from './AutofillFlow';
-import { Notice } from './ui';
+import { Callout, Logo, Mark, Menu, Spinner, type MenuItem } from './ui';
 import { useConnection, type ConnectionState } from './useConnection';
 import './App.css';
 
@@ -23,6 +23,7 @@ export const App = () => {
   const [view, setView] = useState<View>('loading');
   const [auth, setAuth] = useState<StoredAuth | null>(null);
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
+  const [expired, setExpired] = useState(false);
 
   const { state: connection, recheck } = useConnection(auth?.token ?? null);
 
@@ -30,6 +31,7 @@ export const App = () => {
     if (connection.kind === 'auth_required' && auth && view === 'main') {
       void clearAuth();
       setAuth(null);
+      setExpired(true);
       setView('login');
     }
   }, [connection.kind, auth, view]);
@@ -50,57 +52,45 @@ export const App = () => {
     }
     await clearAuth();
     setAuth(null);
+    setExpired(false);
     setView('login');
   };
 
   const onSessionExpired = async () => {
     await clearAuth();
     setAuth(null);
+    setExpired(true);
     setView('login');
   };
+
+  const openSite = (path: string) => chrome.tabs.create({ url: `${settings.dashboardUrl}${path}` });
+  const menu: MenuItem[] = [
+    ...(auth ? [
+      { label: 'Your documents', icon: <FolderOpen size={14} />, onSelect: () => openSite('/documents') },
+      { label: 'Your profile', icon: <UserRound size={14} />, onSelect: () => openSite('/profile') },
+    ] : []),
+    { label: 'Connection settings', icon: <SettingsIcon size={14} />, onSelect: () => setView('settings') },
+    ...(auth ? [{ label: 'Sign out', icon: <LogOut size={14} />, onSelect: signOut, tone: 'danger' as const }] : []),
+  ];
 
   const usable = connection.kind === 'connected' || connection.kind === 'loading';
 
   return (
-    <div className="popup-container">
-      <header className="header">
-        <div className="brand">
-          <span className="brand-mark" aria-hidden="true"><FileCheck2 size={15} /></span>
-          <h1>Smart Form</h1>
-          <StatusChip state={connection} />
-        </div>
-        <div className="header-actions">
-          <button
-            className="btn-icon"
-            onClick={() => setView(view === 'settings' ? (auth ? 'main' : 'login') : 'settings')}
-            title="Settings"
-            aria-label="Settings"
-          >
-            <SettingsIcon size={16} />
-          </button>
-          {auth && view !== 'settings' && (
-            <button className="btn-icon" onClick={signOut} title="Sign out" aria-label="Sign out">
-              <LogOut size={16} />
-            </button>
-          )}
+    <div className="shell">
+      <header className="topbar">
+        <Logo />
+        <div className="topbar-end">
+          {view !== 'settings' && <ConnectionStatus state={connection} />}
+          <Menu items={menu} label="More" />
         </div>
       </header>
 
-      {view === 'main' && connection.kind === 'backend_unavailable' && (
-        <Notice kind="error" action={<button className="btn-text" onClick={recheck}><RefreshCw size={12} /> Retry</button>}>
-          The backend is not responding. Check that it is running at {settings.backendUrl}.
-        </Notice>
-      )}
-      {view === 'main' && connection.kind === 'config_incomplete' && (
-        <Notice kind="warning" action={<button className="btn-text" onClick={() => setView('settings')}>Settings</button>}>
-          Permission to contact the backend has not been granted.
-        </Notice>
-      )}
+      {view === 'loading' && <div className="scroll center-state"><Spinner size={18} label="Loading" /></div>}
 
-      {view === 'loading' && <Loader2 className="spin center" aria-label="Loading" />}
       {view === 'settings' && (
         <SettingsView
           settings={settings}
+          onBack={() => setView(auth ? 'main' : 'login')}
           onSaved={(next) => {
             setSettings(next);
             setView(auth ? 'main' : 'login');
@@ -108,15 +98,41 @@ export const App = () => {
           }}
         />
       )}
+
       {view === 'login' && (
         <LoginView
           settings={settings}
+          expired={expired}
           onSignedIn={(next) => {
             setAuth(next);
+            setExpired(false);
             setView('main');
           }}
         />
       )}
+
+      {view === 'main' && auth && connection.kind === 'backend_unavailable' && (
+        <div className="scroll">
+          <StatePanel
+            icon={<WifiOff size={18} />}
+            title="Smart Form can't reach your account"
+            body={<>The backend at <span className="mono">{settings.backendUrl}</span> is not responding. Your page has not been changed.</>}
+            primary={<button className="button button-primary" onClick={recheck}><RefreshCw size={14} /> Try again</button>}
+            secondary={<button className="button button-quiet" onClick={() => setView('settings')}>Connection settings</button>}
+          />
+        </div>
+      )}
+      {view === 'main' && auth && connection.kind === 'config_incomplete' && (
+        <div className="scroll">
+          <StatePanel
+            icon={<SettingsIcon size={18} />}
+            title="Finish connecting Smart Form"
+            body="Chrome has not yet allowed the extension to contact your backend."
+            primary={<button className="button button-primary" onClick={() => setView('settings')}>Open connection settings</button>}
+          />
+        </div>
+      )}
+
       {view === 'main' && auth && usable && (
         <AutofillFlow settings={settings} onSessionExpired={onSessionExpired} />
       )}
@@ -124,20 +140,36 @@ export const App = () => {
   );
 };
 
-const StatusChip = ({ state }: { state: ConnectionState }) => {
-  const text = {
-    loading: 'Checking…', connected: 'Connected', auth_required: 'Sign-in required',
-    backend_unavailable: 'Backend offline', config_incomplete: 'Setup incomplete',
-  }[state.kind];
-  const tone = state.kind === 'connected' ? 'ok' : state.kind === 'loading' ? 'muted' : state.kind === 'auth_required' ? 'warn' : 'bad';
-  return (
-    <span className={`chip chip-${tone}`} title={state.kind === 'connected' ? state.email : undefined}>
-      <span className="dot" aria-hidden="true" />{text}
-    </span>
-  );
+const STATUS_TEXT: Record<ConnectionState['kind'], string> = {
+  loading: 'Connecting',
+  connected: 'Connected',
+  auth_required: 'Signed out',
+  backend_unavailable: 'Offline',
+  config_incomplete: 'Not set up',
 };
 
-const LoginView = ({ settings, onSignedIn }: { settings: Settings; onSignedIn: (auth: StoredAuth) => void }) => {
+const ConnectionStatus = ({ state }: { state: ConnectionState }) => (
+  <span className={`status status-${state.kind}`} title={state.kind === 'connected' ? `Signed in as ${state.email}` : undefined}
+    role="status">
+    <span className="status-dot" aria-hidden="true" />
+    {STATUS_TEXT[state.kind]}
+  </span>
+);
+
+export const StatePanel = ({ icon, title, body, primary, secondary }: {
+  icon: ReactNode; title: string; body: ReactNode; primary?: ReactNode; secondary?: ReactNode;
+}) => (
+  <section className="state-panel rise">
+    <span className="state-icon" aria-hidden="true">{icon}</span>
+    <h2 className="state-title">{title}</h2>
+    <p className="state-body">{body}</p>
+    {(primary || secondary) && <div className="state-actions">{primary}{secondary}</div>}
+  </section>
+);
+
+const LoginView = ({ settings, expired, onSignedIn }: {
+  settings: Settings; expired: boolean; onSignedIn: (auth: StoredAuth) => void;
+}) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -154,7 +186,9 @@ const LoginView = ({ settings, onSignedIn }: { settings: Settings; onSignedIn: (
       onSignedIn(stored);
     } catch (err) {
       const apiError = err as ApiError;
-      setError(apiError.status === 401 ? 'Incorrect email or password.' : apiError.message);
+      setError(apiError.status === 401
+        ? 'That email and password do not match an account.'
+        : apiError.status === 0 ? 'Smart Form cannot reach the backend. Check the connection settings.' : apiError.message);
     } finally {
       setBusy(false);
       setPassword('');
@@ -162,35 +196,44 @@ const LoginView = ({ settings, onSignedIn }: { settings: Settings; onSignedIn: (
   };
 
   return (
-    <form onSubmit={submit} className="login-form">
-      {error && (
-        <Notice kind="error">{error}</Notice>
-      )}
-      <div className="form-group">
-        <label htmlFor="sfa-email">Email</label>
-        <input id="sfa-email" type="email" autoComplete="username" value={email}
-          onChange={(e) => setEmail(e.target.value)} required />
-      </div>
-      <div className="form-group">
-        <label htmlFor="sfa-password">Password</label>
-        <input id="sfa-password" type="password" autoComplete="current-password" value={password}
-          onChange={(e) => setPassword(e.target.value)} required />
-      </div>
-      <button type="submit" disabled={busy} className="btn-primary">
-        {busy ? <Loader2 size={16} className="spin" /> : <LogIn size={16} />} Sign in
-      </button>
-      <p className="text-secondary text-sm">
-        No account?{' '}
-        <button type="button" className="link-button"
-          onClick={() => chrome.tabs.create({ url: `${settings.dashboardUrl}/register` })}>
-          Register in the dashboard
+    <div className="scroll">
+      <form onSubmit={submit} className="auth rise">
+        <span className="auth-mark"><Mark size={28} /></span>
+        <h2 className="auth-title">{expired ? 'Your session has ended' : 'Sign in to Smart Form'}</h2>
+        <p className="auth-lede">
+          {expired
+            ? 'Sign in again to continue where you left off. Nothing on the page was changed.'
+            : 'Fill forms from your own verified documents. You review every value before it is used.'}
+        </p>
+        {error && <Callout kind="error">{error}</Callout>}
+        <label className="field">
+          <span className="field-label">Email</span>
+          <input type="email" autoComplete="username" value={email}
+            onChange={(e) => setEmail(e.target.value)} required />
+        </label>
+        <label className="field">
+          <span className="field-label">Password</span>
+          <input type="password" autoComplete="current-password" value={password}
+            onChange={(e) => setPassword(e.target.value)} required />
+        </label>
+        <button type="submit" disabled={busy} className="button button-primary button-block">
+          {busy && <Spinner />} Sign in
         </button>
-      </p>
-    </form>
+        <p className="auth-foot">
+          New here?{' '}
+          <button type="button" className="link"
+            onClick={() => chrome.tabs.create({ url: `${settings.dashboardUrl}/register` })}>
+            Create an account
+          </button>
+        </p>
+      </form>
+    </div>
   );
 };
 
-const SettingsView = ({ settings, onSaved }: { settings: Settings; onSaved: (settings: Settings) => void }) => {
+const SettingsView = ({ settings, onSaved, onBack }: {
+  settings: Settings; onSaved: (settings: Settings) => void; onBack: () => void;
+}) => {
   const [backendUrl, setBackendUrl] = useState(settings.backendUrl);
   const [dashboardUrl, setDashboardUrl] = useState(settings.dashboardUrl);
   const [message, setMessage] = useState<{ kind: 'error' | 'success'; text: string } | null>(null);
@@ -206,7 +249,7 @@ const SettingsView = ({ settings, onSaved }: { settings: Settings; onSaved: (set
       dashboard = new URL(dashboardUrl);
       if (!/^https?:$/.test(backend.protocol) || !/^https?:$/.test(dashboard.protocol)) throw new Error();
     } catch {
-      setMessage({ kind: 'error', text: 'Enter full http(s) URLs.' });
+      setMessage({ kind: 'error', text: 'Enter full addresses starting with http:// or https://.' });
       return;
     }
     setBusy(true);
@@ -215,7 +258,7 @@ const SettingsView = ({ settings, onSaved }: { settings: Settings; onSaved: (set
       const granted = await chrome.permissions.contains({ origins: [origin] })
         || await chrome.permissions.request({ origins: [origin] });
       if (!granted) {
-        setMessage({ kind: 'error', text: 'Permission to contact that server was not granted.' });
+        setMessage({ kind: 'error', text: 'Chrome did not allow the extension to contact that server.' });
         return;
       }
       const next = { backendUrl: backend.origin, dashboardUrl: dashboard.origin };
@@ -232,21 +275,25 @@ const SettingsView = ({ settings, onSaved }: { settings: Settings; onSaved: (set
   };
 
   return (
-    <form onSubmit={save} className="login-form">
-      <div className="form-group">
-        <label htmlFor="sfa-backend">Backend URL</label>
-        <input id="sfa-backend" value={backendUrl} onChange={(e) => setBackendUrl(e.target.value)} required />
-      </div>
-      <div className="form-group">
-        <label htmlFor="sfa-dashboard">Dashboard URL</label>
-        <input id="sfa-dashboard" value={dashboardUrl} onChange={(e) => setDashboardUrl(e.target.value)} required />
-      </div>
-      {message && (
-        <Notice kind={message.kind}>{message.text}</Notice>
-      )}
-      <button type="submit" className="btn-primary" disabled={busy}>
-        {busy ? <Loader2 size={16} className="spin" /> : null} Save and test connection
-      </button>
-    </form>
+    <div className="scroll">
+      <form onSubmit={save} className="settings rise">
+        <button type="button" className="back" onClick={onBack}><ArrowLeft size={14} /> Back</button>
+        <h2 className="section-title">Connection</h2>
+        <p className="muted">Where Smart Form finds your account. Only these addresses receive your requests.</p>
+        <label className="field">
+          <span className="field-label">Backend URL</span>
+          <input className="mono" value={backendUrl} onChange={(e) => setBackendUrl(e.target.value)} required spellCheck={false} />
+        </label>
+        <label className="field">
+          <span className="field-label">Website URL</span>
+          <input className="mono" value={dashboardUrl} onChange={(e) => setDashboardUrl(e.target.value)} required spellCheck={false} />
+          <span className="field-hint">Used to open your documents and profile.</span>
+        </label>
+        {message && <Callout kind={message.kind}>{message.text}</Callout>}
+        <button type="submit" className="button button-primary button-block" disabled={busy}>
+          {busy && <Spinner />} Save and test connection
+        </button>
+      </form>
+    </div>
   );
 };

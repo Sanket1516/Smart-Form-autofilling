@@ -127,9 +127,9 @@ describe('document recommendation', () => {
   });
 
   it('reports missing documents with a specific message', () => {
-    expect(rec('Upload Photograph', undefined, []).missing).toBe('No photograph is available. Upload one to continue.');
-    expect(rec('Upload Signature', undefined, []).missing).toBe('No signature file found.');
-    expect(rec('Class 12 marksheet', undefined, []).missing).toBe('Class 12 marksheet is not available in your documents.');
+    expect(rec('Upload Photograph', undefined, []).missing).toBe('Your photograph is not available yet.');
+    expect(rec('Upload Signature', undefined, []).missing).toBe('Your signature is not available yet.');
+    expect(rec('Class 12 marksheet', undefined, []).missing).toBe('Add a Class 12 marksheet to complete this section.');
     expect(rec('OBC-NCL Certificate', undefined, []).missing).toMatch(/OBC-NCL certificate/);
   });
 
