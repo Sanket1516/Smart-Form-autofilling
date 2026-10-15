@@ -116,7 +116,9 @@ class DocumentPipeline:
         await self.facts.delete_for_document(user_id, document_id)
         await self.discovered.delete_for_document(user_id, document_id)
         structured = [
-            self._structured(user_id, document_id, document_name, candidate, now)
+            self._structured(
+                user_id, document_id, document_name, candidate, now, result.document_type
+            )
             for candidate in merged
             if candidate.concept and self.ontology.is_fillable(candidate.concept)
         ]
@@ -143,7 +145,7 @@ class DocumentPipeline:
             if not chunks:
                 result.index_status = "empty"
                 return
-            vectors = await self.embeddings.embed_texts([chunk.text for chunk in chunks])
+            vectors = await self.embeddings.embed_texts([chunk.embed_text for chunk in chunks])
             await self.vector_store.upsert_chunks(chunks, vectors)
         except (EmbeddingUnavailableError, VectorStoreError) as error:
             logger.warning(
@@ -162,8 +164,14 @@ class DocumentPipeline:
 
     @staticmethod
     def _structured(
-        user_id: str, document_id: str, document_name: str, candidate: CandidateFact, now: datetime
+        user_id: str,
+        document_id: str,
+        document_name: str,
+        candidate: CandidateFact,
+        now: datetime,
+        document_type: str = "UNKNOWN",
     ) -> StructuredFact:
+        validation = str(candidate.extra.get("validation") or "")
         return StructuredFact(
             user_id=user_id,
             concept=candidate.concept or "",
@@ -178,6 +186,12 @@ class DocumentPipeline:
             extraction_method=candidate.method,
             confidence=candidate.confidence,
             provenance=_provenance(candidate),
+            document_type=document_type if document_type != "UNKNOWN" else None,
+            needs_review=(
+                candidate.confidence < 0.7
+                or candidate.origin == "inferred"
+                or "repair" in validation.lower()
+            ),
             created_at=now,
             updated_at=now,
         )

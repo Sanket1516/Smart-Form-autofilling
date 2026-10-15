@@ -69,6 +69,7 @@ class Classification:
     confidence: float = 0.0
     scores: dict[str, float] = field(default_factory=dict)
     evidence: list[str] = field(default_factory=list)
+    free_form: bool = False
 
 
 class DocumentRegistry:
@@ -78,6 +79,10 @@ class DocumentRegistry:
         self.min_score = float(data.get("min_score", 3))
         self.min_margin = float(data.get("min_margin", 1))
         self.ignore_phrases = [p.casefold() for p in data.get("ignore_phrases", [])]
+        free_form = data.get("free_form_signals") or {}
+        self.free_form_phrases = [p.casefold() for p in free_form.get("phrases", [])]
+        self.free_form_min_hits = int(free_form.get("min_hits", 3))
+        self.free_form_override = float(free_form.get("override_score", 9))
         self.types: dict[str, DocumentType] = {}
         for type_id, entry in data["document_types"].items():
             self.types[type_id] = DocumentType(
@@ -149,6 +154,13 @@ class DocumentRegistry:
         ranked = sorted(scores.items(), key=lambda item: item[1], reverse=True)
         best, best_score = ranked[0]
         runner_up = ranked[1][1] if len(ranked) > 1 else 0.0
+        free_form_hits = [
+            phrase
+            for phrase in self.free_form_phrases
+            if re.search(rf"(?<!\w){re.escape(phrase)}(?!\w)", lowered)
+        ]
+        if len(free_form_hits) >= self.free_form_min_hits and best_score < self.free_form_override:
+            return Classification(scores=scores, evidence=free_form_hits, free_form=True)
         if best_score < self.min_score or best_score - runner_up < self.min_margin:
             return Classification(scores=scores)
         confidence = min(0.99, 0.6 + 0.04 * best_score + 0.05 * (best_score - runner_up))

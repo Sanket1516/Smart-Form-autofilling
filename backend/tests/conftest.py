@@ -142,13 +142,18 @@ class FakeVectorStore:
         query_embedding: list[float],
         top_k: int,
         document_type: str | None = None,
+        document_ids: list[str] | None = None,
+        document_types: list[str] | None = None,
     ) -> list[dict[str, Any]]:
         self._check()
         scored = []
         for key, item in self.items.items():
             meta = item["metadata"]
-            if meta["user_id"] != user_id or (
-                document_type and meta.get("document_type") != document_type
+            if (
+                meta["user_id"] != user_id
+                or (document_type and meta.get("document_type") != document_type)
+                or (document_types and meta.get("document_type") not in document_types)
+                or (document_ids and meta.get("document_id") not in document_ids)
             ):
                 continue
             similarity = sum(a * b for a, b in zip(query_embedding, item["vector"], strict=False))

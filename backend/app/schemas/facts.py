@@ -22,6 +22,8 @@ class FactData(BaseModel):
     confidence: float
     provenance: dict[str, Any] = Field(default_factory=dict)
     is_user_confirmed: bool
+    document_type: str | None = None
+    needs_review: bool = False
     created_at: datetime
     updated_at: datetime
     source: dict[str, Any] | None = None
@@ -52,6 +54,8 @@ class FactSource(BaseModel):
     origin: str
     confidence: float
     is_user_confirmed: bool
+    document_type: str | None = None
+    needs_review: bool = False
 
 
 class ConflictCandidate(BaseModel):
@@ -97,3 +101,5 @@ class ConceptView(BaseModel):
     origin: str = "extracted"
     sources: list[FactSource] = Field(default_factory=list)
     candidates: list[ConflictCandidate] = Field(default_factory=list)
+    # Why a value was chosen when sources disagreed (e.g. the official document won).
+    note: str | None = None

@@ -10,7 +10,8 @@ from typing import Literal
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-SUPPORTED_LLM_PROVIDERS = ("google", "openai", "anthropic", "mock")
+SUPPORTED_LLM_PROVIDERS = ("google", "openai", "anthropic", "ollama", "mock")
+_KEYLESS_PROVIDERS = ("mock", "ollama")
 _PLACEHOLDER_SECRETS = {
     "replace_this_with_a_long_random_string_at_least_32_chars",
     "change-me",
@@ -50,6 +51,13 @@ class Settings(BaseSettings):
     llm_timeout_seconds: int = Field(default=60, ge=5, le=300)
     llm_max_output_tokens: int = Field(default=4096, ge=256, le=32768)
     llm_max_retries: int = Field(default=2, ge=0, le=5)
+    # Base URL for self-hosted providers (ollama); ignored by hosted APIs.
+    llm_base_url: str = "http://localhost:11434"
+    # Optional second provider used when the primary fails (e.g. a local Ollama model).
+    llm_fallback_provider: str = ""
+    llm_fallback_model: str = ""
+    llm_fallback_api_key: str = ""
+    llm_fallback_base_url: str = "http://localhost:11434"
 
     # Embeddings
     embedding_model_name: str = "all-MiniLM-L6-v2"
@@ -79,6 +87,10 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     processing_max_retries: int = Field(default=2, ge=0, le=5)
     processing_stale_after_minutes: int = Field(default=15, ge=1)
+    # paddle: PaddleOCR (optional install); none: scanned pages are marked for review.
+    ocr_engine: Literal["paddle", "none"] = "paddle"
+    # auto: upscale/contrast/orientation/deskew only when a page needs it; none: read as-is.
+    ocr_preprocess: Literal["auto", "none"] = "auto"
     ocr_language: str = "en"
     ocr_resolution: int = Field(default=150, ge=72, le=300)
     llm_extraction_max_chars: int = Field(default=18000, ge=1000, le=200000)
@@ -126,10 +138,35 @@ class Settings(BaseSettings):
             )
         return provider
 
+    @field_validator("llm_fallback_provider")
+    @classmethod
+    def _known_fallback(cls, value: str) -> str:
+        provider = (value or "").strip().lower()
+        if provider == "gemini":
+            provider = "google"
+        if provider and provider not in SUPPORTED_LLM_PROVIDERS:
+            raise ValueError(
+                f"LLM_FALLBACK_PROVIDER must be empty or one of {', '.join(SUPPORTED_LLM_PROVIDERS)}"
+            )
+        return provider
+
     @model_validator(mode="after")
     def _provider_has_key(self) -> "Settings":
-        if self.llm_provider != "mock" and not self.llm_api_key.strip():
+        if self.llm_provider not in _KEYLESS_PROVIDERS and not self.llm_api_key.strip():
             raise ValueError(f"LLM_API_KEY is required when LLM_PROVIDER={self.llm_provider}")
+        if self.llm_provider not in ("mock",) and not self.llm_model.strip():
+            raise ValueError(f"LLM_MODEL is required when LLM_PROVIDER={self.llm_provider}")
+        if self.llm_fallback_provider:
+            if (
+                self.llm_fallback_provider not in _KEYLESS_PROVIDERS
+                and not self.llm_fallback_api_key.strip()
+            ):
+                raise ValueError(
+                    "LLM_FALLBACK_API_KEY is required when "
+                    f"LLM_FALLBACK_PROVIDER={self.llm_fallback_provider}"
+                )
+            if self.llm_fallback_provider != "mock" and not self.llm_fallback_model.strip():
+                raise ValueError("LLM_FALLBACK_MODEL is required with LLM_FALLBACK_PROVIDER")
         if self.rag_chunk_overlap >= self.rag_chunk_size:
             raise ValueError("RAG_CHUNK_OVERLAP must be smaller than RAG_CHUNK_SIZE")
         if self.storage_provider == "cloudinary" and not (

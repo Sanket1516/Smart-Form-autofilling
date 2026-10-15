@@ -69,6 +69,16 @@ services:
       LLM_PROVIDER: ${LLM_PROVIDER:-mock}
       LLM_MODEL: ${LLM_MODEL:-}
       LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-http://host.docker.internal:11434}
+      LLM_FALLBACK_PROVIDER: ${LLM_FALLBACK_PROVIDER:-}
+      LLM_FALLBACK_MODEL: ${LLM_FALLBACK_MODEL:-}
+      LLM_FALLBACK_API_KEY: ${LLM_FALLBACK_API_KEY:-}
+      LLM_FALLBACK_BASE_URL: ${LLM_FALLBACK_BASE_URL:-http://host.docker.internal:11434}
+      LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-60}
+      LLM_MAX_RETRIES: ${LLM_MAX_RETRIES:-2}
+      OCR_ENGINE: ${OCR_ENGINE:-paddle}
+      OCR_PREPROCESS: ${OCR_PREPROCESS:-auto}
+      RAG_MIN_SIMILARITY: ${RAG_MIN_SIMILARITY:-0.35}
       STORAGE_PROVIDER: ${STORAGE_PROVIDER:-local}
       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
       CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
@@ -115,6 +125,10 @@ services:
       timeout: 5s
       retries: 5
       start_period: 10s
+    # A container that runs out of memory is restarted on its own instead of
+    # exhausting the Docker VM (which stops the whole engine).
+    mem_limit: 2500m
+    restart: unless-stopped
     networks: [smart-form-internal]
 
   worker:
@@ -130,7 +144,8 @@ services:
         "app.tasks.celery_app.celery_app",
         "worker",
         "--loglevel=INFO",
-        "--concurrency=${CELERY_WORKER_CONCURRENCY:-2}",
+        "--concurrency=${CELERY_WORKER_CONCURRENCY:-1}",
+        "--max-tasks-per-child=25",
       ]
     environment:
       APP_ENV: ${APP_ENV:-development}
@@ -160,6 +175,16 @@ services:
       LLM_PROVIDER: ${LLM_PROVIDER:-mock}
       LLM_MODEL: ${LLM_MODEL:-}
       LLM_API_KEY: ${LLM_API_KEY:-}
+      LLM_BASE_URL: ${LLM_BASE_URL:-http://host.docker.internal:11434}
+      LLM_FALLBACK_PROVIDER: ${LLM_FALLBACK_PROVIDER:-}
+      LLM_FALLBACK_MODEL: ${LLM_FALLBACK_MODEL:-}
+      LLM_FALLBACK_API_KEY: ${LLM_FALLBACK_API_KEY:-}
+      LLM_FALLBACK_BASE_URL: ${LLM_FALLBACK_BASE_URL:-http://host.docker.internal:11434}
+      LLM_TIMEOUT_SECONDS: ${LLM_TIMEOUT_SECONDS:-60}
+      LLM_MAX_RETRIES: ${LLM_MAX_RETRIES:-2}
+      OCR_ENGINE: ${OCR_ENGINE:-paddle}
+      OCR_PREPROCESS: ${OCR_PREPROCESS:-auto}
+      RAG_MIN_SIMILARITY: ${RAG_MIN_SIMILARITY:-0.35}
       STORAGE_PROVIDER: ${STORAGE_PROVIDER:-local}
       CLOUDINARY_CLOUD_NAME: ${CLOUDINARY_CLOUD_NAME:-}
       CLOUDINARY_API_KEY: ${CLOUDINARY_API_KEY:-}
@@ -173,6 +198,10 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    # A container that runs out of memory is restarted on its own instead of
+    # exhausting the Docker VM (which stops the whole engine).
+    mem_limit: 3500m
+    restart: unless-stopped
     networks: [smart-form-internal]
 
   frontend:

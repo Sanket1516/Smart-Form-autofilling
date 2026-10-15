@@ -122,11 +122,23 @@ def _cells(row: str) -> list[str]:
     )
 
 
+_OCR_DIGIT_LOOKALIKES = str.maketrans({"O": "0", "o": "0", "I": "1", "l": "1", "|": "1"})
+
+
+def repair_numeric(text: str) -> str:
+    """'10O' -> '100' in a numeric column: OCR look-alikes, only when the cell is
+    otherwise all digits (a grade such as 'O' or 'A1' is left alone)."""
+    if len(text) >= 2 and re.fullmatch(r"[0-9OolI|.,]+", text) and any(ch.isdigit() for ch in text):
+        return text.translate(_OCR_DIGIT_LOOKALIKES)
+    return text
+
+
 def _mark_value(key: str, raw: str, record: dict[str, str]) -> None:
     text = raw.strip()
     if not text or text in ("--", "-", "—"):
         return
     if key in _NUMERIC_MARK_KEYS:
+        text = repair_numeric(text)
         number = normalize_number(text)
         if number is not None:
             record[key] = number
@@ -142,13 +154,36 @@ def _mark_value(key: str, raw: str, record: dict[str, str]) -> None:
 # ---------------------------------------------------------------------- marks
 
 
+def _table_texts(page: NormalizedPage) -> list[str]:
+    """Table texts of a page: parser/OCR table spans, else runs of ``|``-separated lines.
+
+    Text exports and some scans print tables as "Code | Subject | Marks" lines
+    without a table span; two or more consecutive such lines are read as a table.
+    """
+    texts = [span.text for span in page.spans if span.is_table]
+    if texts:
+        return texts
+    blocks: list[str] = []
+    current: list[str] = []
+    for span in page.spans:
+        for line in span.text.splitlines():
+            if line.count("|") >= 2:
+                current.append(line)
+                continue
+            if len(current) >= 2:
+                blocks.append("\n".join(current))
+            current = []
+    if len(current) >= 2:
+        blocks.append("\n".join(current))
+    return blocks
+
+
 def parse_marks(pages: list[NormalizedPage]) -> TableResult:
     result = TableResult()
     for page in pages:
-        table_spans = [s for s in page.spans if s.is_table]
         found = False
-        for span in table_spans:
-            rows = [r for r in span.text.split("\n") if r.strip(" |")]
+        for text in _table_texts(page):
+            rows = [r for r in text.split("\n") if r.strip(" |")]
             header_index = next(
                 (
                     i
@@ -275,15 +310,22 @@ def parse_transactions(pages: list[NormalizedPage]) -> list[TableRecord]:
     records: list[TableRecord] = []
     for page in pages:
         found = False
-        for span in (s for s in page.spans if s.is_table):
-            rows = [r for r in span.text.split("\n") if r.strip(" |")]
-            if not rows:
+        for text in _table_texts(page):
+            rows = [r for r in text.split("\n") if r.strip(" |")]
+            header_index = next(
+                (
+                    i
+                    for i, r in enumerate(rows)
+                    if {"date", "balance"}
+                    <= set(filter(None, _map_header(_cells(r), _TXN_COLUMNS)))
+                ),
+                None,
+            )
+            if header_index is None:
                 continue
-            header = _map_header(_cells(rows[0]), _TXN_COLUMNS)
-            if not {"date", "balance"} <= set(filter(None, header)):
-                continue
+            header = _map_header(_cells(rows[header_index]), _TXN_COLUMNS)
             found = True
-            for row in rows[1:]:
+            for row in rows[header_index + 1 :]:
                 record: dict[str, str] = {}
                 for key, cell in zip(header, _cells(row), strict=False):
                     if not key or not cell.strip():
@@ -366,8 +408,8 @@ def _parse_transaction_lines(page: NormalizedPage) -> list[TableRecord]:
 def parse_members(pages: list[NormalizedPage]) -> list[TableRecord]:
     records: list[TableRecord] = []
     for page in pages:
-        for span in (s for s in page.spans if s.is_table):
-            rows = [r for r in span.text.split("\n") if r.strip(" |")]
+        for text in _table_texts(page):
+            rows = [r for r in text.split("\n") if r.strip(" |")]
             if not rows:
                 continue
             header = _map_header(_cells(rows[0]), _MEMBER_COLUMNS)

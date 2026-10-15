@@ -56,6 +56,7 @@ from app.repositories.collections import (
 from app.retrieval.embeddings import SentenceTransformerEmbeddings
 from app.services.auth import AuthError, AuthService
 from app.services.corrections import CorrectionsService
+from app.services.document_qa import DocumentQAService
 from app.services.documents import DocumentService
 from app.services.facts import FactService
 from app.services.form_filling import FormFillService
@@ -103,6 +104,14 @@ async def lifespan(app: FastAPI):
     )
     state.rag_answer_service = RAGAnswerService(state.retrieval_service, llm)
     state.user_data_service = UserDataService(database, storage, vector_store)
+    state.document_qa_service = DocumentQAService(
+        facts=state.fact_service,
+        retrieval=state.retrieval_service,
+        llm=llm,
+        ontology=ontology,
+        documents=DocumentsRepository(database),
+        exam_service=state.exam_service,
+    )
 
     processing_context = ProcessingContext(
         settings=settings,

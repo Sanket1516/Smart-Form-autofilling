@@ -143,9 +143,11 @@ class _HTTPProvider(LLMProvider):
         timeout = min(self._timeout, _INTERACTIVE_TIMEOUT_SECONDS) if interactive else self._timeout
         retries = 0 if interactive else self._retries
         for attempt in range(retries + 1):
+            wait = min(2**attempt, 8)
             try:
                 response = httpx.post(url, headers=headers, json=payload, timeout=timeout)
-            except httpx.TimeoutException as error:
+            except (httpx.TimeoutException, httpx.NetworkError, httpx.RemoteProtocolError) as error:
+                # transient: timeouts, dropped connections, refused connections
                 last_error = error
             except httpx.HTTPError as error:
                 raise LLMProviderError(
@@ -156,10 +158,15 @@ class _HTTPProvider(LLMProvider):
                     last_error = LLMProviderError(
                         f"{self.name} returned HTTP {response.status_code}"
                     )
+                    headers = getattr(response, "headers", None) or {}
+                    retry_after = str(headers.get("retry-after", ""))
+                    if retry_after.isdigit():
+                        wait = min(int(retry_after), 8)
                 elif response.status_code >= 400:
+                    # invalid credentials or a malformed request: retrying cannot help
                     raise LLMProviderError(
                         f"{self.name} rejected the request (HTTP {response.status_code}); "
-                        "check LLM_MODEL and LLM_API_KEY"
+                        "check the model name and API key"
                     )
                 else:
                     try:
@@ -167,7 +174,7 @@ class _HTTPProvider(LLMProvider):
                     except ValueError as error:
                         raise LLMProviderError(f"{self.name} returned a non-JSON body") from error
             if attempt < retries:
-                time.sleep(min(2**attempt, 8))
+                time.sleep(wait)
         raise LLMProviderError(
             f"{self.name} unavailable after {retries + 1} attempts"
         ) from last_error
@@ -274,25 +281,122 @@ class AnthropicProvider(_HTTPProvider):
         return text.strip()
 
 
-def get_llm_provider(settings: Settings) -> LLMProvider:
-    """Build the provider selected by ``LLM_PROVIDER`` (validated in Settings)."""
-    provider = settings.llm_provider
+class OllamaProvider(_HTTPProvider):
+    """A local model served by Ollama (no data leaves the machine; no API key)."""
+
+    name = "ollama"
+
+    def __init__(self, *args: object, base_url: str = "http://localhost:11434", **kwargs: object):
+        super().__init__(*args, **kwargs)  # type: ignore[arg-type]
+        self._base_url = (base_url or "http://localhost:11434").rstrip("/")
+
+    def _complete(self, prompt: str, *, system: str | None, json_mode: bool, task: str) -> str:
+        messages = [{"role": "system", "content": system}] if system else []
+        messages.append({"role": "user", "content": prompt})
+        payload: dict[str, object] = {
+            "model": self.model,
+            "messages": messages,
+            "stream": False,
+            "options": {"temperature": 0, "num_predict": self._max_tokens, "num_ctx": 8192},
+        }
+        if json_mode:
+            payload["format"] = "json"
+        data = self._post(
+            f"{self._base_url}/api/chat", {"Content-Type": "application/json"}, payload, task=task
+        )
+        try:
+            text = data["message"]["content"] or ""
+        except (KeyError, TypeError) as error:
+            raise LLMProviderError("ollama returned an unexpected response shape") from error
+        if not text.strip():
+            raise LLMProviderError("ollama returned an empty completion")
+        return text.strip()
+
+
+class FallbackLLMProvider(LLMProvider):
+    """Try the primary provider, then the fallback when the primary fails.
+
+    Both answers go through the same parsing and validation in the callers, so a
+    fallback answer is held to exactly the same rules. When both fail the error
+    is raised: nothing is ever invented in place of a completion.
+    """
+
+    def __init__(self, primary: LLMProvider, fallback: LLMProvider) -> None:
+        super().__init__()
+        self.primary = primary
+        self.fallback = fallback
+        self.name = f"{primary.name}+{fallback.name}"
+        self.model = primary.model
+        self.last_used = primary.name
+
+    def _complete(self, prompt: str, *, system: str | None, json_mode: bool, task: str) -> str:
+        try:
+            text = self.primary.complete(prompt, system=system, json_mode=json_mode, task=task)
+            self.last_used = self.primary.name
+            return text
+        except LLMProviderError as error:
+            logger.warning(
+                "llm_primary_failed_using_fallback",
+                extra={
+                    "primary": self.primary.name,
+                    "fallback": self.fallback.name,
+                    "error": str(error),
+                },
+            )
+        text = self.fallback.complete(prompt, system=system, json_mode=json_mode, task=task)
+        self.last_used = self.fallback.name
+        return text
+
+
+def _build(
+    provider: str, model: str, api_key: str, base_url: str, settings: Settings
+) -> LLMProvider:
     if provider == "mock":
-        logger.warning("llm_provider_mock: AI extraction and classification return empty results")
         return MockLLMProvider()
+    common = dict(
+        model=model,
+        api_key=api_key,
+        timeout=settings.llm_timeout_seconds,
+        max_tokens=settings.llm_max_output_tokens,
+        retries=settings.llm_max_retries,
+    )
+    if provider == "ollama":
+        return OllamaProvider(base_url=base_url, **common)  # type: ignore[arg-type]
     providers: dict[str, type[_HTTPProvider]] = {
         "google": GoogleProvider,
         "openai": OpenAIProvider,
         "anthropic": AnthropicProvider,
     }
-    instance = providers[provider](
-        model=settings.llm_model,
-        api_key=settings.llm_api_key,
-        timeout=settings.llm_timeout_seconds,
-        max_tokens=settings.llm_max_output_tokens,
-        retries=settings.llm_max_retries,
+    return providers[provider](**common)  # type: ignore[arg-type]
+
+
+def get_llm_provider(settings: Settings) -> LLMProvider:
+    """Build the provider selected by ``LLM_PROVIDER`` (validated in Settings), wrapped
+    with ``LLM_FALLBACK_PROVIDER`` when one is configured."""
+    provider = settings.llm_provider
+    if provider == "mock" and not settings.llm_fallback_provider:
+        logger.warning("llm_provider_mock: AI extraction and classification return empty results")
+        return MockLLMProvider()
+    instance = _build(
+        provider, settings.llm_model, settings.llm_api_key, settings.llm_base_url, settings
     )
     logger.info(
         "llm_provider_configured", extra={"provider": provider, "model": settings.llm_model}
     )
+    if settings.llm_fallback_provider:
+        fallback = _build(
+            settings.llm_fallback_provider,
+            settings.llm_fallback_model,
+            settings.llm_fallback_api_key,
+            settings.llm_fallback_base_url,
+            settings,
+        )
+        logger.info(
+            "llm_fallback_configured",
+            extra={
+                "provider": settings.llm_fallback_provider,
+                "model": settings.llm_fallback_model,
+            },
+        )
+        return FallbackLLMProvider(instance, fallback)
     return instance

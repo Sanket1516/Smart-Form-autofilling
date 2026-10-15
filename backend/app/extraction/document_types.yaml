@@ -18,6 +18,34 @@ ignore_phrases:
   - council for the indian school certificate examinations
 min_score: 3
 min_margin: 1
+# Free-form documents (CVs, cover letters) mention identity words ("Passport No",
+# "Aadhaar") without being that document. When at least `min_hits` of these
+# phrases appear and no type scores `override_score` or more, the document is
+# not classified as a registered type and the generic extractor reads it.
+free_form_signals:
+  min_hits: 3
+  override_score: 9
+  phrases:
+    - curriculum vitae
+    - resume
+    - career objective
+    - objective
+    - work experience
+    - professional experience
+    - experience
+    - technical skills
+    - skills
+    - projects
+    - internship
+    - internships
+    - certifications
+    - achievements
+    - extracurricular
+    - hobbies
+    - languages known
+    - linkedin
+    - github
+    - references
 document_types:
   AADHAAR_CARD:
     label: Aadhaar card

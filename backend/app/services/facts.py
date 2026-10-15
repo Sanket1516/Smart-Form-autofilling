@@ -22,6 +22,7 @@ from bson import ObjectId
 
 from app.core.api_errors import APIError
 from app.extraction.normalize import comparison_key, normalize_value, same_address
+from app.extraction.registry import get_registry
 from app.models.documents import Correction, StructuredFact
 from app.ontology.loader import FieldOntology
 from app.repositories.collections import CorrectionsRepository, StructuredFactsRepository
@@ -150,8 +151,15 @@ class FactService:
 
     # ------------------------------------------------------------------ resolved view
 
-    async def resolve_view(self, user_id: str) -> dict[str, ConceptView]:
+    async def resolve_view(
+        self, user_id: str, document_ids: list[str] | None = None
+    ) -> dict[str, ConceptView]:
+        """Resolved value per concept; ``document_ids`` limits it to those documents'
+        facts (values the user entered are always included)."""
         records = await self.repository.list_active(user_id)
+        if document_ids is not None:
+            allowed = set(document_ids) | {USER_SOURCE}
+            records = [r for r in records if str(r.get("source_document_id")) in allowed]
         by_concept: dict[str, list[dict[str, Any]]] = defaultdict(list)
         for record in records:
             if record.get("value") not in (None, ""):
@@ -194,6 +202,32 @@ class FactService:
                 confidence=max(c.confidence for c in candidates),
                 sources=[s for c in candidates for s in c.sources],
                 candidates=candidates,
+            )
+        official = _official_candidate(concept, candidates)
+        if official is not None:
+            others = sorted(
+                {
+                    s.document_name or "another document"
+                    for c in candidates
+                    if c is not official
+                    for s in c.sources
+                }
+            )
+            return ConceptView(
+                concept=concept,
+                label=label,
+                status="resolved",
+                value=official.value,
+                values=[official.value],
+                confidence=round(official.confidence * 0.95, 3),
+                is_user_confirmed=False,
+                origin=_best_origin(official.sources),
+                sources=official.sources,
+                candidates=candidates,
+                note=(
+                    f"Taken from the official document ({official.document_name}); "
+                    f"{', '.join(others[:3])} show a different value."
+                ),
             )
         return ConceptView(
             concept=concept,
@@ -337,10 +371,17 @@ def fact_data(record: dict[str, Any]) -> FactData:
         confidence=float(record.get("confidence", 0.0)),
         provenance=record.get("provenance", {}),
         is_user_confirmed=bool(record.get("is_user_confirmed", False)),
+        document_type=_document_type(record),
+        needs_review=bool(record.get("needs_review", False)),
         created_at=record.get("created_at") or datetime.now(UTC),
         updated_at=record.get("updated_at") or datetime.now(UTC),
         source={"document_id": document_id, "page": page},
     )
+
+
+def _document_type(record: dict[str, Any]) -> str | None:
+    value = record.get("document_type") or (record.get("provenance") or {}).get("document_type")
+    return str(value) if value else None
 
 
 def _source(record: dict[str, Any]) -> FactSource:
@@ -353,7 +394,31 @@ def _source(record: dict[str, Any]) -> FactSource:
         origin=record.get("origin", "extracted"),
         confidence=float(record.get("confidence", 0.0)),
         is_user_confirmed=bool(record.get("is_user_confirmed", False)),
+        document_type=_document_type(record),
+        needs_review=bool(record.get("needs_review", False)),
     )
+
+
+def _official_candidate(
+    concept: str, candidates: list[ConflictCandidate]
+) -> ConflictCandidate | None:
+    """The single candidate backed by a document type that officially states ``concept``.
+
+    A Class 12 marksheet outranks a résumé for the Class 12 percentage; two
+    marksheets that disagree stay a conflict for the user to resolve. Values a
+    user confirmed are handled before this rule (they supersede the others).
+    """
+    if any(c.is_user_confirmed for c in candidates):
+        return None
+    official_types = set(get_registry().document_types_for(concept))
+    if not official_types:
+        return None
+    backed = [
+        c
+        for c in candidates
+        if any(s.document_type in official_types and not s.needs_review for s in c.sources)
+    ]
+    return backed[0] if len(backed) == 1 else None
 
 
 def _merge_addresses(groups: list[list[dict[str, Any]]]) -> list[list[dict[str, Any]]]:

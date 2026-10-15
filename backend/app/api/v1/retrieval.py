@@ -34,20 +34,29 @@ async def search_rag(
     )
 
 
+_ANSWER_MESSAGES = {
+    "answered": "Answer built from your documents",
+    "partial": "Partial answer: some information is missing, conflicting or needs review",
+    "insufficient_evidence": "Your documents do not contain enough information to answer this",
+    "no_documents": "Upload documents before asking questions",
+    "documents_not_ready": "Your documents are still processing or failed processing",
+}
+
+
 @router.post("/rag/answer", response_model=SuccessResponse[RAGAnswerData])
 @limiter.limit("20/minute")
 async def answer_from_rag(
     request: Request, body: RAGAnswerRequest, user: User
 ) -> SuccessResponse[RAGAnswerData]:
-    data = await request.app.state.rag_answer_service.answer(
-        user.user_id, body.question, body.top_k
-    )
-    message = (
-        "Answer generated from your documents"
-        if data.status == "answered"
-        else ("Your documents do not contain enough information to answer this")
-    )
-    return SuccessResponse(data=data, message=message)
+    """Ask Documents: answer from the caller's own processed documents, with sources.
+
+    Exact values come from stored facts; text passages from metadata-filtered
+    retrieval; the model only writes the answer from cited evidence. When the model
+    is unavailable the response still lists the facts and passages found
+    (``answer_mode=evidence_only``) instead of failing.
+    """
+    data = await request.app.state.document_qa_service.answer(user.user_id, body)
+    return SuccessResponse(data=data, message=_ANSWER_MESSAGES.get(data.status, ""))
 
 
 @router.post("/structured", response_model=SuccessResponse[StructuredRetrievalData])
