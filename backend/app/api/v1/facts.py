@@ -5,6 +5,7 @@ from typing import Annotated, Any
 from fastapi import APIRouter, Depends, Query, Request
 
 from app.api.v1.auth import User
+from app.extraction.validators import mask, mask_identifiers
 from app.schemas.facts import (
     ConceptView,
     ConflictData,
@@ -93,10 +94,19 @@ async def list_discovered_facts(
     records = await request.app.state.discovered_facts_repo.list_filtered(
         user.user_id, document_id, semantic_type, ontology
     )
+    field_ontology = request.app.state.field_ontology
     items = []
     for record in records:
         record = dict(record)
         record["id"] = str(record.pop("_id"))
         record.pop("user_id", None)
+        concept = record.get("ontology")
+        if concept and field_ontology.is_sensitive(concept):
+            # identifiers are shown masked here; the full value stays in the reviewed profile
+            for key in ("value", "raw_value"):
+                if isinstance(record.get(key), str):
+                    record[key] = mask(record[key])
+            record["evidence_text"] = mask_identifiers(record.get("evidence_text") or "")
+            record["masked"] = True
         items.append(record)
     return SuccessResponse(data=items)

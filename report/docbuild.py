@@ -338,7 +338,7 @@ class Report:
         nat_w = w_px / dpi
         port_w = min(TEXT_W, 6.4 * aspect, nat_w if meta.get("no_upscale", True) else 99)
         land_w = min(9.19, 5.0 * aspect, nat_w if meta.get("no_upscale", True) else 99)
-        land = force_landscape if force_landscape is not None else (land_w > port_w * 1.25)
+        land = False  # all pages stay portrait
         if land:
             self.new_section(portrait=False)
             width = land_w

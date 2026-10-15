@@ -1,0 +1,354 @@
+# Concepts for Indian identity, academic, financial and eligibility documents and
+# entrance-exam forms. Loaded through `includes` in field_ontology.yaml.
+#
+# Extra attributes understood by the loader:
+#   scopes:     {scope: concept} - a generic concept becomes a specific one when the
+#               document type or form context names the scope (class_12, caste_certificate...)
+#   abstract:   true - only meaningful once scoped; never stored, filled or shown unscoped
+#   user_only:  true - only values the user entered or confirmed may be used
+#               (preferences, declarations, official codes that must not be guessed)
+#   fallback:   concept to suggest (always with confirmation) when this one is missing
+#   resolve_from: record concept a per-subject value is read from
+#   validator:  identifier check in app/extraction/validators.py
+concepts:
+  # ------------------------------------------------------------------ personal
+  personal.guardian_name:
+    description: Guardian's name (when different from the parents)
+    aliases: [guardian name, name of guardian, guardian full name, local guardian name]
+    data_type: string
+  personal.given_names:
+    description: Given names as printed on a passport (first and middle names)
+    aliases: [given names]
+    data_type: string
+  personal.place_of_birth:
+    description: Place of birth
+    aliases: [place of birth, birth place, born at]
+    data_type: string
+  personal.spouse_name:
+    description: Spouse's name
+    aliases: [spouse name, husband name, wife name, name of spouse]
+    data_type: string
+
+  # ------------------------------------------------------------------ identity
+  identity.voter_id_number:
+    description: Voter ID (EPIC) number
+    aliases: [epic no, epic number, voter id, voter id number, voter id card number, elector photo identity card number]
+    data_type: identifier
+    validator: epic
+    sensitive: true
+  identity.driving_licence_number:
+    description: Driving licence number
+    aliases: [dl no, dl number, driving licence number, driving license number, driving licence no, licence number, license number, licence no]
+    data_type: identifier
+    validator: driving_licence
+    sensitive: true
+
+  # ------------------------------------------------------------------ addresses
+  address.permanent_address:
+    description: Permanent address
+    aliases: [permanent address, permanent residential address, address permanent]
+    data_type: address
+    fallback: address.full_address
+  address.correspondence_address:
+    description: Correspondence (communication) address
+    aliases: [correspondence address, address for correspondence, communication address, present address]
+    data_type: address
+    fallback: address.full_address
+
+  # ------------------------------------------------------------------ generic academic (scoped)
+  education.board:
+    description: Examination board (needs Class 10 or Class 12 context)
+    aliases: [board, name of board, name of the board, board name, board of examination, examination board]
+    data_type: string
+    abstract: true
+    scopes: {class_10: academic.class10.board, class_12: academic.class12.board}
+  education.roll_number:
+    description: Examination roll or seat number (needs Class 10 or Class 12 context)
+    aliases: [roll no, roll number, seat no, seat number, exam roll number, board roll number]
+    data_type: identifier
+    abstract: true
+    scopes: {class_10: academic.class10.roll_number, class_12: academic.class12.roll_number}
+  education.registration_number:
+    description: Board registration number (needs context)
+    aliases: [registration no, registration number, regn no, reg no, enrolment number, enrollment number]
+    data_type: identifier
+    abstract: true
+    scopes:
+      class_10: academic.class10.registration_number
+      class_12: academic.class12.registration_number
+      birth_certificate: birth_certificate.registration_number
+  education.exam_year:
+    description: Year of the examination (needs context)
+    aliases: [year of examination, examination year, exam year, year of exam]
+    data_type: year
+    abstract: true
+    scopes: {class_10: academic.class10.exam_year, class_12: academic.class12.exam_year}
+  education.exam_month:
+    description: Month of the examination (needs context)
+    aliases: [month of examination, examination month, exam month, month of passing]
+    data_type: string
+    abstract: true
+    scopes: {class_10: academic.class10.exam_month, class_12: academic.class12.exam_month}
+  education.result_status:
+    description: Result or passing status (needs context)
+    aliases: [result, result status, qualifying examination status, passing status, status of qualifying examination, pass status]
+    data_type: string
+    abstract: true
+    scopes: {class_10: academic.class10.result_status, class_12: academic.class12.result_status}
+  education.result_date:
+    description: Result declaration date (needs context)
+    aliases: [date of result, result date, result declared on, date of declaration of result]
+    data_type: date
+    abstract: true
+    scopes: {class_10: academic.class10.result_date, class_12: academic.class12.result_date}
+  education.marks_obtained:
+    description: Total marks obtained (needs context)
+    aliases: [marks obtained, total marks obtained, obtained marks, aggregate marks, total obtained marks, grand total obtained]
+    data_type: number
+    abstract: true
+    scopes: {class_10: academic.class10.marks_obtained, class_12: academic.class12.marks_obtained}
+  education.max_marks:
+    description: Total maximum marks (needs context)
+    aliases: [maximum marks, max marks, total maximum marks, maximum total marks, out of marks]
+    data_type: number
+    abstract: true
+    scopes: {class_10: academic.class10.max_marks, class_12: academic.class12.max_marks}
+  education.total_marks:
+    description: '"Total marks" without saying obtained or maximum - ambiguous on purpose'
+    aliases: [total marks, total]
+    data_type: number
+    abstract: true
+  education.grade:
+    description: Overall grade (needs context)
+    aliases: [overall grade, final grade, grade obtained]
+    data_type: string
+    abstract: true
+    scopes: {class_10: academic.class10.grade, class_12: academic.class12.grade}
+  education.division:
+    description: Division or class awarded (needs context)
+    aliases: [division, division class]
+    data_type: string
+    abstract: true
+    scopes: {class_10: academic.class10.division, class_12: academic.class12.division}
+  education.subject_marks:
+    description: Marks in one named subject (needs Class 10 or Class 12 context)
+    aliases: []
+    data_type: number
+    abstract: true
+    scopes: {class_10: academic.class10.subject_marks, class_12: academic.class12.subject_marks}
+
+  # ------------------------------------------------------------------ Class 10
+  academic.class10.board: {description: Class 10 examination board, aliases: [class 10 board, ssc board, 10th board, matriculation board], data_type: string}
+  academic.class10.school: {description: Class 10 school, aliases: [class 10 school, 10th school, ssc school], data_type: string}
+  academic.class10.roll_number: {description: Class 10 roll or seat number, aliases: [ssc seat number, ssc seat no, class 10 roll number, 10th roll number, 10th roll no], data_type: identifier}
+  academic.class10.registration_number: {description: Class 10 board registration number, aliases: [], data_type: identifier}
+  academic.class10.exam_month: {description: Class 10 examination month, aliases: [], data_type: string}
+  academic.class10.exam_year: {description: Class 10 examination year, aliases: [], data_type: year}
+  academic.class10.passing_year: {description: Year of passing Class 10, aliases: [ssc passing year, 10th passing year, class 10 passing year, year of passing class 10], data_type: year}
+  academic.class10.result_status: {description: Class 10 result, aliases: [], data_type: string}
+  academic.class10.result_date: {description: Class 10 result declaration date, aliases: [], data_type: date}
+  academic.class10.max_marks: {description: Class 10 total maximum marks, aliases: [], data_type: number}
+  academic.class10.marks_obtained: {description: Class 10 total marks obtained, aliases: [], data_type: number}
+  academic.class10.percentage: {description: Class 10 percentage as printed or computed from printed totals, aliases: [ssc percentage, 10th percentage, class 10 percentage], data_type: percentage}
+  academic.class10.cgpa: {description: Class 10 CGPA, aliases: [10th cgpa, class 10 cgpa], data_type: string}
+  academic.class10.grade: {description: Class 10 overall grade, aliases: [], data_type: string}
+  academic.class10.division: {description: Class 10 division, aliases: [], data_type: string}
+  academic.class10.subjects: {description: Class 10 subject-wise marks, aliases: [], data_type: record, cardinality: multiple}
+  academic.class10.subject_marks: {description: Marks in a Class 10 subject, aliases: [], data_type: number, resolve_from: academic.class10.subjects}
+
+  # ------------------------------------------------------------------ Class 12
+  academic.class12.board: {description: Class 12 examination board, aliases: [class 12 board, hsc board, 12th board, qualifying examination board], data_type: string}
+  academic.class12.school: {description: Class 12 school or junior college, aliases: [class 12 school, 12th school, junior college, hsc college], data_type: string}
+  academic.class12.roll_number: {description: Class 12 roll or seat number, aliases: [hsc seat number, hsc seat no, class 12 roll number, 12th roll number, 12th roll no, qualifying examination roll number], data_type: identifier}
+  academic.class12.registration_number: {description: Class 12 board registration number, aliases: [], data_type: identifier}
+  academic.class12.stream: {description: Class 12 stream, aliases: [], data_type: string}
+  academic.class12.exam_month: {description: Class 12 examination month, aliases: [], data_type: string}
+  academic.class12.exam_year: {description: Class 12 examination year, aliases: [], data_type: year}
+  academic.class12.passing_year: {description: Year of passing Class 12, aliases: [hsc passing year, 12th passing year, class 12 passing year, year of passing class 12], data_type: year}
+  academic.class12.result_status: {description: Class 12 result, aliases: [], data_type: string}
+  academic.class12.result_date: {description: Class 12 result declaration date, aliases: [], data_type: date}
+  academic.class12.max_marks: {description: Class 12 total maximum marks, aliases: [], data_type: number}
+  academic.class12.marks_obtained: {description: Class 12 total marks obtained, aliases: [], data_type: number}
+  academic.class12.percentage: {description: Class 12 percentage as printed or computed from printed totals, aliases: [hsc percentage, 12th percentage, class 12 percentage], data_type: percentage}
+  academic.class12.cgpa: {description: Class 12 CGPA, aliases: [12th cgpa, class 12 cgpa], data_type: string}
+  academic.class12.grade: {description: Class 12 overall grade, aliases: [], data_type: string}
+  academic.class12.division: {description: Class 12 division, aliases: [], data_type: string}
+  academic.class12.subjects: {description: Class 12 subject-wise marks, aliases: [], data_type: record, cardinality: multiple}
+  academic.class12.subject_marks: {description: Marks in a Class 12 subject, aliases: [], data_type: number, resolve_from: academic.class12.subjects}
+
+  # ------------------------------------------------------------------ bank
+  financial.account_holder_name:
+    description: Bank account holder name
+    aliases: [account holder name, account holder, name of account holder, account name, name as per bank account, name in bank account]
+    data_type: string
+  financial.micr_code:
+    description: Bank MICR code (9 digits; not the IFSC)
+    aliases: [micr, micr code, micr no, micr number]
+    data_type: identifier
+    validator: micr
+  financial.branch_address:
+    description: Bank branch address
+    aliases: [branch address, bank branch address, address of branch]
+    data_type: string
+  financial.transactions:
+    description: Bank transactions (one record per row)
+    aliases: []
+    data_type: record
+    cardinality: multiple
+    fillable: false
+
+  # ------------------------------------------------------------------ certificates (generic, scoped)
+  document.certificate_number:
+    description: Certificate number (needs to know which certificate)
+    aliases: [certificate no, certificate number, cert no, certificate serial number]
+    data_type: identifier
+    abstract: true
+    scopes:
+      caste_certificate: caste_certificate.number
+      caste_validity: caste_validity.number
+      ncl_certificate: ncl_certificate.number
+      income_certificate: income_certificate.number
+      domicile_certificate: domicile_certificate.number
+      birth_certificate: birth_certificate.registration_number
+  document.application_number:
+    description: Application number of a certificate (not the certificate number)
+    aliases: [application no, application number, application id]
+    data_type: identifier
+    abstract: true
+    scopes:
+      caste_certificate: caste_certificate.application_number
+      income_certificate: income_certificate.application_number
+      domicile_certificate: domicile_certificate.application_number
+      ncl_certificate: ncl_certificate.application_number
+  document.issue_date:
+    description: Date a document was issued (needs to know which document)
+    aliases: [date of issue, issue date, issued on, date of issuance]
+    data_type: date
+    abstract: true
+    scopes:
+      caste_certificate: caste_certificate.issue_date
+      caste_validity: caste_validity.issue_date
+      ncl_certificate: ncl_certificate.issue_date
+      income_certificate: income_certificate.issue_date
+      domicile_certificate: domicile_certificate.issue_date
+      birth_certificate: birth_certificate.issue_date
+      driving_licence: driving_licence.issue_date
+      passport: passport.issue_date
+  document.valid_until:
+    description: Date a document is valid until (needs context)
+    aliases: [valid upto, valid up to, valid till, valid until, validity, valid till nt, validity upto]
+    data_type: date
+    abstract: true
+    scopes:
+      ncl_certificate: ncl_certificate.valid_until
+      income_certificate: income_certificate.valid_until
+      driving_licence: driving_licence.valid_until
+  document.issuing_authority:
+    description: Authority that issued a document (needs context)
+    aliases: [issuing authority, issued by, issuing office, competent authority, licensing authority]
+    data_type: string
+    abstract: true
+    scopes:
+      caste_certificate: caste_certificate.issuing_authority
+      caste_validity: caste_validity.issuing_authority
+      ncl_certificate: ncl_certificate.issuing_authority
+      income_certificate: income_certificate.issuing_authority
+      domicile_certificate: domicile_certificate.issuing_authority
+      driving_licence: driving_licence.issuing_authority
+
+  caste_certificate.number: {description: Caste certificate number, aliases: [caste certificate number, caste certificate no, caste cert no], data_type: identifier}
+  caste_certificate.application_number: {description: Caste certificate application number, aliases: [caste certificate application number], data_type: identifier}
+  caste_certificate.holder_name: {description: Name of the caste certificate holder, aliases: [], data_type: string}
+  caste_certificate.issue_date: {description: Caste certificate issue date, aliases: [caste certificate issue date, caste certificate date of issue], data_type: date}
+  caste_certificate.issuing_authority: {description: Caste certificate issuing authority, aliases: [caste certificate issuing authority], data_type: string}
+  caste_validity.number: {description: Caste validity certificate number, aliases: [caste validity certificate number, caste validity certificate no, validity certificate number, validity certificate no, caste validity number], data_type: identifier}
+  caste_validity.issue_date: {description: Caste validity certificate issue date, aliases: [caste validity issue date, date of validity], data_type: date}
+  caste_validity.issuing_authority: {description: Caste validity issuing committee, aliases: [caste validity issuing authority], data_type: string}
+  ncl_certificate.number: {description: Non-creamy layer certificate number, aliases: [non creamy layer certificate number, ncl certificate number, ncl certificate no, non creamy layer certificate no], data_type: identifier}
+  ncl_certificate.application_number: {description: NCL certificate application number, aliases: [], data_type: identifier}
+  ncl_certificate.issue_date: {description: NCL certificate issue date, aliases: [ncl certificate issue date, ncl issue date], data_type: date}
+  ncl_certificate.valid_until: {description: NCL certificate valid until, aliases: [ncl validity, ncl valid upto], data_type: date}
+  ncl_certificate.issuing_authority: {description: NCL certificate issuing authority, aliases: [], data_type: string}
+  income_certificate.number: {description: Income certificate number, aliases: [income certificate number, income certificate no], data_type: identifier}
+  income_certificate.application_number: {description: Income certificate application number, aliases: [], data_type: identifier}
+  income_certificate.holder_name: {description: Person the income certificate is issued to, aliases: [], data_type: string}
+  income_certificate.financial_year: {description: Financial year of the income certificate, aliases: [income certificate financial year], data_type: string}
+  income_certificate.issue_date: {description: Income certificate issue date, aliases: [income certificate issue date], data_type: date}
+  income_certificate.valid_until: {description: Income certificate valid until, aliases: [], data_type: date}
+  income_certificate.issuing_authority: {description: Income certificate issuing authority, aliases: [], data_type: string}
+  domicile_certificate.number: {description: Domicile certificate number, aliases: [domicile certificate number, domicile certificate no, domicile number], data_type: identifier}
+  domicile_certificate.application_number: {description: Domicile certificate application number, aliases: [], data_type: identifier}
+  domicile_certificate.state: {description: State of domicile stated on the certificate, aliases: [domicile state, state of domicile], data_type: string}
+  domicile_certificate.issue_date: {description: Domicile certificate issue date, aliases: [domicile certificate issue date], data_type: date}
+  domicile_certificate.issuing_authority: {description: Domicile certificate issuing authority, aliases: [], data_type: string}
+  birth_certificate.registration_number: {description: Birth registration number, aliases: [birth registration number, birth certificate number], data_type: identifier}
+  birth_certificate.registration_date: {description: Birth registration date, aliases: [birth registration date, date of registration of birth], data_type: date}
+  birth_certificate.issue_date: {description: Birth certificate issue date, aliases: [], data_type: date}
+
+  # ------------------------------------------------------------------ category and eligibility
+  category.social_category:
+    description: Social category as stated on a certificate (General, EWS, OBC, SC, ST...)
+    aliases: [category, caste category, social category, reservation category, category applied for]
+    data_type: string
+    sensitive: true
+  category.caste:
+    description: Caste name as printed on a caste certificate
+    aliases: [caste, caste name, sub caste, name of caste]
+    data_type: string
+    sensitive: true
+  category.pwbd_status:
+    description: Person with Benchmark Disability declaration
+    aliases: [pwbd, pwd, person with benchmark disability, person with disability, benchmark disability, divyang, disability status]
+    data_type: string
+    sensitive: true
+    user_only: true
+  category.ews_status:
+    description: Economically Weaker Section declaration
+    aliases: [ews, economically weaker section]
+    data_type: string
+    sensitive: true
+    user_only: true
+  category.domicile_declaration:
+    description: Declaration of domicile or state eligibility (an eligibility claim the user makes)
+    aliases: [domiciled in, domicile of maharashtra, are you domiciled, state eligibility, domicile status]
+    data_type: string
+    user_only: true
+
+  # ------------------------------------------------------------------ passport / licence / voter
+  passport.issue_date: {description: Passport date of issue, aliases: [passport issue date, passport date of issue], data_type: date}
+  passport.expiry_date: {description: Passport date of expiry, aliases: [passport expiry date, date of expiry, passport valid till], data_type: date}
+  passport.place_of_issue: {description: Passport place of issue, aliases: [place of issue, passport place of issue], data_type: string}
+  driving_licence.issue_date: {description: Driving licence issue date, aliases: [], data_type: date}
+  driving_licence.valid_until: {description: Driving licence valid until, aliases: [], data_type: date}
+  driving_licence.vehicle_classes: {description: Licensed vehicle classes, aliases: [class of vehicle, vehicle class, cov], data_type: string}
+  driving_licence.issuing_authority: {description: Driving licence issuing RTO, aliases: [], data_type: string}
+
+  # ------------------------------------------------------------------ utility bill
+  utility.provider_name: {description: Electricity supplier, aliases: [electricity board, electricity provider, distribution company], data_type: string}
+  utility.consumer_number: {description: Electricity consumer number, aliases: [consumer no, consumer number, consumer id, ca number, service connection number, electricity consumer number], data_type: identifier}
+  utility.consumer_name: {description: Name the electricity connection is in (may not be the applicant), aliases: [consumer name], data_type: string}
+  utility.billing_unit: {description: Billing unit, aliases: [billing unit], data_type: string}
+  utility.service_address: {description: Address of the electricity connection, aliases: [], data_type: address}
+  utility.bill_month: {description: Billing month, aliases: [bill month, billing month, bill period], data_type: string}
+  utility.bill_date: {description: Bill date, aliases: [bill date, date of bill], data_type: date}
+  utility.due_date: {description: Bill due date, aliases: [due date, last date of payment, pay by], data_type: date}
+  utility.units_consumed: {description: Units consumed, aliases: [units consumed, consumption units, total units], data_type: number}
+  utility.bill_amount: {description: Bill amount, aliases: [bill amount, electricity bill amount, net amount payable], data_type: amount}
+  utility.meter_number: {description: Meter number, aliases: [meter no, meter number], data_type: identifier}
+
+  # ------------------------------------------------------------------ ration card
+  ration_card.number: {description: Ration card number, aliases: [ration card no, ration card number, rc number, rc no], data_type: identifier}
+  ration_card.card_type: {description: Ration card type (APL, BPL, AAY, PHH...), aliases: [card type, ration card type, card category], data_type: string}
+  ration_card.head_of_family: {description: Head of family on the ration card, aliases: [head of family, head of the family, name of head of family], data_type: string}
+  ration_card.address: {description: Address on the ration card, aliases: [], data_type: address}
+  ration_card.members: {description: Household members on the ration card, aliases: [], data_type: record, cardinality: multiple}
+
+  # ------------------------------------------------------------------ exam choices (never derived from documents)
+  exam.city_preference: {description: Preferred exam city, aliases: [exam city, exam city choice, exam city preference, choice of exam city, preferred exam city, test city, examination centre city, centre preference], data_type: string, user_only: true}
+  exam.question_paper_language: {description: Medium or language of the question paper, aliases: [medium of question paper, question paper medium, question paper language, language of question paper, exam medium], data_type: string, user_only: true}
+  exam.course_choice: {description: Course or paper applied for, aliases: [paper applying for, paper applied for, course applied for, course choice, course preference], data_type: string, user_only: true}
+  exam.session: {description: Exam session or attempt, aliases: [session, exam session, attempt, session applying for], data_type: string, user_only: true}
+  exam.qualifying_exam_code: {description: Official qualifying-examination code from the information bulletin, aliases: [qualifying examination code, qualifying exam code, code of qualifying examination], data_type: string, user_only: true}
+  exam.identification_type: {description: Identity document chosen for the application, aliases: [identification type, id type, identity proof type, type of identity proof, identity type], data_type: string, user_only: true}
+  exam.application_number: {description: Entrance exam application number, aliases: [exam application number, nta application number, application form number], data_type: identifier, user_only: true}
+  exam.history: {description: Previous entrance examination attempts, aliases: [previous attempts, number of attempts, previous exam], data_type: string, user_only: true}

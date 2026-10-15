@@ -133,6 +133,7 @@ async def process_document(context: ProcessingContext, user_id: str, document_id
                     if result.document_type != "UNKNOWN"
                     else document.get("document_type")
                 ),
+                "document_type_confidence": result.document_type_confidence,
                 "normalized_reference": normalized_reference,
                 "fact_count": result.fact_count,
                 "index_status": result.index_status,

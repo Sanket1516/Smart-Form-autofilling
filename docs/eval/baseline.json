@@ -1,0 +1,739 @@
+{
+  "mode": "baseline",
+  "generated_at": "2026-10-15T08:35:20+00:00",
+  "llm": "none (mock provider returns empty output; deterministic path only)",
+  "ocr_quality": "not measured: PaddleOCR is not installed in this environment",
+  "extraction": {
+    "documents": 20,
+    "document_classification_accuracy": 0.0,
+    "field_recall": 0.1722,
+    "field_precision_scored": 0.6047,
+    "wrong_value_facts": 8,
+    "forbidden_facts": 9,
+    "identifier_exact_match": 0.2258,
+    "table_record_exact_match": 0.0,
+    "table_cell_accuracy": 0.0,
+    "generic_kv_coverage": 0.0,
+    "source_attribution_accuracy": 1.0,
+    "field_recall_by_variant": {
+      "clean": 0.2466,
+      "multilingual": 0.0,
+      "ocr": 0.1053,
+      "table": 0.1333
+    },
+    "per_document": [
+      {
+        "fixture": "aadhaar_front_bilingual",
+        "variant": "multilingual",
+        "expected_type": "AADHAAR_CARD",
+        "predicted_type": "UNKNOWN",
+        "fields_correct": "0/4",
+        "forbidden_facts": 0,
+        "records_exact": "0/0",
+        "labels_preserved": "0/0"
+      },
+      {
+        "fixture": "aadhaar_back_ocr",
+        "variant": "ocr",
+        "expected_type": "AADHAAR_CARD",
+        "predicted_type": "UNKNOWN",
+        "fields_correct": "0/4",
+        "forbidden_facts": 1,
+        "records_exact": "0/0",
+        "labels_preserved": "0/0"
+      },
+      {
+        "fixture": "pan_card_bilingual",
+        "variant": "multilingual",
+        "expected_type": "PAN_CARD",
+        "predicted_type": "UNKNOWN",
+        "fields_correct": "0/4",
+        "forbidden_facts": 0,
+        "records_exact": "0/0",
+        "labels_preserved": "0/0"
+      },
+      {
+        "fixture": "voter_id_clean",
+        "variant": "clean",
+        "expected_type": "VOTER_ID",
+        "predicted_type": "UNKNOWN",
+        "fields_correct": "4/7",
+        "forbidden_facts": 0,
+        "records_exact": "0/0",
+        "labels_preserved": "0/2"
+      },
+      {
+        "fixture": "driving_licence_clean",
+        "variant": "clean",
+        "expected_type": "DRIVING_LICENCE",
+        "predicted_type": "UNKNOWN",
+        "fields_correct": "4/10",
+        "forbidden_facts": 0,
+        "records_exact": "0/0",
+        "labels_preserved": "0/1"
+      },
+      {
+        "fixture": "passport_clean",
+        "variant": "clean",
+        "expected_type": "PASSPORT",
+        "predicted_type": "UNKNOWN",
+        "fields_correct": "4/10",
+        "forbidden_facts": 0,
+        "records_exact": "0/0",
+        "labels_preserved": "0/2"
+      },
+      {
+        "fixture": "class10_cbse_table",
+        "variant": "table",
+        "expected_type": "CLASS_10_MARKSHEET",
+        "predicted_type": "UNKNOWN",
+        "fields_correct": "0/11",
+        "forbidden_facts": 0,
+        "records_exact": "0/5",
+        "labels_preserved": "0/0"
+      },
+      {
+        "fixture": "class12_hsc_table",
+        "variant": "table",
+        "expected_type": "CLASS_12_MARKSHEET",
+        "predicted_type": "UNKNOWN",
+        "fields_correct": "1/14",
+        "forbidden_facts": 0,
+        "records_exact": "0/7",
+        "labels_preserved": "0/1"
+      },
+      {
+        "fixture": "class12_hsc_scanned",
+        "variant": "ocr",
+        "expected_type": "CLASS_12_MARKSHEET",
+        "predicted_type": "UNKNOWN",
+        "fields_correct": "0/12",
+        "forbidden_facts": 0,
+        "records_exact": "0/6",
+        "labels_preserved": "0/0"
+      },
+      {
+        "fixture": "birth_certificate_clean",
+        "variant": "clean",
+        "expected_type": "BIRTH_CERTIFICATE",
+        "predicted_type": "UNKNOWN",
+        "fields_correct": "5/9",
+        "forbidden_facts": 0,
+        "records_exact": "0/0",
+        "labels_preserved": "0/1"
+      },
+      {
+        "fixture": "bank_passbook_table",
+        "variant": "table",
+        "expected_type": "BANK_PASSBOOK",
+        "predicted_type": "UNKNOWN",
+        "fields_correct": "3/9",
+        "forbidden_facts": 2,
+        "records_exact": "0/3",
+        "labels_preserved": "0/2"
+      },
+      {
+        "fixture": "bank_statement_table",
+        "variant": "table",
+        "expected_type": "BANK_STATEMENT",
+        "predicted_type": "UNKNOWN",
+        "fields_correct": "2/7",
+        "forbidden_facts": 1,
+        "records_exact": "0/4",
+        "labels_preserved": "0/1"
+      },
+      {
+        "fixture": "bank_statement_ocr",
+        "variant": "ocr",
+        "expected_type": "BANK_STATEMENT",
+        "predicted_type": "UNKNOWN",
+        "fields_correct": "2/3",
+        "forbidden_facts": 0,
+        "records_exact": "0/3",
+        "labels_preserved": "0/0"
+      },
+      {
+        "fixture": "electricity_bill_clean",
+        "variant": "clean",
+        "expected_type": "ELECTRICITY_BILL",
+        "predicted_type": "UNKNOWN",
+        "fields_correct": "0/11",
+        "forbidden_facts": 2,
+        "records_exact": "0/0",
+        "labels_preserved": "0/1"
+      },
+      {
+        "fixture": "ration_card_table",
+        "variant": "table",
+        "expected_type": "RATION_CARD",
+        "predicted_type": "UNKNOWN",
+        "fields_correct": "0/4",
+        "forbidden_facts": 2,
+        "records_exact": "0/3",
+        "labels_preserved": "0/1"
+      },
+      {
+        "fixture": "income_certificate_clean",
+        "variant": "clean",
+        "expected_type": "INCOME_CERTIFICATE",
+        "predicted_type": "UNKNOWN",
+        "fields_correct": "0/8",
+        "forbidden_facts": 1,
+        "records_exact": "0/0",
+        "labels_preserved": "0/0"
+      },
+      {
+        "fixture": "caste_certificate_clean",
+        "variant": "clean",
+        "expected_type": "CASTE_CERTIFICATE",
+        "predicted_type": "UNKNOWN",
+        "fields_correct": "0/7",
+        "forbidden_facts": 0,
+        "records_exact": "0/0",
+        "labels_preserved": "0/0"
+      },
+      {
+        "fixture": "caste_validity_clean",
+        "variant": "clean",
+        "expected_type": "CASTE_VALIDITY_CERTIFICATE",
+        "predicted_type": "UNKNOWN",
+        "fields_correct": "1/7",
+        "forbidden_facts": 0,
+        "records_exact": "0/0",
+        "labels_preserved": "0/0"
+      },
+      {
+        "fixture": "ncl_certificate_clean",
+        "variant": "clean",
+        "expected_type": "NON_CREAMY_LAYER_CERTIFICATE",
+        "predicted_type": "UNKNOWN",
+        "fields_correct": "0/4",
+        "forbidden_facts": 0,
+        "records_exact": "0/0",
+        "labels_preserved": "0/0"
+      },
+      {
+        "fixture": "domicile_certificate_marathi",
+        "variant": "multilingual",
+        "expected_type": "DOMICILE_CERTIFICATE",
+        "predicted_type": "UNKNOWN",
+        "fields_correct": "0/6",
+        "forbidden_facts": 0,
+        "records_exact": "0/0",
+        "labels_preserved": "0/0"
+      }
+    ]
+  },
+  "form_filling": {
+    "fields": 60,
+    "field_matching_accuracy": 0.3333,
+    "end_to_end_correct_outcome_rate": 0.3667,
+    "correct_fill_rate": 0.2,
+    "incorrect_fill_rate": 0.4667,
+    "incorrect_fills": 7,
+    "wrong_suggestions": 1,
+    "verdicts": {
+      "correct_fill": 8,
+      "safe_review": 5,
+      "correct_review": 3,
+      "correct_abstain": 11,
+      "missed": 25,
+      "wrong_suggestion": 1,
+      "incorrect_fill": 7
+    },
+    "rows": [
+      {
+        "form": "jee_main",
+        "label": "Candidate Name (as per Class 10th certificate)",
+        "expected": "fill",
+        "status": "missing_information",
+        "concept": null,
+        "verdict": "missed"
+      },
+      {
+        "form": "jee_main",
+        "label": "Date of Birth (DD/MM/YYYY)",
+        "expected": "fill",
+        "status": "ready",
+        "concept": "personal.date_of_birth",
+        "verdict": "correct_fill"
+      },
+      {
+        "form": "jee_main",
+        "label": "School Name",
+        "expected": "fill",
+        "status": "missing_information",
+        "concept": null,
+        "verdict": "missed"
+      },
+      {
+        "form": "jee_main",
+        "label": "Name of Board",
+        "expected": "fill",
+        "status": "needs_review",
+        "concept": "personal.full_name",
+        "verdict": "missed"
+      },
+      {
+        "form": "jee_main",
+        "label": "Name of School/College",
+        "expected": "fill",
+        "status": "missing_information",
+        "concept": null,
+        "verdict": "missed"
+      },
+      {
+        "form": "jee_main",
+        "label": "Mathematics Marks",
+        "expected": "fill",
+        "status": "ready",
+        "concept": "education.percentage",
+        "verdict": "incorrect_fill"
+      },
+      {
+        "form": "jee_main",
+        "label": "Total Marks Obtained",
+        "expected": "fill",
+        "status": "ready",
+        "concept": "education.percentage",
+        "verdict": "incorrect_fill"
+      },
+      {
+        "form": "jee_main",
+        "label": "Maximum Marks",
+        "expected": "fill",
+        "status": "ready",
+        "concept": "education.percentage",
+        "verdict": "incorrect_fill"
+      },
+      {
+        "form": "jee_main",
+        "label": "Total Marks",
+        "expected": "abstain",
+        "status": "ready",
+        "concept": "education.percentage",
+        "verdict": "incorrect_fill"
+      },
+      {
+        "form": "jee_main",
+        "label": "Paper Applying For",
+        "expected": "abstain",
+        "status": "missing_information",
+        "concept": "publication.title",
+        "verdict": "correct_abstain"
+      },
+      {
+        "form": "jee_main",
+        "label": "Session",
+        "expected": "abstain",
+        "status": "missing_information",
+        "concept": null,
+        "verdict": "correct_abstain"
+      },
+      {
+        "form": "jee_main",
+        "label": "PAN Number",
+        "expected": "review",
+        "status": "missing_information",
+        "concept": "identity.pan_number",
+        "verdict": "missed"
+      },
+      {
+        "form": "jee_main",
+        "label": "Enter OTP",
+        "expected": "abstain",
+        "status": "security_blocked",
+        "concept": null,
+        "verdict": "correct_abstain"
+      },
+      {
+        "form": "mht_cet",
+        "label": "Candidate's Full Name",
+        "expected": "fill",
+        "status": "needs_review",
+        "concept": "personal.full_name",
+        "verdict": "safe_review"
+      },
+      {
+        "form": "mht_cet",
+        "label": "SSC Seat Number",
+        "expected": "fill",
+        "status": "missing_information",
+        "concept": null,
+        "verdict": "missed"
+      },
+      {
+        "form": "mht_cet",
+        "label": "HSC Percentage",
+        "expected": "fill",
+        "status": "ready",
+        "concept": "education.percentage",
+        "verdict": "correct_fill"
+      },
+      {
+        "form": "mht_cet",
+        "label": "HSC Board",
+        "expected": "fill",
+        "status": "missing_information",
+        "concept": null,
+        "verdict": "missed"
+      },
+      {
+        "form": "mht_cet",
+        "label": "Are you domiciled in Maharashtra?",
+        "expected": "abstain",
+        "status": "missing_information",
+        "concept": null,
+        "verdict": "correct_abstain"
+      },
+      {
+        "form": "mht_cet",
+        "label": "Domicile Certificate Number",
+        "expected": "fill",
+        "status": "missing_information",
+        "concept": "certification.name",
+        "verdict": "missed"
+      },
+      {
+        "form": "mht_cet",
+        "label": "Caste Certificate Number",
+        "expected": "fill",
+        "status": "missing_information",
+        "concept": "certification.name",
+        "verdict": "missed"
+      },
+      {
+        "form": "mht_cet",
+        "label": "Caste Validity Certificate Number",
+        "expected": "fill",
+        "status": "missing_information",
+        "concept": "certification.name",
+        "verdict": "missed"
+      },
+      {
+        "form": "mht_cet",
+        "label": "Non Creamy Layer Certificate Number",
+        "expected": "fill",
+        "status": "missing_information",
+        "concept": "certification.name",
+        "verdict": "missed"
+      },
+      {
+        "form": "mht_cet",
+        "label": "Certificate Number",
+        "expected": "fill",
+        "status": "missing_information",
+        "concept": "certification.name",
+        "verdict": "missed"
+      },
+      {
+        "form": "mht_cet",
+        "label": "Annual Family Income",
+        "expected": "review",
+        "status": "needs_review",
+        "concept": "financial.annual_income",
+        "verdict": "wrong_suggestion"
+      },
+      {
+        "form": "mht_cet",
+        "label": "Caste",
+        "expected": "review",
+        "status": "missing_information",
+        "concept": null,
+        "verdict": "missed"
+      },
+      {
+        "form": "neet_ug",
+        "label": "Candidate's Name",
+        "expected": "fill",
+        "status": "needs_review",
+        "concept": "personal.full_name",
+        "verdict": "safe_review"
+      },
+      {
+        "form": "neet_ug",
+        "label": "Father's Name",
+        "expected": "fill",
+        "status": "ready",
+        "concept": "personal.father_name",
+        "verdict": "correct_fill"
+      },
+      {
+        "form": "neet_ug",
+        "label": "Mother's Name",
+        "expected": "review",
+        "status": "needs_review",
+        "concept": "personal.mother_name",
+        "verdict": "correct_review"
+      },
+      {
+        "form": "neet_ug",
+        "label": "Date of Birth",
+        "expected": "fill",
+        "status": "ready",
+        "concept": "personal.date_of_birth",
+        "verdict": "correct_fill"
+      },
+      {
+        "form": "neet_ug",
+        "label": "Gender",
+        "expected": "fill",
+        "status": "needs_review",
+        "concept": "identity.gender",
+        "verdict": "safe_review"
+      },
+      {
+        "form": "neet_ug",
+        "label": "Nationality",
+        "expected": "fill",
+        "status": "ready",
+        "concept": "identity.nationality",
+        "verdict": "correct_fill"
+      },
+      {
+        "form": "neet_ug",
+        "label": "Category",
+        "expected": "review",
+        "status": "missing_information",
+        "concept": null,
+        "verdict": "missed"
+      },
+      {
+        "form": "neet_ug",
+        "label": "Are you a Person with Benchmark Disability (PwBD)?",
+        "expected": "abstain",
+        "status": "missing_information",
+        "concept": null,
+        "verdict": "correct_abstain"
+      },
+      {
+        "form": "neet_ug",
+        "label": "Aadhaar Number",
+        "expected": "review",
+        "status": "missing_information",
+        "concept": "identity.aadhaar_number",
+        "verdict": "missed"
+      },
+      {
+        "form": "neet_ug",
+        "label": "Identification Type",
+        "expected": "abstain",
+        "status": "missing_information",
+        "concept": null,
+        "verdict": "correct_abstain"
+      },
+      {
+        "form": "neet_ug",
+        "label": "Email Address",
+        "expected": "fill",
+        "status": "needs_review",
+        "concept": "personal.email",
+        "verdict": "safe_review"
+      },
+      {
+        "form": "neet_ug",
+        "label": "Mobile Number",
+        "expected": "fill",
+        "status": "ready",
+        "concept": "personal.phone",
+        "verdict": "correct_fill"
+      },
+      {
+        "form": "neet_ug",
+        "label": "Permanent Address",
+        "expected": "review",
+        "status": "needs_review",
+        "concept": "address.full_address",
+        "verdict": "correct_review"
+      },
+      {
+        "form": "neet_ug",
+        "label": "Pin Code",
+        "expected": "fill",
+        "status": "missing_information",
+        "concept": "address.zipcode",
+        "verdict": "missed"
+      },
+      {
+        "form": "neet_ug",
+        "label": "Name of the Board",
+        "expected": "fill",
+        "status": "needs_review",
+        "concept": "personal.full_name",
+        "verdict": "missed"
+      },
+      {
+        "form": "neet_ug",
+        "label": "Year of Passing",
+        "expected": "fill",
+        "status": "missing_information",
+        "concept": "education.end_year",
+        "verdict": "missed"
+      },
+      {
+        "form": "neet_ug",
+        "label": "Roll Number",
+        "expected": "fill",
+        "status": "missing_information",
+        "concept": null,
+        "verdict": "missed"
+      },
+      {
+        "form": "neet_ug",
+        "label": "Qualifying Examination Status",
+        "expected": "fill",
+        "status": "missing_information",
+        "concept": null,
+        "verdict": "missed"
+      },
+      {
+        "form": "neet_ug",
+        "label": "Year of Passing",
+        "expected": "fill",
+        "status": "missing_information",
+        "concept": "education.end_year",
+        "verdict": "missed"
+      },
+      {
+        "form": "neet_ug",
+        "label": "Roll Number",
+        "expected": "fill",
+        "status": "missing_information",
+        "concept": null,
+        "verdict": "missed"
+      },
+      {
+        "form": "neet_ug",
+        "label": "Percentage of Marks",
+        "expected": "fill",
+        "status": "ready",
+        "concept": "education.percentage",
+        "verdict": "correct_fill"
+      },
+      {
+        "form": "neet_ug",
+        "label": "Physics Marks Obtained",
+        "expected": "fill",
+        "status": "ready",
+        "concept": "education.percentage",
+        "verdict": "incorrect_fill"
+      },
+      {
+        "form": "neet_ug",
+        "label": "Chemistry Marks Obtained",
+        "expected": "fill",
+        "status": "ready",
+        "concept": "education.percentage",
+        "verdict": "incorrect_fill"
+      },
+      {
+        "form": "neet_ug",
+        "label": "Biology Marks Obtained",
+        "expected": "fill",
+        "status": "ready",
+        "concept": "education.percentage",
+        "verdict": "incorrect_fill"
+      },
+      {
+        "form": "neet_ug",
+        "label": "Qualifying Examination Code",
+        "expected": "abstain",
+        "status": "missing_information",
+        "concept": null,
+        "verdict": "correct_abstain"
+      },
+      {
+        "form": "neet_ug",
+        "label": "Exam City Choice 1",
+        "expected": "abstain",
+        "status": "missing_information",
+        "concept": "address.city",
+        "verdict": "correct_abstain"
+      },
+      {
+        "form": "neet_ug",
+        "label": "Medium of Question Paper",
+        "expected": "abstain",
+        "status": "missing_information",
+        "concept": "publication.title",
+        "verdict": "correct_abstain"
+      },
+      {
+        "form": "neet_ug",
+        "label": "Upload Photograph",
+        "expected": "abstain",
+        "status": "security_blocked",
+        "concept": null,
+        "verdict": "correct_abstain"
+      },
+      {
+        "form": "neet_ug",
+        "label": "I hereby declare that all the information given is true",
+        "expected": "abstain",
+        "status": "missing_information",
+        "concept": null,
+        "verdict": "correct_abstain"
+      },
+      {
+        "form": "scholarship_bank",
+        "label": "Bank Name",
+        "expected": "fill",
+        "status": "missing_information",
+        "concept": "financial.bank_name",
+        "verdict": "missed"
+      },
+      {
+        "form": "scholarship_bank",
+        "label": "Branch Name",
+        "expected": "fill",
+        "status": "missing_information",
+        "concept": "financial.branch_name",
+        "verdict": "missed"
+      },
+      {
+        "form": "scholarship_bank",
+        "label": "IFSC Code",
+        "expected": "fill",
+        "status": "ready",
+        "concept": "financial.ifsc_code",
+        "verdict": "correct_fill"
+      },
+      {
+        "form": "scholarship_bank",
+        "label": "MICR Code",
+        "expected": "fill",
+        "status": "missing_information",
+        "concept": null,
+        "verdict": "missed"
+      },
+      {
+        "form": "scholarship_bank",
+        "label": "Bank Account Number",
+        "expected": "review",
+        "status": "needs_review",
+        "concept": "financial.account_number",
+        "verdict": "correct_review"
+      },
+      {
+        "form": "scholarship_bank",
+        "label": "Account Holder Name",
+        "expected": "fill",
+        "status": "needs_review",
+        "concept": "personal.full_name",
+        "verdict": "safe_review"
+      }
+    ]
+  },
+  "retrieval": {
+    "queries": 14,
+    "chunks": 24,
+    "semantic_only": {
+      "recall_at_3": 1.0,
+      "precision_at_3": 0.3571
+    },
+    "semantic_plus_document_type_filter": {
+      "recall_at_3": 0.0,
+      "precision_at_3": null
+    }
+  }
+}

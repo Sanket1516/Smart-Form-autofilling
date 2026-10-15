@@ -86,4 +86,15 @@ Success responses use `{ "success": true, "data": ..., "message": "..." }` (some
 | POST | `/retrieval/rag/answer` | Answer from above-cutoff evidence; returns `insufficient_evidence` when no adequate evidence exists and 503 when the LLM fails. Sources list only chunks cited by the answer. |
 | POST | `/retrieval/structured` | Retrieve facts by ontology `concept`; optional `verified_only`. |
 
+## Indian documents and entrance exams
+
+| Method | Path | Purpose |
+|---|---|---|
+| GET | `/document-types` | Document types the extractor recognises (15 required types plus caste validity and non-creamy layer certificates). |
+| GET | `/exams` | Configured exam requirement profiles (NEET-UG, JEE Main, MHT-CET) with review date and verification status. |
+| GET | `/exams/{exam_id}/readiness` | Per requirement: `available`, `needs_confirmation`, `conflict`, `missing` (with documents that would supply it) or `needs_user_input`; required uploads for this candidate. Sensitive values are masked. |
+| POST | `/exams/{exam_id}/uploads/{upload_id}/check` | Multipart `file`: checks format, size and image dimensions against the exam's upload rules. Nothing is stored. Limits marked unverified are reported with a note. |
+
+Documents now also return `document_type_confidence`. Discovered facts include `original_label` and `raw_value`; values of sensitive concepts (Aadhaar, PAN, account numbers…) are masked there (`masked: true`). Profile fields include `group` and `data_type`; the profile includes the ordered `groups`.
+
 Login, registration, upload, document processing, field classification, recommendations and RAG have per-process rate limits. The exact route schemas, bounds and response types are available from the generated OpenAPI document.

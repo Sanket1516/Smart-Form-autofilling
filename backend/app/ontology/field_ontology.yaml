@@ -1,4 +1,4 @@
-version: 3.0.0
+version: 4.0.0
 concepts:
   achievement.organization:
     canonical_name: achievement.organization
@@ -59,15 +59,13 @@ concepts:
     description: Complete postal address
     aliases:
     - address
-    - correspondence address
     - current address
     - full address
     - home address
     - mailing address
-    - permanent address
     - postal address
     - residential address
-    data_type: string
+    data_type: address
     cardinality: single
     is_structured: true
     autocomplete:
@@ -206,6 +204,9 @@ concepts:
     data_type: string
     cardinality: multiple
     is_structured: true
+    scopes:
+      class_10: academic.class10.cgpa
+      class_12: academic.class12.cgpa
   education.degree:
     canonical_name: education.degree
     description: Degree obtained (e.g. B.Tech, BSc, MSc)
@@ -221,7 +222,6 @@ concepts:
     description: Year of graduation or passing out
     aliases:
     - batch
-    - class of
     - end year
     - graduation year
     - passing year
@@ -229,6 +229,9 @@ concepts:
     data_type: string
     cardinality: multiple
     is_structured: true
+    scopes:
+      class_10: academic.class10.passing_year
+      class_12: academic.class12.passing_year
   education.field_of_study:
     canonical_name: education.field_of_study
     description: Major, specialization, branch, or stream
@@ -241,28 +244,42 @@ concepts:
     data_type: string
     cardinality: multiple
     is_structured: true
+    scopes:
+      class_12: academic.class12.stream
   education.institution:
     canonical_name: education.institution
     description: College, university, institute or school attended by the candidate
     aliases:
     - college
+    - college name
     - institute
     - institution
+    - name of school
+    - name of school college
     - school
+    - school college
+    - school name
     - university
     data_type: string
     cardinality: multiple
     is_structured: true
+    scopes:
+      class_10: academic.class10.school
+      class_12: academic.class12.school
   education.percentage:
     canonical_name: education.percentage
     description: Percentage marks obtained
     aliases:
-    - marks
+    - aggregate percentage
     - percentage
-    - score
-    data_type: string
+    - percentage obtained
+    - percentage of marks
+    data_type: percentage
     cardinality: multiple
     is_structured: true
+    scopes:
+      class_10: academic.class10.percentage
+      class_12: academic.class12.percentage
   education.qualification:
     canonical_name: education.qualification
     description: Type of qualification (e.g., Undergrad, Postgrad, SSC, HSC)
@@ -395,7 +412,8 @@ concepts:
     - account number
     - acct no
     - bank account number
-    data_type: string
+    - savings account number
+    data_type: identifier
     cardinality: single
     is_structured: true
     sensitive: true
@@ -413,10 +431,18 @@ concepts:
     canonical_name: financial.annual_income
     description: Annual Income
     aliases:
+    - income group
+    - income range
+    - income slab
+    - family income group
+    - annual family income
     - annual income
+    - annual income of family
+    - family annual income
     - family income
+    - total annual income
     - yearly income
-    data_type: string
+    data_type: amount
     cardinality: single
     is_structured: true
     sensitive: true
@@ -446,6 +472,9 @@ concepts:
     - cif
     - cif no
     - cif number
+    - customer id
+    - customer no
+    - customer number
     data_type: string
     cardinality: single
     is_structured: true
@@ -454,11 +483,16 @@ concepts:
     canonical_name: financial.ifsc_code
     description: Bank IFSC Code
     aliases:
+    - ifs code
+    - bank ifsc
+    - bank ifsc code
     - ifsc
     - ifsc code
-    data_type: string
+    - ifsc no
+    data_type: identifier
     cardinality: single
     is_structured: true
+    validator: ifsc
   financial.routing_number:
     canonical_name: financial.routing_number
     description: Routing Number / Sort Code
@@ -485,21 +519,26 @@ concepts:
     description: Aadhaar Card Number
     aliases:
     - aadhaar
+    - aadhaar card no
+    - aadhaar card number
     - aadhaar no
     - aadhaar number
     - aadhar number
     - adhaar
-    data_type: string
+    - uid no
+    - uid number
+    data_type: identifier
     cardinality: single
     is_structured: true
     sensitive: true
+    validator: aadhaar
   identity.gender:
     canonical_name: identity.gender
     description: Gender
     aliases:
     - gender
     - sex
-    data_type: string
+    data_type: gender
     cardinality: single
     is_structured: true
     autocomplete:
@@ -540,26 +579,34 @@ concepts:
     - pan card number
     - pan no
     - pan number
-    data_type: string
+    - permanent account number
+    data_type: identifier
     cardinality: single
     is_structured: true
     sensitive: true
+    validator: pan
   identity.passport_number:
     canonical_name: identity.passport_number
     description: Passport Number
     aliases:
     - passport
     - passport no
-    data_type: string
+    - passport number
+    data_type: identifier
     cardinality: single
     is_structured: true
     sensitive: true
+    validator: passport
   legal.consent:
     canonical_name: legal.consent
     description: Consent Checkbox
     aliases:
     - consent
+    - declaration
     - i agree
+    - i declare
+    - i hereby declare
+    - undertaking
     data_type: boolean
     cardinality: single
     is_structured: true
@@ -644,9 +691,11 @@ concepts:
     canonical_name: personal.father_name
     description: Father's name
     aliases:
+    - father guardian name
     - father full name
     - father name
-    - guardian name
+    - father s name
+    - fathers name
     - name of father
     data_type: string
     cardinality: single
@@ -668,16 +717,18 @@ concepts:
     canonical_name: personal.full_name
     description: Full legal name of the person
     aliases:
-    - account holder name
     - applicant name
+    - candidate full name
     - candidate name
     - complete name
+    - elector name
     - full legal name
     - full name
     - legal name
     - name
     - name of applicant
     - name of candidate
+    - name of student
     - name of the applicant
     - name of the candidate
     - student name
@@ -983,3 +1034,5 @@ concepts:
     data_type: string
     cardinality: single
     is_structured: true
+includes:
+- india_ontology.yaml

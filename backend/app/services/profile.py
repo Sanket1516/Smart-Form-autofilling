@@ -35,6 +35,64 @@ _LEGACY_KEYS = {
 }
 
 
+# (group key, label, concept prefixes) in display order; first matching prefix wins.
+PROFILE_GROUPS: tuple[tuple[str, str, tuple[str, ...]], ...] = (
+    (
+        "contact",
+        "Contact",
+        ("personal.email", "personal.phone", "personal.linkedin", "personal.github", "contact."),
+    ),
+    (
+        "family",
+        "Parents and guardian",
+        (
+            "personal.father_name",
+            "personal.mother_name",
+            "personal.guardian_name",
+            "personal.spouse_name",
+        ),
+    ),
+    ("identity", "Personal identity", ("personal.", "identity.")),
+    ("address", "Addresses", ("address.",)),
+    ("subjects", "Subject-wise marks", ("academic.class10.subjects", "academic.class12.subjects")),
+    ("academic", "Academic history", ("academic.", "education.")),
+    ("exams", "Entrance examinations", ("exam.",)),
+    (
+        "category",
+        "Category and eligibility",
+        (
+            "category.",
+            "caste_certificate.",
+            "caste_validity.",
+            "ncl_certificate.",
+            "domicile_certificate.",
+            "income_certificate.",
+            "financial.annual_income",
+        ),
+    ),
+    ("bank", "Bank details", ("financial.",)),
+    (
+        "documents",
+        "Other document details",
+        (
+            "passport.",
+            "driving_licence.",
+            "voter_id.",
+            "birth_certificate.",
+            "ration_card.",
+            "utility.",
+        ),
+    ),
+)
+
+
+def profile_group(concept: str) -> str:
+    for key, _label, prefixes in PROFILE_GROUPS:
+        if any(concept == p or (p.endswith(".") and concept.startswith(p)) for p in prefixes):
+            return key
+    return "other"
+
+
 class ProfileService:
     def __init__(self, fact_service: FactService, ontology: FieldOntology) -> None:
         self.facts = fact_service
@@ -63,6 +121,8 @@ class ProfileService:
                     origin=view.origin,
                     sources=view.sources,
                     sensitive=self.ontology.is_sensitive(concept),
+                    group=profile_group(concept),
+                    data_type=self.ontology.data_type(concept),
                 )
             )
         personal = dict(sections.get("personal", {}))
@@ -80,6 +140,8 @@ class ProfileService:
             employment=_entries(sections.get("experience", {})),
             sections=sections,
             fields=fields,
+            groups=[{"key": key, "label": label} for key, label, _ in PROFILE_GROUPS]
+            + [{"key": "other", "label": "Other"}],
             updated_at=datetime.now(UTC),
         )
 

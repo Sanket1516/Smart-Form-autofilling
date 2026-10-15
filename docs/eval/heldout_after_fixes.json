@@ -1,0 +1,308 @@
+{
+  "mode": "current",
+  "fixture_set": "heldout",
+  "generated_at": "2026-10-15T09:09:28+00:00",
+  "llm": "none (mock provider returns empty output; deterministic path only)",
+  "ocr_quality": "not measured: PaddleOCR is not installed in this environment",
+  "extraction": {
+    "documents": 10,
+    "document_classification_accuracy": 1.0,
+    "field_recall": 1.0,
+    "field_precision_scored": 1.0,
+    "wrong_value_facts": 0,
+    "forbidden_facts": 0,
+    "identifier_exact_match": 1.0,
+    "table_record_exact_match": 1.0,
+    "table_cell_accuracy": 1.0,
+    "generic_kv_coverage": 1.0,
+    "source_attribution_accuracy": 1.0,
+    "field_recall_by_variant": {
+      "clean": 1.0,
+      "multilingual": 1.0,
+      "ocr": 1.0,
+      "table": 1.0
+    },
+    "per_document": [
+      {
+        "fixture": "ho_aadhaar_yob",
+        "variant": "ocr",
+        "expected_type": "AADHAAR_CARD",
+        "predicted_type": "AADHAAR_CARD",
+        "fields_correct": "3/3",
+        "forbidden_facts": 0,
+        "records_exact": "0/0",
+        "labels_preserved": "0/0"
+      },
+      {
+        "fixture": "ho_pan_old_format",
+        "variant": "ocr",
+        "expected_type": "PAN_CARD",
+        "predicted_type": "PAN_CARD",
+        "fields_correct": "1/1",
+        "forbidden_facts": 0,
+        "records_exact": "0/0",
+        "labels_preserved": "0/0"
+      },
+      {
+        "fixture": "ho_cbse_class12",
+        "variant": "table",
+        "expected_type": "CLASS_12_MARKSHEET",
+        "predicted_type": "CLASS_12_MARKSHEET",
+        "fields_correct": "9/9",
+        "forbidden_facts": 0,
+        "records_exact": "5/5",
+        "labels_preserved": "0/0"
+      },
+      {
+        "fixture": "ho_icse_class10",
+        "variant": "ocr",
+        "expected_type": "CLASS_10_MARKSHEET",
+        "predicted_type": "CLASS_10_MARKSHEET",
+        "fields_correct": "5/5",
+        "forbidden_facts": 0,
+        "records_exact": "3/3",
+        "labels_preserved": "2/2"
+      },
+      {
+        "fixture": "ho_bank_statement",
+        "variant": "table",
+        "expected_type": "BANK_STATEMENT",
+        "predicted_type": "BANK_STATEMENT",
+        "fields_correct": "6/6",
+        "forbidden_facts": 0,
+        "records_exact": "2/2",
+        "labels_preserved": "0/0"
+      },
+      {
+        "fixture": "ho_caste_certificate_sc",
+        "variant": "multilingual",
+        "expected_type": "CASTE_CERTIFICATE",
+        "predicted_type": "CASTE_CERTIFICATE",
+        "fields_correct": "5/5",
+        "forbidden_facts": 0,
+        "records_exact": "0/0",
+        "labels_preserved": "0/0"
+      },
+      {
+        "fixture": "ho_income_certificate",
+        "variant": "clean",
+        "expected_type": "INCOME_CERTIFICATE",
+        "predicted_type": "INCOME_CERTIFICATE",
+        "fields_correct": "2/2",
+        "forbidden_facts": 0,
+        "records_exact": "0/0",
+        "labels_preserved": "0/0"
+      },
+      {
+        "fixture": "ho_electricity_bill",
+        "variant": "clean",
+        "expected_type": "ELECTRICITY_BILL",
+        "predicted_type": "ELECTRICITY_BILL",
+        "fields_correct": "4/4",
+        "forbidden_facts": 0,
+        "records_exact": "0/0",
+        "labels_preserved": "0/0"
+      },
+      {
+        "fixture": "ho_voter_id",
+        "variant": "clean",
+        "expected_type": "VOTER_ID",
+        "predicted_type": "VOTER_ID",
+        "fields_correct": "5/5",
+        "forbidden_facts": 0,
+        "records_exact": "0/0",
+        "labels_preserved": "0/0"
+      },
+      {
+        "fixture": "ho_domicile_certificate",
+        "variant": "clean",
+        "expected_type": "DOMICILE_CERTIFICATE",
+        "predicted_type": "DOMICILE_CERTIFICATE",
+        "fields_correct": "2/2",
+        "forbidden_facts": 0,
+        "records_exact": "0/0",
+        "labels_preserved": "0/0"
+      }
+    ]
+  },
+  "form_filling": {
+    "fields": 20,
+    "field_matching_accuracy": 1.0,
+    "end_to_end_correct_outcome_rate": 1.0,
+    "correct_fill_rate": 1.0,
+    "incorrect_fill_rate": 0.0,
+    "incorrect_fills": 0,
+    "wrong_suggestions": 0,
+    "verdicts": {
+      "correct_fill": 13,
+      "safe_review": 0,
+      "correct_review": 4,
+      "correct_abstain": 3,
+      "missed": 0,
+      "wrong_suggestion": 0,
+      "incorrect_fill": 0
+    },
+    "rows": [
+      {
+        "form": "heldout_form",
+        "label": "Applicant Name",
+        "expected": "fill",
+        "status": "ready",
+        "concept": "personal.full_name",
+        "verdict": "correct_fill"
+      },
+      {
+        "form": "heldout_form",
+        "label": "Father/Guardian Name",
+        "expected": "fill",
+        "status": "ready",
+        "concept": "personal.father_name",
+        "verdict": "correct_fill"
+      },
+      {
+        "form": "heldout_form",
+        "label": "Mother Name",
+        "expected": "fill",
+        "status": "ready",
+        "concept": "personal.mother_name",
+        "verdict": "correct_fill"
+      },
+      {
+        "form": "heldout_form",
+        "label": "DOB",
+        "expected": "fill",
+        "status": "ready",
+        "concept": "personal.date_of_birth",
+        "verdict": "correct_fill"
+      },
+      {
+        "form": "heldout_form",
+        "label": "Sex",
+        "expected": "fill",
+        "status": "ready",
+        "concept": "identity.gender",
+        "verdict": "correct_fill"
+      },
+      {
+        "form": "heldout_form",
+        "label": "12th Board",
+        "expected": "fill",
+        "status": "ready",
+        "concept": "academic.class12.board",
+        "verdict": "correct_fill"
+      },
+      {
+        "form": "heldout_form",
+        "label": "12th Roll No",
+        "expected": "fill",
+        "status": "ready",
+        "concept": "academic.class12.roll_number",
+        "verdict": "correct_fill"
+      },
+      {
+        "form": "heldout_form",
+        "label": "Marks in Physics",
+        "expected": "fill",
+        "status": "ready",
+        "concept": "academic.class12.subject_marks",
+        "verdict": "correct_fill"
+      },
+      {
+        "form": "heldout_form",
+        "label": "Biology marks",
+        "expected": "fill",
+        "status": "ready",
+        "concept": "academic.class12.subject_marks",
+        "verdict": "correct_fill"
+      },
+      {
+        "form": "heldout_form",
+        "label": "Percentage",
+        "expected": "abstain",
+        "status": "missing_information",
+        "concept": "academic.class12.percentage",
+        "verdict": "correct_abstain"
+      },
+      {
+        "form": "heldout_form",
+        "label": "Name of School",
+        "expected": "fill",
+        "status": "ready",
+        "concept": "academic.class10.school",
+        "verdict": "correct_fill"
+      },
+      {
+        "form": "heldout_form",
+        "label": "Mathematics marks",
+        "expected": "fill",
+        "status": "ready",
+        "concept": "academic.class10.subject_marks",
+        "verdict": "correct_fill"
+      },
+      {
+        "form": "heldout_form",
+        "label": "Social Category",
+        "expected": "review",
+        "status": "needs_review",
+        "concept": "category.social_category",
+        "verdict": "correct_review"
+      },
+      {
+        "form": "heldout_form",
+        "label": "Income Group",
+        "expected": "review",
+        "status": "needs_review",
+        "concept": "financial.annual_income",
+        "verdict": "correct_review"
+      },
+      {
+        "form": "heldout_form",
+        "label": "Account No.",
+        "expected": "review",
+        "status": "needs_review",
+        "concept": "financial.account_number",
+        "verdict": "correct_review"
+      },
+      {
+        "form": "heldout_form",
+        "label": "IFS Code",
+        "expected": "fill",
+        "status": "ready",
+        "concept": "financial.ifsc_code",
+        "verdict": "correct_fill"
+      },
+      {
+        "form": "heldout_form",
+        "label": "Bank Branch",
+        "expected": "fill",
+        "status": "ready",
+        "concept": "financial.branch_name",
+        "verdict": "correct_fill"
+      },
+      {
+        "form": "heldout_form",
+        "label": "Voter ID Number",
+        "expected": "review",
+        "status": "needs_review",
+        "concept": "identity.voter_id_number",
+        "verdict": "correct_review"
+      },
+      {
+        "form": "heldout_form",
+        "label": "Preferred Exam City",
+        "expected": "abstain",
+        "status": "missing_information",
+        "concept": "exam.city_preference",
+        "verdict": "correct_abstain"
+      },
+      {
+        "form": "heldout_form",
+        "label": "Enter Captcha",
+        "expected": "abstain",
+        "status": "security_blocked",
+        "concept": null,
+        "verdict": "correct_abstain"
+      }
+    ]
+  }
+}

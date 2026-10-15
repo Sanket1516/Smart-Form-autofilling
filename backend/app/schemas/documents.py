@@ -17,6 +17,7 @@ class DocumentData(BaseModel):
     file_type: str
     file_size: int = 0
     document_type: str | None = None
+    document_type_confidence: float | None = None
     status: DocumentStatus
     current_stage: str | None = None
     progress: int = 0

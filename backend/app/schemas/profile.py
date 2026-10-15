@@ -18,6 +18,8 @@ class ProfileField(BaseModel):
     is_user_confirmed: bool = False
     origin: str = "extracted"
     sensitive: bool = False
+    group: str = "other"
+    data_type: str = "string"
     sources: list[FactSource] = Field(default_factory=list)
 
 
@@ -30,6 +32,7 @@ class ProfileData(BaseModel):
     employment: list[dict[str, Any]] = Field(default_factory=list)
     sections: dict[str, dict[str, Any]] = Field(default_factory=dict)
     fields: list[ProfileField] = Field(default_factory=list)
+    groups: list[dict[str, str]] = Field(default_factory=list)
     updated_at: datetime
 
 

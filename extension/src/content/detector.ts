@@ -249,11 +249,22 @@ function nearbyText(element: Element, container?: Element | null): string | unde
   return undefined;
 }
 
+const HEADING_SELECTOR = 'h1, h2, h3, h4, h5, h6, [role="heading"], .panel-heading, .card-header, .section-title';
+
+/** The heading a field sits under: its fieldset legend, else the nearest heading before it
+ * inside its section/form. One long form often has "Class 10" and "Class 12" headings in
+ * sequence, so the first heading of the form is not the field's section. */
 function sectionText(element: Element): string | undefined {
   const legend = clean(element.closest('fieldset')?.querySelector('legend')?.textContent);
   if (legend) return legend;
-  const section = element.closest('section, [role="region"], form');
-  return clean(section?.querySelector('h1, h2, h3, h4, h5, h6')?.textContent);
+  const container = element.closest('section, [role="region"], form') ?? element.ownerDocument.body;
+  let nearest: Element | undefined;
+  for (const heading of Array.from(container.querySelectorAll(HEADING_SELECTOR))) {
+    if (heading.contains(element)) continue;
+    if (heading.compareDocumentPosition(element) & Node.DOCUMENT_POSITION_FOLLOWING) nearest = heading;
+    else break;
+  }
+  return clean(nearest?.textContent);
 }
 
 // ---------------------------------------------------------------------------- stable IDs

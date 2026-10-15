@@ -1,0 +1,240 @@
+# Registry of supported Indian document types.
+#
+# keywords:     phrase -> weight for classification (negative weights separate look-alikes);
+#               matched on lower-case text after `ignore_phrases` are removed
+# identifiers:  validator -> concept; matched anywhere on the document and validated
+# scope:        context passed to the ontology so generic labels become specific
+#               ("Certificate No" -> caste_certificate.number)
+# labels:       document-specific label -> concept (null = keep only as a generic key-value)
+# certify_that: concept for the name in "This is to certify that <NAME> ..."
+# header:       concept for the first of the top lines matching `pattern`
+# phrases:      regex (one group) -> concept, for values written in sentences
+# rules:        layout rules implemented in document_extractor.py
+# tables:       record tables to parse (marks, transactions, members)
+version: 1
+ignore_phrases:
+  - board of secondary and higher secondary education
+  - board of secondary education
+  - council for the indian school certificate examinations
+min_score: 3
+min_margin: 1
+document_types:
+  AADHAAR_CARD:
+    label: Aadhaar card
+    keywords: {unique identification authority of india: 4, uidai: 4, aadhaar: 3, "आधार": 3, enrolment no: 2, government of india: 1}
+    identifiers: {aadhaar: identity.aadhaar_number}
+    identifier_weight: 3
+    labels: {dob: personal.date_of_birth, year of birth: null, address: address.full_address, vid: null, enrolment no: null}
+    rules: [name_before_dob, gender_line, relation_prefix]
+
+  PAN_CARD:
+    label: PAN card
+    keywords: {income tax department: 4, permanent account number: 4, "आयकर विभाग": 3, govt of india: 1}
+    identifiers: {pan: identity.pan_number}
+    identifier_weight: 2
+    labels: {name: personal.full_name, father s name: personal.father_name, date of birth: personal.date_of_birth, signature: null}
+
+  VOTER_ID:
+    label: Voter ID card
+    keywords: {election commission of india: 5, elector: 2, epic: 2, electors photo identity card: 3}
+    identifiers: {epic: identity.voter_id_number}
+    identifier_weight: 2
+    labels: {address: address.full_address, assembly constituency: null, part no and name: null}
+
+  DRIVING_LICENCE:
+    label: Driving licence
+    scope: driving_licence
+    keywords: {driving licence: 5, driving license: 5, transport department: 2, class of vehicle: 3, motor: 1}
+    identifiers: {driving_licence: identity.driving_licence_number}
+    identifier_weight: 2
+    labels:
+      name: personal.full_name
+      s w d of: null
+      valid till nt: document.valid_until
+      valid till tr: null
+      address: address.full_address
+
+  PASSPORT:
+    label: Passport
+    scope: passport
+    keywords: {republic of india: 3, passport: 3, "p<ind": 5, place of issue: 2, file no: 1}
+    identifiers: {passport: identity.passport_number}
+    identifier_weight: 2
+    labels:
+      surname: personal.last_name
+      given name s: personal.given_names
+      given names: personal.given_names
+      sex: identity.gender
+      date of expiry: passport.expiry_date
+      place of issue: passport.place_of_issue
+      type: null
+      country code: null
+      file no: null
+
+  CLASS_10_MARKSHEET:
+    label: Class 10 marksheet
+    scope: class_10
+    keywords:
+      secondary school examination: 4
+      secondary school certificate: 4
+      class x: 3
+      matriculation: 4
+      marks statement: 2
+      statement of marks: 2
+      marksheet: 2
+      mark sheet: 2
+      higher secondary: -6
+      senior school certificate: -6
+      class xii: -6
+    labels: &marksheet_labels
+      name of candidate: personal.full_name
+      candidate s name: personal.full_name
+      candidate s full name: personal.full_name
+      name of the candidate: personal.full_name
+      mother s name: personal.mother_name
+      father s name: personal.father_name
+      father s guardian s name: personal.father_name
+      seat no: education.roll_number
+      roll no: education.roll_number
+      school: education.institution
+      college: education.institution
+      stream: education.field_of_study
+      result: education.result_status
+      date of result: education.result_date
+      percentage: education.percentage
+      registration no: education.registration_number
+      centre no: null
+    certify_that: personal.full_name
+    header: {pattern: '\b(BOARD|COUNCIL)\b', concept: education.board, lines: 6}
+    phrases:
+      - {pattern: '\bDated\s*:?\s*(\d{1,2}[-/.]\d{1,2}[-/.]\d{4})', concept: education.result_date}
+    rules: [exam_session]
+    tables: [marks]
+
+  CLASS_12_MARKSHEET:
+    label: Class 12 marksheet
+    scope: class_12
+    keywords:
+      higher secondary certificate: 5
+      higher secondary: 4
+      senior school certificate: 5
+      senior secondary: 4
+      class xii: 4
+      intermediate examination: 4
+      hsc: 2
+      marks statement: 2
+      statement of marks: 2
+      marksheet: 2
+      mark sheet: 2
+    labels: *marksheet_labels
+    certify_that: personal.full_name
+    header: {pattern: '\b(BOARD|COUNCIL)\b', concept: education.board, lines: 6}
+    phrases:
+      - {pattern: '\bDated\s*:?\s*(\d{1,2}[-/.]\d{1,2}[-/.]\d{4})', concept: education.result_date}
+    rules: [exam_session]
+    tables: [marks]
+
+  BIRTH_CERTIFICATE:
+    label: Birth certificate
+    scope: birth_certificate
+    keywords: {birth certificate: 5, registrar of births: 4, registration of births: 3, place of birth: 1}
+    labels:
+      name: personal.full_name
+      sex: identity.gender
+      name of mother: personal.mother_name
+      name of father: personal.father_name
+      registration no: birth_certificate.registration_number
+      date of registration: birth_certificate.registration_date
+      address of parents at the time of birth of the child: null
+      address of parents at the time of birth: null
+
+  BANK_PASSBOOK:
+    label: Bank passbook
+    keywords: {passbook: 5, pass book: 5, ifsc: 1, bank: 1, branch: 1, statement of account: -3}
+    identifiers: {ifsc: financial.ifsc_code}
+    identifier_weight: 1
+    labels: &bank_labels
+      name: financial.account_holder_name
+      account name: financial.account_holder_name
+      account holder name: financial.account_holder_name
+      branch: financial.branch_name
+      branch name: financial.branch_name
+      address: null
+      nominee: null
+      date of opening: null
+      statement period: null
+    header: {pattern: '\bBANK\b', concept: financial.bank_name, lines: 4}
+    tables: [transactions]
+
+  BANK_STATEMENT:
+    label: Bank statement
+    keywords: {statement of account: 5, account statement: 5, bank statement: 5, statement period: 3, opening balance: 1, closing balance: 1, passbook: -3}
+    identifiers: {ifsc: financial.ifsc_code}
+    identifier_weight: 1
+    labels: *bank_labels
+    header: {pattern: '\bBANK\b', concept: financial.bank_name, lines: 4}
+    tables: [transactions]
+
+  ELECTRICITY_BILL:
+    label: Electricity bill
+    keywords: {electricity bill: 5, electricity: 2, consumer no: 3, units consumed: 3, tariff: 1, billing unit: 2, meter no: 1, energy bill: 3}
+    labels:
+      name: utility.consumer_name
+      consumer name: utility.consumer_name
+      address: utility.service_address
+      tariff: null
+    header: {pattern: '\b(ELECTRICITY|POWER|ENERGY|VIDYUT)\b', concept: utility.provider_name, lines: 3, exclude: '\bBILL\b'}
+
+  RATION_CARD:
+    label: Ration card
+    keywords: {ration card: 5, civil supplies: 3, fair price shop: 2, head of family: 2, public distribution: 2}
+    labels:
+      card no: ration_card.number
+      address: ration_card.address
+      fps no: null
+    tables: [members]
+
+  INCOME_CERTIFICATE:
+    label: Income certificate
+    scope: income_certificate
+    keywords: {income certificate: 6, annual income: 2, annual family income: 2, tahsildar: 1}
+    labels:
+      annual income: financial.annual_income
+      annual family income: financial.annual_income
+      financial year: income_certificate.financial_year
+      name: income_certificate.holder_name
+      name of applicant: income_certificate.holder_name
+      applicant name: income_certificate.holder_name
+    certify_that: income_certificate.holder_name
+
+  CASTE_CERTIFICATE:
+    label: Caste certificate
+    scope: caste_certificate
+    keywords: {caste certificate: 5, belongs to the: 1, scheduled caste: 1, backward class: 1, validity: -4, scrutiny committee: -4, creamy layer: -4}
+    labels: {caste: category.caste, category: category.social_category}
+    certify_that: caste_certificate.holder_name
+
+  CASTE_VALIDITY_CERTIFICATE:
+    label: Caste validity certificate
+    scope: caste_validity
+    keywords: {caste validity: 6, validity certificate: 5, scrutiny committee: 4}
+    labels:
+      validity certificate no: caste_validity.number
+      caste certificate no: caste_certificate.number
+      caste: category.caste
+      category: category.social_category
+
+  NON_CREAMY_LAYER_CERTIFICATE:
+    label: Non-creamy layer certificate
+    scope: ncl_certificate
+    keywords: {non creamy layer: 6, non-creamy layer: 6, creamy layer: 3}
+    labels: {category: category.social_category}
+
+  DOMICILE_CERTIFICATE:
+    label: Domicile certificate
+    scope: domicile_certificate
+    keywords: {domicile certificate: 6, domicile: 3, domiciled: 3}
+    labels: {nationality: identity.nationality}
+    certify_that: personal.full_name
+    phrases:
+      - {pattern: 'domiciled in (?:the )?[Ss]tate of ([A-Z][A-Za-z]+(?: [A-Z][A-Za-z]+)?)', concept: domicile_certificate.state}

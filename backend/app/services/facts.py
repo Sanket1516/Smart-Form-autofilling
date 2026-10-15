@@ -21,7 +21,7 @@ from typing import Any
 from bson import ObjectId
 
 from app.core.api_errors import APIError
-from app.extraction.normalize import comparison_key, normalize_value
+from app.extraction.normalize import comparison_key, normalize_value, same_address
 from app.models.documents import Correction, StructuredFact
 from app.ontology.loader import FieldOntology
 from app.repositories.collections import CorrectionsRepository, StructuredFactsRepository
@@ -105,6 +105,12 @@ class FactService:
     async def add_user_fact(self, user_id: str, concept: str, value: Any) -> FactData:
         if not self.ontology.is_known(concept):
             raise APIError("UNKNOWN_CONCEPT", f"Unknown concept: {concept}", 422)
+        if self.ontology.is_abstract(concept):
+            raise APIError(
+                "AMBIGUOUS_CONCEPT",
+                f"{concept} needs context; use a specific field (e.g. the Class 12 value)",
+                422,
+            )
         data_type = self.ontology.data_type(concept)
         normalized, _ = normalize_value(data_type, value)
         if normalized in (None, ""):
@@ -157,7 +163,12 @@ class FactService:
         groups: dict[str, list[dict[str, Any]]] = defaultdict(list)
         for record in records:
             groups[comparison_key(data_type, record["value"])].append(record)
-        candidates = [_candidate(items) for items in groups.values()]
+        merged_groups = (
+            _merge_addresses(list(groups.values()))
+            if data_type == "address"
+            else list(groups.values())
+        )
+        candidates = [_candidate(items) for items in merged_groups]
         candidates.sort(key=lambda c: (c.is_user_confirmed, c.confidence), reverse=True)
         label = self.ontology.description(concept)
         if len(candidates) == 1:
@@ -345,10 +356,28 @@ def _source(record: dict[str, Any]) -> FactSource:
     )
 
 
+def _merge_addresses(groups: list[list[dict[str, Any]]]) -> list[list[dict[str, Any]]]:
+    """Join address groups that describe the same place (same PIN, one a subset of the other)."""
+    merged: list[list[dict[str, Any]]] = []
+    for group in groups:
+        for target in merged:
+            if same_address(target[0]["value"], group[0]["value"]):
+                target.extend(group)
+                break
+        else:
+            merged.append(list(group))
+    return merged
+
+
 def _candidate(records: list[dict[str, Any]]) -> ConflictCandidate:
+    # user-confirmed first, then the most complete wording among equally confident values
     ordered = sorted(
         records,
-        key=lambda r: (bool(r.get("is_user_confirmed")), float(r.get("confidence", 0.0))),
+        key=lambda r: (
+            bool(r.get("is_user_confirmed")),
+            float(r.get("confidence", 0.0)),
+            len(str(r.get("value", ""))),
+        ),
         reverse=True,
     )
     best = ordered[0]
