@@ -308,11 +308,45 @@ export interface Correction {
   created_at: string;
 }
 
+export type RagAnswerStatus = 'answered' | 'partial' | 'insufficient_evidence' | 'no_documents' | 'documents_not_ready';
+
+export interface RagAnswerFact {
+  fact_id: string;
+  concept: string;
+  label: string;
+  value: unknown;
+  status: 'verified' | 'extracted' | 'needs_review';
+  document_id?: string | null;
+  document_name?: string | null;
+  document_type?: string | null;
+  page?: number | null;
+  evidence?: string | null;
+  confidence: number;
+}
+
 export interface RagAnswer {
   answer: string;
-  status: 'answered' | 'insufficient_evidence';
+  status: RagAnswerStatus;
   confidence: number;
-  sources: Array<{ chunk_id: string; document_id: string; document_name: string; page_number: number; similarity: number; snippet: string }>;
+  question_type: string;
+  /** structured: built from stored facts by code; generated: written by the AI from cited evidence;
+   * evidence_only: the AI was unavailable, so only evidence is shown. */
+  answer_mode: 'structured' | 'generated' | 'evidence_only' | 'none';
+  sources: Array<{ chunk_id: string; document_id: string; document_name: string; document_type?: string; page_number: number; similarity: number; snippet: string }>;
+  facts: RagAnswerFact[];
+  derived: Array<{ label: string; value: string; method: string; inputs: string[] }>;
+  inferences: string[];
+  missing: Array<{ concept: string; label: string; reason: string; suggested_documents: string[] }>;
+  conflicts: Array<{ concept: string; label: string; values: Array<{ value: unknown; document_name?: string | null; page?: number | null }> }>;
+  requirements: Array<{ label: string; outcome: 'met' | 'not_met' | 'unknown' | 'needs_confirmation' | 'info'; detail: string; source: string }>;
+  documents: Array<{ document_id: string; document_name: string; document_type?: string | null; status: string; searched: boolean }>;
+  warnings: string[];
+}
+
+export interface AskOptions {
+  documentIds?: string[];
+  history?: Array<{ role: 'user' | 'assistant'; content: string }>;
+  examId?: string;
 }
 
 export interface ServiceHealth {
@@ -387,7 +421,16 @@ export const formsApi = {
 };
 
 export const ragApi = {
-  ask: (question: string) => request<RagAnswer>('/retrieval/rag/answer', { method: 'POST', body: { question } }),
+  ask: (question: string, options: AskOptions = {}) =>
+    request<RagAnswer>('/retrieval/rag/answer', {
+      method: 'POST',
+      body: {
+        question,
+        ...(options.documentIds && options.documentIds.length ? { document_ids: options.documentIds } : {}),
+        ...(options.history && options.history.length ? { history: options.history.slice(-12) } : {}),
+        ...(options.examId ? { exam_id: options.examId } : {}),
+      },
+    }),
 };
 
 export const examsApi = {

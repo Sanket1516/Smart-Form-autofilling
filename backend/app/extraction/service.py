@@ -65,8 +65,16 @@ class DocumentExtractionService:
             candidates.extend(llm_result.facts)
             result.warnings.extend(llm_result.warnings)
             if doc_type is None and llm_result.document_type != "UNKNOWN":
-                result.document_type = llm_result.document_type
-        if doc_type is None and classification.scores and max(classification.scores.values()) >= 2:
+                # A CV or letter that mentions an ID must not become that ID document
+                # (its values would then outrank the real document's).
+                if not (classification.free_form and self.registry.get(llm_result.document_type)):
+                    result.document_type = llm_result.document_type
+        if (
+            doc_type is None
+            and not classification.free_form
+            and classification.scores
+            and max(classification.scores.values()) >= 2
+        ):
             likely = max(classification.scores, key=classification.scores.__getitem__)
             if result.document_type == "UNKNOWN":
                 result.warnings.append(

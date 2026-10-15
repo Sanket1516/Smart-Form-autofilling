@@ -3,7 +3,6 @@
 import math
 from typing import Any
 
-
 _MAX_DESKEW_SAMPLES = 1_000_000
 
 
@@ -16,9 +15,7 @@ def preprocess_for_ocr(image: Any) -> Any:
         array = np.asarray(image)
         gray = cv2.cvtColor(array, cv2.COLOR_RGB2GRAY) if len(array.shape) == 3 else array
         threshold = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)[1]
-        sample_step = max(
-            1, math.ceil(math.sqrt(threshold.size / _MAX_DESKEW_SAMPLES))
-        )
+        sample_step = max(1, math.ceil(math.sqrt(threshold.size / _MAX_DESKEW_SAMPLES)))
         sampled = threshold[::sample_step, ::sample_step]
         coordinates = np.column_stack(np.where(sampled < 255))
         if coordinates.shape[0] >= 3:

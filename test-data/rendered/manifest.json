@@ -1,0 +1,1390 @@
+[
+ {
+  "fixture": "aadhaar_front_bilingual",
+  "document_type": "AADHAAR_CARD",
+  "variant": "multilingual",
+  "files": {
+   "clean": "aadhaar_front_bilingual.clean.png",
+   "skew": "aadhaar_front_bilingual.skew.png",
+   "rot90": "aadhaar_front_bilingual.rot90.png",
+   "photo": "aadhaar_front_bilingual.photo.png",
+   "scanned_pdf": "aadhaar_front_bilingual.scanned.pdf",
+   "digital_pdf": "aadhaar_front_bilingual.digital.pdf"
+  },
+  "expected": {
+   "personal.full_name": "Aarav Example Patil",
+   "personal.date_of_birth": "2007-02-14",
+   "identity.gender": "Male",
+   "identity.aadhaar_number": "234567890124"
+  },
+  "absent": [],
+  "records": {},
+  "lines": [
+   "भारत सरकार",
+   "GOVERNMENT OF INDIA",
+   "Aarav Example Patil",
+   "जन्म तिथि / DOB: 14/02/2007",
+   "पुरुष / MALE",
+   "2345 6789 0124",
+   "मेरा आधार, मेरी पहचान"
+  ]
+ },
+ {
+  "fixture": "aadhaar_back_ocr",
+  "document_type": "AADHAAR_CARD",
+  "variant": "ocr",
+  "files": {
+   "clean": "aadhaar_back_ocr.clean.png",
+   "skew": "aadhaar_back_ocr.skew.png",
+   "rot90": "aadhaar_back_ocr.rot90.png",
+   "photo": "aadhaar_back_ocr.photo.png",
+   "scanned_pdf": "aadhaar_back_ocr.scanned.pdf",
+   "digital_pdf": "aadhaar_back_ocr.digital.pdf"
+  },
+  "expected": {
+   "personal.father_name": "Suresh Example Patil",
+   "address.full_address": "Flat 12, Example Residency, MG Road, Pune, Maharashtra - 411001",
+   "address.zipcode": "411001",
+   "identity.aadhaar_number": "234567890124"
+  },
+  "absent": [
+   "personal.email"
+  ],
+  "records": {},
+  "lines": [
+   "Unique Identification Authority of India",
+   "Address:",
+   "S/O: Suresh Example Patil, Flat 12, Example",
+   "Residency, MG Road, Pune,",
+   "Maharashtra - 411001",
+   "2345 6789 O124",
+   "help@uidai.gov.in    www.uidai.gov.in"
+  ]
+ },
+ {
+  "fixture": "pan_card_bilingual",
+  "document_type": "PAN_CARD",
+  "variant": "multilingual",
+  "files": {
+   "clean": "pan_card_bilingual.clean.png",
+   "skew": "pan_card_bilingual.skew.png",
+   "rot90": "pan_card_bilingual.rot90.png",
+   "photo": "pan_card_bilingual.photo.png",
+   "scanned_pdf": "pan_card_bilingual.scanned.pdf",
+   "digital_pdf": "pan_card_bilingual.digital.pdf"
+  },
+  "expected": {
+   "identity.pan_number": "ABCPE1234F",
+   "personal.full_name": "Aarav Example Patil",
+   "personal.father_name": "Suresh Example Patil",
+   "personal.date_of_birth": "2007-02-14"
+  },
+  "absent": [],
+  "records": {},
+  "lines": [
+   "आयकर विभाग INCOME TAX DEPARTMENT",
+   "भारत सरकार GOVT. OF INDIA",
+   "स्थायी लेखा संख्या कार्ड",
+   "Permanent Account Number Card",
+   "ABCPE1234F",
+   "नाम / Name",
+   "AARAV EXAMPLE PATIL",
+   "पिता का नाम / Father's Name",
+   "SURESH EXAMPLE PATIL",
+   "जन्म की तारीख / Date of Birth",
+   "14/02/2007",
+   "हस्ताक्षर / Signature"
+  ]
+ },
+ {
+  "fixture": "voter_id_clean",
+  "document_type": "VOTER_ID",
+  "variant": "clean",
+  "files": {
+   "clean": "voter_id_clean.clean.png",
+   "skew": "voter_id_clean.skew.png",
+   "rot90": "voter_id_clean.rot90.png",
+   "photo": "voter_id_clean.photo.png",
+   "scanned_pdf": "voter_id_clean.scanned.pdf",
+   "digital_pdf": "voter_id_clean.digital.pdf"
+  },
+  "expected": {
+   "identity.voter_id_number": "XYZ1234567",
+   "personal.full_name": "Aarav Example Patil",
+   "personal.father_name": "Suresh Example Patil",
+   "identity.gender": "Male",
+   "personal.date_of_birth": "2007-02-14",
+   "address.full_address": "Flat 12, Example Residency, MG Road, Pune, Maharashtra 411001",
+   "address.zipcode": "411001"
+  },
+  "absent": [],
+  "records": {},
+  "lines": [
+   "ELECTION COMMISSION OF INDIA",
+   "ELECTOR PHOTO IDENTITY CARD",
+   "EPIC No: XYZ1234567",
+   "Elector's Name: Aarav Example Patil",
+   "Father's Name: Suresh Example Patil",
+   "Gender: Male",
+   "Date of Birth: 14/02/2007",
+   "Address: Flat 12, Example Residency, MG Road, Pune, Maharashtra 411001",
+   "Assembly Constituency: 215 - Example Nagar",
+   "Part No. and Name: 45 - Example School"
+  ]
+ },
+ {
+  "fixture": "driving_licence_clean",
+  "document_type": "DRIVING_LICENCE",
+  "variant": "clean",
+  "files": {
+   "clean": "driving_licence_clean.clean.png",
+   "skew": "driving_licence_clean.skew.png",
+   "rot90": "driving_licence_clean.rot90.png",
+   "photo": "driving_licence_clean.photo.png",
+   "scanned_pdf": "driving_licence_clean.scanned.pdf",
+   "digital_pdf": "driving_licence_clean.digital.pdf"
+  },
+  "expected": {
+   "identity.driving_licence_number": "MH1220250012345",
+   "personal.full_name": "Aarav Example Patil",
+   "personal.date_of_birth": "2007-02-14",
+   "medical.blood_group": "B+",
+   "driving_licence.issue_date": "2025-03-20",
+   "driving_licence.valid_until": "2047-02-13",
+   "driving_licence.vehicle_classes": "MCWG, LMV",
+   "driving_licence.issuing_authority": "RTO Pune",
+   "address.full_address": "Flat 12, Example Residency, MG Road, Pune 411001",
+   "address.zipcode": "411001"
+  },
+  "absent": [
+   "personal.father_name"
+  ],
+  "records": {},
+  "lines": [
+   "THE UNION OF INDIA",
+   "MAHARASHTRA STATE MOTOR DRIVING LICENCE",
+   "DL No: MH12 20250012345",
+   "Name: Aarav Example Patil",
+   "S/W/D of: Suresh Example Patil",
+   "DOB: 14/02/2007",
+   "Blood Group: B+",
+   "Date of Issue: 20/03/2025",
+   "Valid Till (NT): 13/02/2047",
+   "Class of Vehicle: MCWG, LMV",
+   "Issuing Authority: RTO Pune",
+   "Address: Flat 12, Example Residency, MG Road, Pune 411001"
+  ]
+ },
+ {
+  "fixture": "passport_clean",
+  "document_type": "PASSPORT",
+  "variant": "clean",
+  "files": {
+   "clean": "passport_clean.clean.png",
+   "skew": "passport_clean.skew.png",
+   "rot90": "passport_clean.rot90.png",
+   "photo": "passport_clean.photo.png",
+   "scanned_pdf": "passport_clean.scanned.pdf",
+   "digital_pdf": "passport_clean.digital.pdf"
+  },
+  "expected": {
+   "identity.passport_number": "Z1234567",
+   "personal.last_name": "Patil",
+   "personal.given_names": "Aarav Example",
+   "identity.nationality": "Indian",
+   "identity.gender": "Male",
+   "personal.date_of_birth": "2007-02-14",
+   "personal.place_of_birth": "PUNE, MAHARASHTRA",
+   "passport.place_of_issue": "PUNE",
+   "passport.issue_date": "2024-06-01",
+   "passport.expiry_date": "2034-05-31"
+  },
+  "absent": [],
+  "records": {},
+  "lines": [
+   "REPUBLIC OF INDIA",
+   "Type: P     Country Code: IND     Passport No.: Z1234567",
+   "Surname: PATIL",
+   "Given Name(s): AARAV EXAMPLE",
+   "Nationality: INDIAN",
+   "Sex: M",
+   "Date of Birth: 14/02/2007",
+   "Place of Birth: PUNE, MAHARASHTRA",
+   "Place of Issue: PUNE",
+   "Date of Issue: 01/06/2024",
+   "Date of Expiry: 31/05/2034",
+   "P<INDPATIL<<AARAV<EXAMPLE<<<<<<<<<<<<<<<<<<<<<<",
+   "Z1234567<1IND0702142M3405318<<<<<<<<<<<<<<04"
+  ]
+ },
+ {
+  "fixture": "class10_cbse_table",
+  "document_type": "CLASS_10_MARKSHEET",
+  "variant": "table",
+  "files": {
+   "clean": "class10_cbse_table.clean.png",
+   "skew": "class10_cbse_table.skew.png",
+   "rot90": "class10_cbse_table.rot90.png",
+   "photo": "class10_cbse_table.photo.png",
+   "scanned_pdf": "class10_cbse_table.scanned.pdf",
+   "digital_pdf": "class10_cbse_table.digital.pdf"
+  },
+  "expected": {
+   "personal.full_name": "Aarav Example Patil",
+   "personal.mother_name": "Meena Example Patil",
+   "personal.father_name": "Suresh Example Patil",
+   "personal.date_of_birth": "2007-02-14",
+   "academic.class10.roll_number": "12345678",
+   "academic.class10.board": "CENTRAL BOARD OF SECONDARY EDUCATION",
+   "academic.class10.school": "98765 EXAMPLE PUBLIC SCHOOL PUNE MAHARASHTRA",
+   "academic.class10.exam_year": "2023",
+   "academic.class10.passing_year": "2023",
+   "academic.class10.result_status": "PASS",
+   "academic.class10.result_date": "2023-05-12"
+  },
+  "absent": [
+   "academic.class10.percentage",
+   "education.percentage"
+  ],
+  "records": {
+   "academic.class10.subjects": [
+    {
+     "code": "184",
+     "name": "ENGLISH LNG & LIT.",
+     "theory": "78",
+     "practical_or_internal": "19",
+     "total": "97",
+     "grade": "A1"
+    },
+    {
+     "code": "085",
+     "name": "HINDI COURSE-B",
+     "theory": "71",
+     "practical_or_internal": "18",
+     "total": "89",
+     "grade": "A2"
+    },
+    {
+     "code": "041",
+     "name": "MATHEMATICS STANDARD",
+     "theory": "76",
+     "practical_or_internal": "20",
+     "total": "96",
+     "grade": "A1"
+    },
+    {
+     "code": "086",
+     "name": "SCIENCE",
+     "theory": "74",
+     "practical_or_internal": "19",
+     "total": "93",
+     "grade": "A1"
+    },
+    {
+     "code": "087",
+     "name": "SOCIAL SCIENCE",
+     "theory": "72",
+     "practical_or_internal": "18",
+     "total": "90",
+     "grade": "A2"
+    }
+   ]
+  },
+  "lines": [
+   "SPECIMEN - SYNTHETIC TEST DOCUMENT",
+   "CENTRAL BOARD OF SECONDARY EDUCATION",
+   "SECONDARY SCHOOL EXAMINATION (CLASS X) 2023",
+   "MARKS STATEMENT CUM CERTIFICATE",
+   "This is to certify that AARAV EXAMPLE PATIL",
+   "Roll No. 12345678",
+   "Mother's Name MEENA EXAMPLE PATIL",
+   "Father's / Guardian's Name SURESH EXAMPLE PATIL",
+   "Date of Birth 14-02-2007",
+   "School 98765 EXAMPLE PUBLIC SCHOOL PUNE MAHARASHTRA",
+   "SUB CODE | SUBJECT | THEORY | IA/PR | TOTAL | TOTAL (IN WORDS) | POSITIONAL GRADE\n184 | ENGLISH LNG & LIT. | 078 | 019 | 097 | NINETY SEVEN | A1\n085 | HINDI COURSE-B | 071 | 018 | 089 | EIGHTY NINE | A2\n041 | MATHEMATICS STANDARD | 076 | 020 | 096 | NINETY SIX | A1\n086 | SCIENCE | 074 | 019 | 093 | NINETY THREE | A1\n087 | SOCIAL SCIENCE | 072 | 018 | 090 | NINETY | A2",
+   "Result: PASS",
+   "Delhi Dated: 12-05-2023"
+  ]
+ },
+ {
+  "fixture": "class12_hsc_table",
+  "document_type": "CLASS_12_MARKSHEET",
+  "variant": "table",
+  "files": {
+   "clean": "class12_hsc_table.clean.png",
+   "skew": "class12_hsc_table.skew.png",
+   "rot90": "class12_hsc_table.rot90.png",
+   "photo": "class12_hsc_table.photo.png",
+   "scanned_pdf": "class12_hsc_table.scanned.pdf",
+   "digital_pdf": "class12_hsc_table.digital.pdf"
+  },
+  "expected": {
+   "personal.full_name": "Aarav Example Patil",
+   "academic.class12.roll_number": "F123456",
+   "academic.class12.board": "MAHARASHTRA STATE BOARD OF SECONDARY AND HIGHER SECONDARY EDUCATION, PUNE DIVISIONAL BOARD",
+   "academic.class12.stream": "SCIENCE",
+   "academic.class12.exam_month": "February",
+   "academic.class12.exam_year": "2025",
+   "academic.class12.passing_year": "2025",
+   "academic.class12.max_marks": "600",
+   "academic.class12.marks_obtained": "532",
+   "academic.class12.percentage": "88.67",
+   "academic.class12.result_status": "PASS",
+   "academic.class12.result_date": "2025-05-21",
+   "personal.mother_name": "Meena",
+   "academic.class12.school": "EXAMPLE JUNIOR COLLEGE OF SCIENCE, PUNE"
+  },
+  "absent": [],
+  "records": {
+   "academic.class12.subjects": [
+    {
+     "code": "01",
+     "name": "ENGLISH",
+     "max_marks": "100",
+     "marks_obtained": "82"
+    },
+    {
+     "code": "54",
+     "name": "PHYSICS",
+     "max_marks": "100",
+     "marks_obtained": "91"
+    },
+    {
+     "code": "55",
+     "name": "CHEMISTRY",
+     "max_marks": "100",
+     "marks_obtained": "88"
+    },
+    {
+     "code": "56",
+     "name": "BIOLOGY",
+     "max_marks": "100",
+     "marks_obtained": "93"
+    },
+    {
+     "code": "40",
+     "name": "MATHEMATICS & STATISTICS",
+     "max_marks": "100",
+     "marks_obtained": "90"
+    },
+    {
+     "code": "03",
+     "name": "MARATHI",
+     "max_marks": "100",
+     "marks_obtained": "88"
+    },
+    {
+     "code": "31",
+     "name": "ENVIRONMENT EDUCATION",
+     "grade": "A"
+    }
+   ]
+  },
+  "lines": [
+   "SPECIMEN - SYNTHETIC TEST DOCUMENT",
+   "MAHARASHTRA STATE BOARD OF SECONDARY AND HIGHER SECONDARY EDUCATION, PUNE DIVISIONAL BOARD",
+   "HIGHER SECONDARY CERTIFICATE EXAMINATION - FEBRUARY 2025",
+   "STATEMENT OF MARKS",
+   "Seat No: F123456      Centre No: 1122     Stream: SCIENCE",
+   "Candidate's Full Name: AARAV EXAMPLE PATIL",
+   "Mother's Name: MEENA",
+   "College: EXAMPLE JUNIOR COLLEGE OF SCIENCE, PUNE",
+   "Subject Code Subject Name Max Marks Marks Obtained",
+   "01 ENGLISH 100 082",
+   "54 PHYSICS 100 091",
+   "55 CHEMISTRY 100 088",
+   "56 BIOLOGY 100 093",
+   "40 MATHEMATICS & STATISTICS 100 090",
+   "03 MARATHI 100 088",
+   "31 ENVIRONMENT EDUCATION -- A",
+   "Total 600 532",
+   "Subject Code | Subject Name | Max Marks | Marks Obtained\n01 | ENGLISH | 100 | 082\n54 | PHYSICS | 100 | 091\n55 | CHEMISTRY | 100 | 088\n56 | BIOLOGY | 100 | 093\n40 | MATHEMATICS & STATISTICS | 100 | 090\n03 | MARATHI | 100 | 088\n31 | ENVIRONMENT EDUCATION | -- | A\nTotal | | 600 | 532",
+   "Percentage: 88.67",
+   "Result: PASS",
+   "Date of Result: 21/05/2025"
+  ]
+ },
+ {
+  "fixture": "class12_hsc_scanned",
+  "document_type": "CLASS_12_MARKSHEET",
+  "variant": "ocr",
+  "files": {
+   "clean": "class12_hsc_scanned.clean.png",
+   "skew": "class12_hsc_scanned.skew.png",
+   "rot90": "class12_hsc_scanned.rot90.png",
+   "photo": "class12_hsc_scanned.photo.png",
+   "scanned_pdf": "class12_hsc_scanned.scanned.pdf",
+   "digital_pdf": "class12_hsc_scanned.digital.pdf"
+  },
+  "expected": {
+   "personal.full_name": "Aarav Example Patil",
+   "academic.class12.roll_number": "F123456",
+   "academic.class12.board": "MAHARASHTRA STATE BOARD OF SECONDARY AND HIGHER SECONDARY EDUCATION, PUNE DIVISIONAL BOARD",
+   "academic.class12.stream": "SCIENCE",
+   "academic.class12.exam_month": "February",
+   "academic.class12.exam_year": "2025",
+   "academic.class12.passing_year": "2025",
+   "academic.class12.max_marks": "600",
+   "academic.class12.marks_obtained": "532",
+   "academic.class12.percentage": "88.67",
+   "academic.class12.result_status": "PASS",
+   "academic.class12.result_date": "2025-05-21"
+  },
+  "absent": [],
+  "records": {
+   "academic.class12.subjects": [
+    {
+     "code": "01",
+     "name": "ENGLISH",
+     "max_marks": "100",
+     "marks_obtained": "82"
+    },
+    {
+     "code": "54",
+     "name": "PHYSICS",
+     "max_marks": "100",
+     "marks_obtained": "91"
+    },
+    {
+     "code": "55",
+     "name": "CHEMISTRY",
+     "max_marks": "100",
+     "marks_obtained": "88"
+    },
+    {
+     "code": "56",
+     "name": "BIOLOGY",
+     "max_marks": "100",
+     "marks_obtained": "93"
+    },
+    {
+     "code": "40",
+     "name": "MATHEMATICS & STATISTICS",
+     "max_marks": "100",
+     "marks_obtained": "90"
+    },
+    {
+     "code": "03",
+     "name": "MARATHI",
+     "max_marks": "100",
+     "marks_obtained": "88"
+    }
+   ]
+  },
+  "lines": [
+   "SPECIMEN - SYNTHETIC TEST DOCUMENT",
+   "MAHARASHTRA STATE BOARD OF SECONDARY AND HIGHER SECONDARY EDUCATION, PUNE DIVISIONAL BOARD",
+   "HIGHER SECONDARY CERTIFICATE EXAMINATION - FEBRUARY 2025",
+   "STATEMENT OF MARKS",
+   "Seat No. F123456",
+   "Stream : SCIENCE",
+   "Candidate's Full Name : AARAV EXAMPLE PATIL",
+   "SUBJECT CODE SUBJECT NAME MAX MARKS MARKS OBTAINED",
+   "01 ENGLISH 100 082",
+   "54 PHYSICS 100 091",
+   "55 CHEMISTRY 100 088",
+   "56 BIOLOGY 100 093",
+   "40 MATHEMATICS & STATISTICS 100 090",
+   "03 MARATHI 100 088",
+   "TOTAL 600 532",
+   "Percentage : 88.67 %",
+   "Result : PASS",
+   "Date of Result : 21/05/2025"
+  ]
+ },
+ {
+  "fixture": "birth_certificate_clean",
+  "document_type": "BIRTH_CERTIFICATE",
+  "variant": "clean",
+  "files": {
+   "clean": "birth_certificate_clean.clean.png",
+   "skew": "birth_certificate_clean.skew.png",
+   "rot90": "birth_certificate_clean.rot90.png",
+   "photo": "birth_certificate_clean.photo.png",
+   "scanned_pdf": "birth_certificate_clean.scanned.pdf",
+   "digital_pdf": "birth_certificate_clean.digital.pdf"
+  },
+  "expected": {
+   "personal.full_name": "Aarav Example Patil",
+   "identity.gender": "Male",
+   "personal.date_of_birth": "2007-02-14",
+   "personal.place_of_birth": "Example Hospital, Pune",
+   "personal.mother_name": "Meena Example Patil",
+   "personal.father_name": "Suresh Example Patil",
+   "birth_certificate.registration_number": "B-2007/123/004567",
+   "birth_certificate.registration_date": "2007-02-20",
+   "birth_certificate.issue_date": "2024-01-05"
+  },
+  "absent": [
+   "address.full_address"
+  ],
+  "records": {},
+  "lines": [
+   "GOVERNMENT OF MAHARASHTRA",
+   "OFFICE OF THE REGISTRAR OF BIRTHS AND DEATHS, PUNE MUNICIPAL CORPORATION",
+   "BIRTH CERTIFICATE",
+   "(Issued under Section 12/17 of the Registration of Births & Deaths Act, 1969)",
+   "Name: AARAV EXAMPLE PATIL",
+   "Sex: Male",
+   "Date of Birth: 14-02-2007",
+   "Place of Birth: Example Hospital, Pune",
+   "Name of Mother: MEENA EXAMPLE PATIL",
+   "Name of Father: SURESH EXAMPLE PATIL",
+   "Address of parents at the time of birth of the child: Example Colony, Pune 411002",
+   "Registration No: B-2007/123/004567",
+   "Date of Registration: 20-02-2007",
+   "Date of Issue: 05-01-2024"
+  ]
+ },
+ {
+  "fixture": "bank_passbook_table",
+  "document_type": "BANK_PASSBOOK",
+  "variant": "table",
+  "files": {
+   "clean": "bank_passbook_table.clean.png",
+   "skew": "bank_passbook_table.skew.png",
+   "rot90": "bank_passbook_table.rot90.png",
+   "photo": "bank_passbook_table.photo.png",
+   "scanned_pdf": "bank_passbook_table.scanned.pdf",
+   "digital_pdf": "bank_passbook_table.digital.pdf"
+  },
+  "expected": {
+   "financial.bank_name": "EXAMPLE CO-OPERATIVE BANK LTD.",
+   "financial.branch_name": "Shivajinagar, Pune",
+   "financial.ifsc_code": "EXBK0001234",
+   "financial.micr_code": "411123045",
+   "financial.account_number": "001234567890",
+   "financial.cif_number": "00987654",
+   "financial.account_holder_name": "Aarav Example Patil",
+   "financial.branch_address": "45 Example Road, Shivajinagar, Pune 411005",
+   "financial.account_type": "Savings"
+  },
+  "absent": [
+   "personal.full_name"
+  ],
+  "records": {
+   "financial.transactions": [
+    {
+     "date": "2023-04-01",
+     "description": "BY CASH",
+     "credit": "5000.00",
+     "balance": "5000.00"
+    },
+    {
+     "date": "2023-04-12",
+     "description": "TO CHQ 000123",
+     "reference": "000123",
+     "debit": "1200.00",
+     "balance": "3800.00"
+    },
+    {
+     "date": "2023-04-30",
+     "description": "INTEREST CREDIT",
+     "credit": "12.50",
+     "balance": "3812.50"
+    }
+   ]
+  },
+  "lines": [
+   "EXAMPLE CO-OPERATIVE BANK LTD.",
+   "SAVINGS ACCOUNT PASSBOOK",
+   "Branch: Shivajinagar, Pune",
+   "Branch Address: 45 Example Road, Shivajinagar, Pune 411005",
+   "IFSC: EXBK0001234     MICR: 411123045",
+   "Account Holder Name: AARAV EXAMPLE PATIL",
+   "Account No: 001234567890",
+   "Customer ID: 00987654",
+   "Account Type: Savings",
+   "Nominee: Meena Example Patil",
+   "Date of Opening: 01/04/2023",
+   "Date | Particulars | Cheque No | Withdrawals | Deposits | Balance\n01/04/2023 | BY CASH | | | 5,000.00 | 5,000.00\n12/04/2023 | TO CHQ 000123 | 000123 | 1,200.00 | | 3,800.00\n30/04/2023 | INTEREST CREDIT | | | 12.50 | 3,812.50"
+  ]
+ },
+ {
+  "fixture": "bank_statement_table",
+  "document_type": "BANK_STATEMENT",
+  "variant": "table",
+  "files": {
+   "clean": "bank_statement_table.clean.png",
+   "skew": "bank_statement_table.skew.png",
+   "rot90": "bank_statement_table.rot90.png",
+   "photo": "bank_statement_table.photo.png",
+   "scanned_pdf": "bank_statement_table.scanned.pdf",
+   "digital_pdf": "bank_statement_table.digital.pdf"
+  },
+  "expected": {
+   "financial.bank_name": "EXAMPLE CO-OPERATIVE BANK LTD.",
+   "financial.branch_name": "Shivajinagar, Pune",
+   "financial.ifsc_code": "EXBK0001234",
+   "financial.micr_code": "411123045",
+   "financial.account_number": "001234567890",
+   "financial.cif_number": "00987654",
+   "financial.account_holder_name": "Aarav Example Patil"
+  },
+  "absent": [
+   "identity.aadhaar_number",
+   "personal.full_name"
+  ],
+  "records": {
+   "financial.transactions": [
+    {
+     "date": "2025-07-01",
+     "description": "OPENING BALANCE",
+     "balance": "10000.00"
+    },
+    {
+     "date": "2025-07-05",
+     "description": "UPI/123456789012/EXAMPLE STORE",
+     "reference": "123456789012",
+     "debit": "450.00",
+     "balance": "9550.00"
+    },
+    {
+     "date": "2025-07-10",
+     "description": "NEFT-SCHOLARSHIP-EXAMPLE TRUST",
+     "reference": "N123456789",
+     "credit": "25000.00",
+     "balance": "34550.00"
+    },
+    {
+     "date": "2025-07-15",
+     "description": "ATM WDL EXAMPLE ROAD",
+     "reference": "000045",
+     "debit": "2000.00",
+     "balance": "32550.00"
+    }
+   ]
+  },
+  "lines": [
+   "EXAMPLE CO-OPERATIVE BANK LTD.",
+   "STATEMENT OF ACCOUNT",
+   "Account Name: AARAV EXAMPLE PATIL",
+   "Account Number: 001234567890",
+   "Customer ID: 00987654",
+   "Branch: Shivajinagar, Pune",
+   "IFSC Code: EXBK0001234     MICR Code: 411123045",
+   "Statement Period: 01/07/2025 to 30/09/2025",
+   "Txn Date | Description | Ref No./Cheque No. | Debit | Credit | Balance\n01/07/2025 | OPENING BALANCE | | | | 10,000.00\n05/07/2025 | UPI/123456789012/EXAMPLE STORE | 123456789012 | 450.00 | | 9,550.00\n10/07/2025 | NEFT-SCHOLARSHIP-EXAMPLE TRUST | N123456789 | | 25,000.00 | 34,550.00\n15/07/2025 | ATM WDL EXAMPLE ROAD | 000045 | 2,000.00 | | 32,550.00"
+  ]
+ },
+ {
+  "fixture": "bank_statement_ocr",
+  "document_type": "BANK_STATEMENT",
+  "variant": "ocr",
+  "files": {
+   "clean": "bank_statement_ocr.clean.png",
+   "skew": "bank_statement_ocr.skew.png",
+   "rot90": "bank_statement_ocr.rot90.png",
+   "photo": "bank_statement_ocr.photo.png",
+   "scanned_pdf": "bank_statement_ocr.scanned.pdf",
+   "digital_pdf": "bank_statement_ocr.digital.pdf"
+  },
+  "expected": {
+   "financial.account_number": "001234567890",
+   "financial.ifsc_code": "EXBK0001234",
+   "financial.bank_name": "EXAMPLE CO-OPERATIVE BANK LTD."
+  },
+  "absent": [],
+  "records": {
+   "financial.transactions": [
+    {
+     "date": "2025-08-01",
+     "description": "OPENING BALANCE",
+     "balance": "32550.00"
+    },
+    {
+     "date": "2025-08-03",
+     "description": "UPI/223344556677/EXAMPLE CAFE",
+     "debit": "250.00",
+     "balance": "32300.00"
+    },
+    {
+     "date": "2025-08-07",
+     "description": "NEFT-SCHOLARSHIP-EXAMPLE TRUST",
+     "credit": "5000.00",
+     "balance": "37300.00"
+    }
+   ]
+  },
+  "lines": [
+   "EXAMPLE CO-OPERATIVE BANK LTD.",
+   "Statement of Account",
+   "Account No : 001234567890",
+   "IFSC : EXBK0001234",
+   "Date Description Debit Credit Balance",
+   "01/08/2025 OPENING BALANCE 32,550.00",
+   "03/08/2025 UPI/223344556677/EXAMPLE CAFE 250.00 32,300.00",
+   "07/08/2025 NEFT-SCHOLARSHIP-EXAMPLE TRUST 5,000.00 37,300.00"
+  ]
+ },
+ {
+  "fixture": "electricity_bill_clean",
+  "document_type": "ELECTRICITY_BILL",
+  "variant": "clean",
+  "files": {
+   "clean": "electricity_bill_clean.clean.png",
+   "skew": "electricity_bill_clean.skew.png",
+   "rot90": "electricity_bill_clean.rot90.png",
+   "photo": "electricity_bill_clean.photo.png",
+   "scanned_pdf": "electricity_bill_clean.scanned.pdf",
+   "digital_pdf": "electricity_bill_clean.digital.pdf"
+  },
+  "expected": {
+   "utility.provider_name": "EXAMPLE STATE ELECTRICITY DISTRIBUTION CO. LTD.",
+   "utility.consumer_number": "170012345678",
+   "utility.consumer_name": "Suresh Example Patil",
+   "utility.billing_unit": "4567",
+   "utility.service_address": "Flat 12, Example Residency, MG Road, Pune, Maharashtra 411001",
+   "utility.bill_month": "SEP-2025",
+   "utility.bill_date": "2025-10-05",
+   "utility.due_date": "2025-10-25",
+   "utility.units_consumed": "142",
+   "utility.bill_amount": "1234.50",
+   "utility.meter_number": "06543210"
+  },
+  "absent": [
+   "personal.full_name",
+   "address.full_address"
+  ],
+  "records": {},
+  "lines": [
+   "EXAMPLE STATE ELECTRICITY DISTRIBUTION CO. LTD.",
+   "ELECTRICITY BILL",
+   "Consumer No: 170012345678",
+   "Consumer Name: SURESH EXAMPLE PATIL",
+   "Billing Unit: 4567",
+   "Address: Flat 12, Example Residency, MG Road, Pune, Maharashtra 411001",
+   "Bill Month: SEP-2025",
+   "Bill Date: 05/10/2025",
+   "Due Date: 25/10/2025",
+   "Units Consumed: 142",
+   "Bill Amount: Rs. 1,234.50",
+   "Tariff: LT I Residential",
+   "Meter No: 06543210"
+  ]
+ },
+ {
+  "fixture": "ration_card_table",
+  "document_type": "RATION_CARD",
+  "variant": "table",
+  "files": {
+   "clean": "ration_card_table.clean.png",
+   "skew": "ration_card_table.skew.png",
+   "rot90": "ration_card_table.rot90.png",
+   "photo": "ration_card_table.photo.png",
+   "scanned_pdf": "ration_card_table.scanned.pdf",
+   "digital_pdf": "ration_card_table.digital.pdf"
+  },
+  "expected": {
+   "ration_card.number": "27123456789",
+   "ration_card.card_type": "PHH",
+   "ration_card.head_of_family": "Suresh Example Patil",
+   "ration_card.address": "Flat 12, Example Residency, MG Road, Pune, Maharashtra 411001"
+  },
+  "absent": [
+   "personal.full_name",
+   "address.full_address"
+  ],
+  "records": {
+   "ration_card.members": [
+    {
+     "name": "SURESH EXAMPLE PATIL",
+     "relation": "SELF",
+     "age": "48",
+     "gender": "M"
+    },
+    {
+     "name": "MEENA EXAMPLE PATIL",
+     "relation": "WIFE",
+     "age": "44",
+     "gender": "F"
+    },
+    {
+     "name": "AARAV EXAMPLE PATIL",
+     "relation": "SON",
+     "age": "18",
+     "gender": "M"
+    }
+   ]
+  },
+  "lines": [
+   "GOVERNMENT OF MAHARASHTRA",
+   "FOOD, CIVIL SUPPLIES AND CONSUMER PROTECTION DEPARTMENT",
+   "RATION CARD",
+   "Ration Card No: 27123456789",
+   "Card Type: PHH",
+   "Head of Family: SURESH EXAMPLE PATIL",
+   "Address: Flat 12, Example Residency, MG Road, Pune, Maharashtra 411001",
+   "FPS No: 1234",
+   "Sr. No. | Name of Member | Relation with Head | Age | Gender\n1 | SURESH EXAMPLE PATIL | SELF | 48 | M\n2 | MEENA EXAMPLE PATIL | WIFE | 44 | F\n3 | AARAV EXAMPLE PATIL | SON | 18 | M"
+  ]
+ },
+ {
+  "fixture": "income_certificate_clean",
+  "document_type": "INCOME_CERTIFICATE",
+  "variant": "clean",
+  "files": {
+   "clean": "income_certificate_clean.clean.png",
+   "skew": "income_certificate_clean.skew.png",
+   "rot90": "income_certificate_clean.rot90.png",
+   "photo": "income_certificate_clean.photo.png",
+   "scanned_pdf": "income_certificate_clean.scanned.pdf",
+   "digital_pdf": "income_certificate_clean.digital.pdf"
+  },
+  "expected": {
+   "income_certificate.number": "INC/2025/HVL/004321",
+   "income_certificate.application_number": "APP-2025-778899",
+   "income_certificate.holder_name": "Suresh Example Patil",
+   "financial.annual_income": "450000",
+   "income_certificate.financial_year": "2024-25",
+   "income_certificate.issue_date": "2025-04-12",
+   "income_certificate.valid_until": "2026-03-31",
+   "income_certificate.issuing_authority": "Tahsildar, Haveli"
+  },
+  "absent": [
+   "personal.full_name"
+  ],
+  "records": {},
+  "lines": [
+   "GOVERNMENT OF MAHARASHTRA",
+   "OFFICE OF THE TAHSILDAR, HAVELI, PUNE",
+   "INCOME CERTIFICATE",
+   "Certificate No: INC/2025/HVL/004321",
+   "Application No: APP-2025-778899",
+   "This is to certify that Shri SURESH EXAMPLE PATIL, resident of Pune, has an annual family income of Rs. 4,50,000/- for the financial year 2024-25.",
+   "Financial Year: 2024-25",
+   "Annual Income: Rs. 4,50,000/-",
+   "Date of Issue: 12/04/2025",
+   "Valid Upto: 31/03/2026",
+   "Issuing Authority: Tahsildar, Haveli"
+  ]
+ },
+ {
+  "fixture": "caste_certificate_clean",
+  "document_type": "CASTE_CERTIFICATE",
+  "variant": "clean",
+  "files": {
+   "clean": "caste_certificate_clean.clean.png",
+   "skew": "caste_certificate_clean.skew.png",
+   "rot90": "caste_certificate_clean.rot90.png",
+   "photo": "caste_certificate_clean.photo.png",
+   "scanned_pdf": "caste_certificate_clean.scanned.pdf",
+   "digital_pdf": "caste_certificate_clean.digital.pdf"
+  },
+  "expected": {
+   "caste_certificate.number": "CC/2024/PUN/012345",
+   "caste_certificate.application_number": "APP-CC-2024-5566",
+   "caste_certificate.holder_name": "Aarav Example Patil",
+   "category.caste": "Examplecaste",
+   "category.social_category": "OBC",
+   "caste_certificate.issuing_authority": "Sub Divisional Officer, Pune",
+   "caste_certificate.issue_date": "2024-01-10"
+  },
+  "absent": [
+   "caste_validity.number"
+  ],
+  "records": {},
+  "lines": [
+   "GOVERNMENT OF MAHARASHTRA",
+   "OFFICE OF THE SUB DIVISIONAL OFFICER, PUNE",
+   "CASTE CERTIFICATE",
+   "Certificate No: CC/2024/PUN/012345",
+   "Application No: APP-CC-2024-5566",
+   "This is to certify that Kumar AARAV EXAMPLE PATIL son of SURESH EXAMPLE PATIL resident of Pune belongs to the EXAMPLECASTE caste which is recognised as an Other Backward Class.",
+   "Caste: Examplecaste",
+   "Category: OBC",
+   "Issuing Authority: Sub Divisional Officer, Pune",
+   "Date of Issue: 10/01/2024"
+  ]
+ },
+ {
+  "fixture": "caste_validity_clean",
+  "document_type": "CASTE_VALIDITY_CERTIFICATE",
+  "variant": "clean",
+  "files": {
+   "clean": "caste_validity_clean.clean.png",
+   "skew": "caste_validity_clean.skew.png",
+   "rot90": "caste_validity_clean.rot90.png",
+   "photo": "caste_validity_clean.photo.png",
+   "scanned_pdf": "caste_validity_clean.scanned.pdf",
+   "digital_pdf": "caste_validity_clean.digital.pdf"
+  },
+  "expected": {
+   "caste_validity.number": "CVC/2025/PUN/009876",
+   "caste_certificate.number": "CC/2024/PUN/012345",
+   "personal.full_name": "Aarav Example Patil",
+   "category.caste": "Examplecaste",
+   "category.social_category": "OBC",
+   "caste_validity.issue_date": "2025-03-15",
+   "caste_validity.issuing_authority": "Member Secretary, District Caste Certificate Scrutiny Committee, Pune"
+  },
+  "absent": [],
+  "records": {},
+  "lines": [
+   "GOVERNMENT OF MAHARASHTRA",
+   "DISTRICT CASTE CERTIFICATE SCRUTINY COMMITTEE, PUNE",
+   "CASTE VALIDITY CERTIFICATE",
+   "Validity Certificate No: CVC/2025/PUN/009876",
+   "Caste Certificate No: CC/2024/PUN/012345",
+   "Name of Applicant: AARAV EXAMPLE PATIL",
+   "Caste: Examplecaste",
+   "Category: OBC",
+   "Date of Issue: 15/03/2025",
+   "Issuing Authority: Member Secretary, District Caste Certificate Scrutiny Committee, Pune"
+  ]
+ },
+ {
+  "fixture": "ncl_certificate_clean",
+  "document_type": "NON_CREAMY_LAYER_CERTIFICATE",
+  "variant": "clean",
+  "files": {
+   "clean": "ncl_certificate_clean.clean.png",
+   "skew": "ncl_certificate_clean.skew.png",
+   "rot90": "ncl_certificate_clean.rot90.png",
+   "photo": "ncl_certificate_clean.photo.png",
+   "scanned_pdf": "ncl_certificate_clean.scanned.pdf",
+   "digital_pdf": "ncl_certificate_clean.digital.pdf"
+  },
+  "expected": {
+   "ncl_certificate.number": "NCL/2025/PUN/004455",
+   "ncl_certificate.issue_date": "2025-04-01",
+   "ncl_certificate.valid_until": "2026-03-31",
+   "ncl_certificate.issuing_authority": "Sub Divisional Officer, Pune"
+  },
+  "absent": [],
+  "records": {},
+  "lines": [
+   "GOVERNMENT OF MAHARASHTRA",
+   "NON-CREAMY LAYER CERTIFICATE",
+   "Certificate No: NCL/2025/PUN/004455",
+   "This is to certify that AARAV EXAMPLE PATIL son of SURESH EXAMPLE PATIL does not belong to the creamy layer.",
+   "Date of Issue: 01/04/2025",
+   "Valid Upto: 31/03/2026",
+   "Issuing Authority: Sub Divisional Officer, Pune"
+  ]
+ },
+ {
+  "fixture": "domicile_certificate_marathi",
+  "document_type": "DOMICILE_CERTIFICATE",
+  "variant": "multilingual",
+  "files": {
+   "clean": "domicile_certificate_marathi.clean.png",
+   "skew": "domicile_certificate_marathi.skew.png",
+   "rot90": "domicile_certificate_marathi.rot90.png",
+   "photo": "domicile_certificate_marathi.photo.png",
+   "scanned_pdf": "domicile_certificate_marathi.scanned.pdf",
+   "digital_pdf": "domicile_certificate_marathi.digital.pdf"
+  },
+  "expected": {
+   "domicile_certificate.number": "DOM/2024/HVL/001122",
+   "personal.full_name": "Aarav Example Patil",
+   "domicile_certificate.state": "Maharashtra",
+   "identity.nationality": "Indian",
+   "domicile_certificate.issue_date": "2024-02-15",
+   "domicile_certificate.issuing_authority": "Tahsildar, Haveli"
+  },
+  "absent": [],
+  "records": {},
+  "lines": [
+   "महाराष्ट्र शासन / GOVERNMENT OF MAHARASHTRA",
+   "वय, राष्ट्रीयत्व व अधिवास प्रमाणपत्र",
+   "AGE, NATIONALITY AND DOMICILE CERTIFICATE",
+   "प्रमाणपत्र क्रमांक / Certificate No: DOM/2024/HVL/001122",
+   "This is to certify that AARAV EXAMPLE PATIL son of SURESH EXAMPLE PATIL, born on 14/02/2007, is a citizen of India and is domiciled in the State of Maharashtra.",
+   "राष्ट्रीयत्व / Nationality: Indian",
+   "दिनांक / Date of Issue: 15/02/2024",
+   "Issuing Authority: Tahsildar, Haveli"
+  ]
+ },
+ {
+  "fixture": "ho_aadhaar_yob",
+  "document_type": "AADHAAR_CARD",
+  "variant": "ocr",
+  "files": {
+   "clean": "ho_aadhaar_yob.clean.png",
+   "skew": "ho_aadhaar_yob.skew.png",
+   "rot90": "ho_aadhaar_yob.rot90.png",
+   "photo": "ho_aadhaar_yob.photo.png",
+   "scanned_pdf": "ho_aadhaar_yob.scanned.pdf",
+   "digital_pdf": "ho_aadhaar_yob.digital.pdf"
+  },
+  "expected": {
+   "personal.full_name": "Priya Example Deshmukh",
+   "identity.gender": "Female",
+   "identity.aadhaar_number": "987654321012"
+  },
+  "absent": [
+   "personal.date_of_birth"
+  ],
+  "records": {},
+  "lines": [
+   "Government of India",
+   "Priya Example Deshmukh",
+   "Year of Birth : 2006",
+   "FEMALE",
+   "9876 5432 1012",
+   "Aadhaar - Aam Admi ka Adhikar"
+  ]
+ },
+ {
+  "fixture": "ho_pan_old_format",
+  "document_type": "PAN_CARD",
+  "variant": "ocr",
+  "files": {
+   "clean": "ho_pan_old_format.clean.png",
+   "skew": "ho_pan_old_format.skew.png",
+   "rot90": "ho_pan_old_format.rot90.png",
+   "photo": "ho_pan_old_format.photo.png",
+   "scanned_pdf": "ho_pan_old_format.scanned.pdf",
+   "digital_pdf": "ho_pan_old_format.digital.pdf"
+  },
+  "expected": {
+   "identity.pan_number": "BCDPD5678K"
+  },
+  "absent": [],
+  "records": {},
+  "lines": [
+   "INCOME TAX DEPARTMENT",
+   "GOVT. OF INDIA",
+   "PRIYA EXAMPLE DESHMUKH",
+   "RAMESH EXAMPLE DESHMUKH",
+   "09/11/2006",
+   "Permanent Account Number",
+   "BCDPD5678K",
+   "Signature"
+  ]
+ },
+ {
+  "fixture": "ho_cbse_class12",
+  "document_type": "CLASS_12_MARKSHEET",
+  "variant": "table",
+  "files": {
+   "clean": "ho_cbse_class12.clean.png",
+   "skew": "ho_cbse_class12.skew.png",
+   "rot90": "ho_cbse_class12.rot90.png",
+   "photo": "ho_cbse_class12.photo.png",
+   "scanned_pdf": "ho_cbse_class12.scanned.pdf",
+   "digital_pdf": "ho_cbse_class12.digital.pdf"
+  },
+  "expected": {
+   "personal.full_name": "Priya Example Deshmukh",
+   "personal.mother_name": "Sunita Example Deshmukh",
+   "personal.father_name": "Ramesh Example Deshmukh",
+   "academic.class12.roll_number": "21456789",
+   "academic.class12.board": "CENTRAL BOARD OF SECONDARY EDUCATION",
+   "academic.class12.exam_year": "2024",
+   "academic.class12.passing_year": "2024",
+   "academic.class12.result_status": "PASS",
+   "academic.class12.school": "55443 EXAMPLE VIDYALAYA NAGPUR"
+  },
+  "absent": [
+   "academic.class12.percentage",
+   "academic.class10.roll_number"
+  ],
+  "records": {
+   "academic.class12.subjects": [
+    {
+     "code": "301",
+     "name": "ENGLISH CORE",
+     "theory": "72",
+     "total": "92",
+     "grade": "A1"
+    },
+    {
+     "code": "042",
+     "name": "PHYSICS",
+     "theory": "58",
+     "total": "88",
+     "grade": "A2"
+    },
+    {
+     "code": "043",
+     "name": "CHEMISTRY",
+     "theory": "61",
+     "total": "91",
+     "grade": "A1"
+    },
+    {
+     "code": "044",
+     "name": "BIOLOGY",
+     "theory": "64",
+     "total": "94",
+     "grade": "A1"
+    },
+    {
+     "code": "041",
+     "name": "MATHEMATICS",
+     "theory": "70",
+     "total": "90",
+     "grade": "A1"
+    }
+   ]
+  },
+  "lines": [
+   "CENTRAL BOARD OF SECONDARY EDUCATION",
+   "SENIOR SCHOOL CERTIFICATE EXAMINATION 2024",
+   "STATEMENT OF MARKS",
+   "This is to certify that PRIYA EXAMPLE DESHMUKH",
+   "Roll No. 21456789",
+   "Mother's Name SUNITA EXAMPLE DESHMUKH",
+   "Father's / Guardian's Name RAMESH EXAMPLE DESHMUKH",
+   "School 55443 EXAMPLE VIDYALAYA NAGPUR",
+   "SUB CODE | SUB NAME | THEORY | PRAC./IA | TOTAL | POSITIONAL GRADE\n301 | ENGLISH CORE | 072 | 020 | 092 | A1\n042 | PHYSICS | 058 | 030 | 088 | A2\n043 | CHEMISTRY | 061 | 030 | 091 | A1\n044 | BIOLOGY | 064 | 030 | 094 | A1\n041 | MATHEMATICS | 070 | 020 | 090 | A1",
+   "Result: PASS"
+  ]
+ },
+ {
+  "fixture": "ho_icse_class10",
+  "document_type": "CLASS_10_MARKSHEET",
+  "variant": "ocr",
+  "files": {
+   "clean": "ho_icse_class10.clean.png",
+   "skew": "ho_icse_class10.skew.png",
+   "rot90": "ho_icse_class10.rot90.png",
+   "photo": "ho_icse_class10.photo.png",
+   "scanned_pdf": "ho_icse_class10.scanned.pdf",
+   "digital_pdf": "ho_icse_class10.digital.pdf"
+  },
+  "expected": {
+   "personal.full_name": "Priya Example Deshmukh",
+   "personal.date_of_birth": "2006-11-09",
+   "academic.class10.board": "COUNCIL FOR THE INDIAN SCHOOL CERTIFICATE EXAMINATIONS",
+   "academic.class10.school": "EXAMPLE CONVENT HIGH SCHOOL, NAGPUR",
+   "academic.class10.exam_year": "2022"
+  },
+  "absent": [],
+  "records": {
+   "academic.class10.subjects": [
+    {
+     "name": "ENGLISH",
+     "marks_obtained": "91"
+    },
+    {
+     "name": "MATHEMATICS",
+     "marks_obtained": "95"
+    },
+    {
+     "name": "SCIENCE",
+     "marks_obtained": "93"
+    }
+   ]
+  },
+  "lines": [
+   "COUNCIL FOR THE INDIAN SCHOOL CERTIFICATE EXAMINATIONS",
+   "INDIAN CERTIFICATE OF SECONDARY EDUCATION (CLASS X) EXAMINATION 2022",
+   "Name: PRIYA EXAMPLE DESHMUKH",
+   "Unique ID: 7654321",
+   "Index No: T/1234/056",
+   "Date of Birth: 09/11/2006",
+   "School: EXAMPLE CONVENT HIGH SCHOOL, NAGPUR",
+   "SUBJECT MARKS OBTAINED",
+   "ENGLISH 91",
+   "HISTORY CIVICS & GEOGRAPHY 88",
+   "MATHEMATICS 95",
+   "SCIENCE 93",
+   "Result: Pass Certificate Awarded"
+  ]
+ },
+ {
+  "fixture": "ho_bank_statement",
+  "document_type": "BANK_STATEMENT",
+  "variant": "table",
+  "files": {
+   "clean": "ho_bank_statement.clean.png",
+   "skew": "ho_bank_statement.skew.png",
+   "rot90": "ho_bank_statement.rot90.png",
+   "photo": "ho_bank_statement.photo.png",
+   "scanned_pdf": "ho_bank_statement.scanned.pdf",
+   "digital_pdf": "ho_bank_statement.digital.pdf"
+  },
+  "expected": {
+   "financial.account_holder_name": "Priya Example Deshmukh",
+   "financial.account_number": "30012345678",
+   "financial.ifsc_code": "EXSB0004567",
+   "financial.branch_name": "Civil Lines, Nagpur",
+   "financial.micr_code": "440002011",
+   "financial.bank_name": "EXAMPLE STATE BANK"
+  },
+  "absent": [],
+  "records": {
+   "financial.transactions": [
+    {
+     "date": "2025-01-02",
+     "description": "NEFT CR-SCHOLARSHIP",
+     "reference": "0000123",
+     "credit": "12000.00",
+     "balance": "15500.00"
+    },
+    {
+     "date": "2025-01-09",
+     "description": "UPI-BOOKSTORE",
+     "reference": "509876543210",
+     "debit": "1250.00",
+     "balance": "14250.00"
+    }
+   ]
+  },
+  "lines": [
+   "EXAMPLE STATE BANK",
+   "ACCOUNT STATEMENT",
+   "Account Holder: PRIYA EXAMPLE DESHMUKH",
+   "A/c No.: 30012345678",
+   "IFS Code: EXSB0004567",
+   "Branch Name: Civil Lines, Nagpur",
+   "MICR: 440002011",
+   "Txn Date | Value Dt | Narration | Chq./Ref.No. | Withdrawal Amt. | Deposit Amt. | Closing Balance\n02/01/2025 | 02/01/2025 | NEFT CR-SCHOLARSHIP | 0000123 | | 12,000.00 | 15,500.00\n09/01/2025 | 09/01/2025 | UPI-BOOKSTORE | 509876543210 | 1,250.00 | | 14,250.00"
+  ]
+ },
+ {
+  "fixture": "ho_caste_certificate_sc",
+  "document_type": "CASTE_CERTIFICATE",
+  "variant": "multilingual",
+  "files": {
+   "clean": "ho_caste_certificate_sc.clean.png",
+   "skew": "ho_caste_certificate_sc.skew.png",
+   "rot90": "ho_caste_certificate_sc.rot90.png",
+   "photo": "ho_caste_certificate_sc.photo.png",
+   "scanned_pdf": "ho_caste_certificate_sc.scanned.pdf",
+   "digital_pdf": "ho_caste_certificate_sc.digital.pdf"
+  },
+  "expected": {
+   "caste_certificate.number": "SC/2023/NGP/000777",
+   "caste_certificate.holder_name": "Priya Example Deshmukh",
+   "category.social_category": "SC",
+   "caste_certificate.issue_date": "2023-03-03",
+   "caste_certificate.issuing_authority": "Sub Divisional Officer, Nagpur"
+  },
+  "absent": [
+   "caste_validity.number"
+  ],
+  "records": {},
+  "lines": [
+   "महाराष्ट्र शासन",
+   "जात प्रमाणपत्र / CASTE CERTIFICATE",
+   "Certificate No. : SC/2023/NGP/000777",
+   "This is to certify that Kumari PRIYA EXAMPLE DESHMUKH daughter of RAMESH EXAMPLE DESHMUKH of Nagpur belongs to the Examplejati caste which is recognised as a Scheduled Caste.",
+   "Category : SC",
+   "Date of Issue : 03/03/2023",
+   "Issued by : Sub Divisional Officer, Nagpur"
+  ]
+ },
+ {
+  "fixture": "ho_income_certificate",
+  "document_type": "INCOME_CERTIFICATE",
+  "variant": "clean",
+  "files": {
+   "clean": "ho_income_certificate.clean.png",
+   "skew": "ho_income_certificate.skew.png",
+   "rot90": "ho_income_certificate.rot90.png",
+   "photo": "ho_income_certificate.photo.png",
+   "scanned_pdf": "ho_income_certificate.scanned.pdf",
+   "digital_pdf": "ho_income_certificate.digital.pdf"
+  },
+  "expected": {
+   "financial.annual_income": "720000",
+   "income_certificate.valid_until": "2026-03-31"
+  },
+  "absent": [
+   "personal.full_name"
+  ],
+  "records": {},
+  "lines": [
+   "OFFICE OF THE TAHSILDAR, NAGPUR (URBAN)",
+   "INCOME CERTIFICATE",
+   "Sr. No. INC/NGP/2025/1188",
+   "Name of Applicant: Ramesh Example Deshmukh",
+   "Annual Family Income: Rs. 7.2 Lakh",
+   "Year: 2024-2025",
+   "Valid Upto: 31/03/2026"
+  ]
+ },
+ {
+  "fixture": "ho_electricity_bill",
+  "document_type": "ELECTRICITY_BILL",
+  "variant": "clean",
+  "files": {
+   "clean": "ho_electricity_bill.clean.png",
+   "skew": "ho_electricity_bill.skew.png",
+   "rot90": "ho_electricity_bill.rot90.png",
+   "photo": "ho_electricity_bill.photo.png",
+   "scanned_pdf": "ho_electricity_bill.scanned.pdf",
+   "digital_pdf": "ho_electricity_bill.digital.pdf"
+  },
+  "expected": {
+   "utility.consumer_number": "410012398765",
+   "utility.consumer_name": "Ramesh Example Deshmukh",
+   "utility.units_consumed": "210",
+   "utility.due_date": "2025-09-20"
+  },
+  "absent": [
+   "personal.full_name"
+  ],
+  "records": {},
+  "lines": [
+   "EXAMPLE POWER DISTRIBUTION LIMITED",
+   "Electricity Bill for the month of AUG-2025",
+   "Consumer Number: 410012398765",
+   "Name: RAMESH EXAMPLE DESHMUKH",
+   "Units Consumed: 210",
+   "Amount Payable: Rs. 2,145.00",
+   "Due Date: 20/09/2025"
+  ]
+ },
+ {
+  "fixture": "ho_voter_id",
+  "document_type": "VOTER_ID",
+  "variant": "clean",
+  "files": {
+   "clean": "ho_voter_id.clean.png",
+   "skew": "ho_voter_id.skew.png",
+   "rot90": "ho_voter_id.rot90.png",
+   "photo": "ho_voter_id.photo.png",
+   "scanned_pdf": "ho_voter_id.scanned.pdf",
+   "digital_pdf": "ho_voter_id.digital.pdf"
+  },
+  "expected": {
+   "identity.voter_id_number": "ABC7654321",
+   "personal.full_name": "Priya Example Deshmukh",
+   "personal.father_name": "Ramesh Example Deshmukh",
+   "identity.gender": "Female",
+   "personal.date_of_birth": "2006-11-09"
+  },
+  "absent": [],
+  "records": {},
+  "lines": [
+   "ELECTION COMMISSION OF INDIA",
+   "IDENTITY CARD",
+   "ABC7654321",
+   "Name: Priya Example Deshmukh",
+   "Father's Name: Ramesh Example Deshmukh",
+   "Sex: Female",
+   "Date of Birth: 09/11/2006"
+  ]
+ },
+ {
+  "fixture": "ho_domicile_certificate",
+  "document_type": "DOMICILE_CERTIFICATE",
+  "variant": "clean",
+  "files": {
+   "clean": "ho_domicile_certificate.clean.png",
+   "skew": "ho_domicile_certificate.skew.png",
+   "rot90": "ho_domicile_certificate.rot90.png",
+   "photo": "ho_domicile_certificate.photo.png",
+   "scanned_pdf": "ho_domicile_certificate.scanned.pdf",
+   "digital_pdf": "ho_domicile_certificate.digital.pdf"
+  },
+  "expected": {
+   "personal.full_name": "Priya Example Deshmukh",
+   "domicile_certificate.state": "Maharashtra"
+  },
+  "absent": [],
+  "records": {},
+  "lines": [
+   "GOVERNMENT OF MAHARASHTRA",
+   "DOMICILE CERTIFICATE",
+   "No. DOM/NGP/2024/5555",
+   "This is to certify that PRIYA EXAMPLE DESHMUKH daughter of RAMESH EXAMPLE DESHMUKH has been residing in the State of Maharashtra and is domiciled in the State of Maharashtra.",
+   "Date: 11/06/2024"
+  ]
+ }
+]

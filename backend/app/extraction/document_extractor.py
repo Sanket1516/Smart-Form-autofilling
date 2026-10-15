@@ -193,7 +193,23 @@ class DocumentAwareExtractor:
         )
 
     def _resolve_label(self, label: str) -> tuple[bool, str | None]:
-        """(is_label, concept). A known label may map to ``None`` (keep as key-value)."""
+        """(is_label, concept). A known label may map to ``None`` (keep as key-value).
+
+        Bilingual labels ("नाम / Name") lose their Indic half in English OCR
+        ("71H / Name"); when the whole label is unknown each "/" part is tried,
+        English (last) part first.
+        """
+        resolved = self._resolve_single_label(label)
+        if resolved[0] or "/" not in label:
+            return resolved
+        for part in reversed(label.split("/")):
+            if len(part.strip()) >= 3:
+                resolved = self._resolve_single_label(part.strip())
+                if resolved[0]:
+                    return resolved
+        return False, None
+
+    def _resolve_single_label(self, label: str) -> tuple[bool, str | None]:
         key = label_key(label)
         if not key:
             return False, None

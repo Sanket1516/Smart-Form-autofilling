@@ -252,6 +252,18 @@ _MIXED_CLASSES = re.compile(
 _SUBSUMES = {"caste_validity": {"caste_certificate"}, "ncl_certificate": {"caste_certificate"}}
 
 
+def detect_scopes(text: str | None) -> set[str]:
+    """Every document/education scope mentioned ("Compare Class 10 and 12" -> both)."""
+    if not text:
+        return set()
+    found = {name for name, pattern in _SCOPE_PATTERNS if pattern.search(text)}
+    if _MIXED_CLASSES.search(text):
+        found |= {"class_10", "class_12"}
+    for name in list(found):
+        found -= _SUBSUMES.get(name, set())
+    return found
+
+
 def detect_scope(text: str | None) -> str | None:
     """The single document/education scope a piece of text refers to, if unambiguous.
 

@@ -263,6 +263,7 @@ class FormFillGraph:
             item["concept"] = classification.concept
             item["narrative"] = classification.narrative
             item["qualifier"] = classification.qualifier
+            item["classification"] = (classification.method, classification.confidence)
             if item["quarantined"] and not classification.concept:
                 item["status"] = "security_blocked"
                 item["reason"] = (
@@ -446,6 +447,8 @@ class FormFillGraph:
                 retrieval_type="profile",
                 source=_view_source(view, "user" if view.origin == "user_provided" else "profile"),
                 reason=_reason(view),
+                # another document disagrees: the official value is proposed, not auto-filled
+                requires_confirmation=bool(view.note),
             )
             return
         item["candidates"] = [
@@ -602,6 +605,11 @@ class FormFillGraph:
             item.pop("quarantined", None)
             item.pop("qualifier", None)
             narrative = item.pop("narrative", False)
+            method, classified_with = item.pop("classification", ("none", 0.0))
+            if method == "llm" and item["recommended_value"] is not None:
+                # A value is only as reliable as the decision about which field it
+                # belongs to: a model-chosen mapping caps the confidence.
+                item["confidence"] = round(min(item["confidence"], classified_with), 3)
             if item["status"] in ("security_blocked", "skipped", "error", "needs_review"):
                 continue
             value = item["recommended_value"]
@@ -613,6 +621,11 @@ class FormFillGraph:
                         if item["concept"] or narrative
                         else "This field was not recognised; fill it yourself if needed."
                     )
+                    suggested = _suggested_documents(item["concept"])
+                    if suggested:
+                        item[
+                            "reason"
+                        ] += f" It is usually printed on your {suggested}; upload it to fill this field."
                 continue
             concept = item["concept"]
             data_type = self.ontology.data_type(concept) if concept else "string"
@@ -708,6 +721,21 @@ def match_subject(
     return [(c, r) for c, r, tokens in found if not (tokens & other_subjects)]
 
 
+def _suggested_documents(concept: str | None) -> str:
+    """'Class 12 marksheet' / 'caste certificate or caste validity certificate' for a concept."""
+    if not concept:
+        return ""
+    registry = get_registry()
+    labels = [
+        registry.types[t].label.lower().replace("class ", "Class ")
+        for t in registry.document_types_for(concept)
+        if t in registry.types
+    ]
+    if not labels or len(labels) > 3:
+        return ""  # names, dates of birth...: printed on almost every document
+    return " or ".join(labels)
+
+
 def _view_source(view: ConceptView, source_type: str) -> dict[str, Any]:
     first = view.sources[0] if view.sources else None
     return {
@@ -727,4 +755,5 @@ def _reason(view: ConceptView) -> str:
     where = ", ".join(names[:2]) if names else "your documents"
     count = len({s.document_id for s in view.sources})
     agreement = f" ({count} documents agree)" if count > 1 else ""
-    return f"Extracted from {where}{agreement}."
+    note = f" {view.note}" if view.note else ""
+    return f"Extracted from {where}{agreement}.{note}"

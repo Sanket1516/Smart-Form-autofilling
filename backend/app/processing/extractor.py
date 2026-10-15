@@ -17,12 +17,13 @@ import os
 from pathlib import Path
 from typing import Any, Protocol
 
-from app.processing.preprocessing import preprocess_for_ocr
-from app.processing.schemas import ExtractedSpan, LayoutBox, NormalizedDocument, NormalizedPage
+from app.processing.ocr import OCRBox, boxes_from_paddle, read_page, spans_from_boxes
+from app.processing.schemas import ExtractedSpan, NormalizedDocument, NormalizedPage
 
 logger = logging.getLogger(__name__)
 
 _MIN_WORDS_PER_PAGE = 10
+_MIN_WORDS_WITH_IMAGE = 80
 
 
 class DocumentReadError(RuntimeError):
@@ -38,11 +39,20 @@ class OCRAdapter(Protocol):
 
 
 class PaddleOCRAdapter:
-    """Lazily loaded PaddleOCR 2.x engine (optional dependency)."""
+    """Lazily loaded PaddleOCR 2.x engine (optional dependency) with layout rebuilding.
 
-    def __init__(self, language: str = "en") -> None:
+    ``preprocess="auto"`` applies only the corrections a page needs (upscaling,
+    contrast, orientation, deskew; see ``app.processing.ocr``); ``"none"`` reads
+    the image as given.
+    """
+
+    name = "paddle"
+
+    def __init__(self, language: str = "en", preprocess: str = "auto") -> None:
         self.language = language
+        self.preprocess = preprocess
         self._engine: Any | None = None
+        self.last_steps: list[str] = []
 
     def _get_engine(self) -> Any:
         if self._engine is None:
@@ -66,37 +76,34 @@ class PaddleOCRAdapter:
             )
         return self._engine
 
-    def extract(self, image: Any, page_number: int) -> list[ExtractedSpan]:
-        import numpy as np
+    def read(self, image: Any) -> list[OCRBox]:
+        return boxes_from_paddle(self._get_engine().ocr(image, cls=False))
 
-        engine = self._get_engine()
-        array = preprocess_for_ocr(
-            np.array(image.convert("RGB")) if hasattr(image, "convert") else image
-        )
-        array = np.asarray(array)
-        if array.ndim == 2:
-            array = np.stack([array] * 3, axis=-1)
-        result = engine.ocr(array, cls=False) or []
-        spans: list[ExtractedSpan] = []
-        for page in result:
-            for line in page or []:
-                if not line or len(line) < 2:
-                    continue
-                box, text_info = line[0], line[1]
-                text, score = str(text_info[0]).strip(), float(text_info[1])
-                if not text or score < 0.5:
-                    continue
-                xs = [float(point[0]) for point in box]
-                ys = [float(point[1]) for point in box]
-                spans.append(
-                    ExtractedSpan(
-                        page_number=page_number,
-                        text=text,
-                        source_method="ocr",
-                        bbox=LayoutBox(x0=min(xs), top=min(ys), x1=max(xs), bottom=max(ys)),
-                    )
-                )
-        return spans
+    def extract(self, image: Any, page_number: int) -> list[ExtractedSpan]:
+        self._get_engine()  # raise OCRUnavailableError before any image work
+        reading = read_page(self, image, self.preprocess)
+        self.last_steps = reading.steps
+        if reading.steps:
+            logger.info("ocr_page_corrections", extra={"page": page_number, "steps": reading.steps})
+        return spans_from_boxes(reading.boxes, page_number)
+
+
+class NoOCRAdapter:
+    """OCR disabled by configuration (``OCR_ENGINE=none``)."""
+
+    name = "none"
+    last_steps: list[str] = []
+
+    def extract(self, image: Any, page_number: int) -> list[ExtractedSpan]:
+        raise OCRUnavailableError("This document needs OCR, but OCR is disabled (OCR_ENGINE=none).")
+
+
+def build_ocr_adapter(
+    engine: str = "paddle", language: str = "en", preprocess: str = "auto"
+) -> Any:
+    if engine == "none":
+        return NoOCRAdapter()
+    return PaddleOCRAdapter(language=language, preprocess=preprocess)
 
 
 class UniversalDocumentExtractor:
@@ -134,15 +141,27 @@ class UniversalDocumentExtractor:
                     raise DocumentReadError("The PDF has no pages.")
                 for number, page in enumerate(pdf.pages, start=1):
                     spans = _direct_spans(page, number)
-                    if _word_count(spans) < _MIN_WORDS_PER_PAGE:
+                    direct_words = _word_count(spans)
+                    # A scanned card pasted under a typed header has some text but
+                    # its content is in the image: OCR it and add what is new.
+                    pasted_scan = (
+                        direct_words < _MIN_WORDS_WITH_IMAGE and _image_coverage(page) >= 0.35
+                    )
+                    if direct_words < _MIN_WORDS_PER_PAGE or pasted_scan:
                         try:
                             image = page.to_image(resolution=self.resolution).original
                             ocr_spans = self.ocr.extract(image, number)
                         except OCRUnavailableError:
                             ocr_missing = True
                             ocr_spans = []
-                        if _word_count(ocr_spans) > _word_count(spans):
-                            spans = ocr_spans
+                        if direct_words < _MIN_WORDS_PER_PAGE:
+                            if _word_count(ocr_spans) > direct_words:
+                                spans = ocr_spans
+                        else:
+                            known = {_compact(span.text) for span in spans}
+                            spans = spans + [
+                                span for span in ocr_spans if _compact(span.text) not in known
+                            ]
                     pages.append(
                         NormalizedPage(
                             page_number=number, width=page.width, height=page.height, spans=spans
@@ -244,6 +263,24 @@ def _direct_spans(page: Any, page_number: int) -> list[ExtractedSpan]:
                 )
             )
     return spans
+
+
+def _compact(text: str) -> str:
+    return "".join(ch for ch in text.casefold() if ch.isalnum())
+
+
+def _image_coverage(page: Any) -> float:
+    """Share of the page area covered by embedded images (0..1)."""
+    try:
+        area = float(page.width) * float(page.height)
+        covered = sum(
+            max(0.0, float(i["x1"]) - float(i["x0"]))
+            * max(0.0, float(i["bottom"]) - float(i["top"]))
+            for i in page.images or []
+        )
+    except (KeyError, TypeError, ValueError):
+        return 0.0
+    return min(1.0, covered / area) if area else 0.0
 
 
 def _word_count(spans: list[ExtractedSpan]) -> int:

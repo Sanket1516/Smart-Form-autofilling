@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import logging
+import re
+from typing import Any
 
 from pydantic import BaseModel, Field
 
@@ -37,17 +39,38 @@ class RAGRetrievalService:
         top_k: int,
         document_type: str | None = None,
         min_similarity: float | None = None,
+        document_ids: list[str] | None = None,
+        document_types: list[str] | None = None,
     ) -> list[RAGSearchResult]:
         """Return this user's chunks above the similarity cutoff, best first.
+
+        ``document_ids`` / ``document_types`` are metadata filters applied in the
+        vector store. Candidates are over-fetched and re-ranked with a small bonus
+        for query words that appear literally in the chunk, so exact terms
+        ("income certificate", "Physics") are not lost to embedding noise; the
+        similarity cutoff still applies to the embedding score alone.
 
         Raises ``APIError`` (503) when the embedding model or vector store is down.
         """
         threshold = self.min_similarity if min_similarity is None else min_similarity
+        filters: dict[str, Any] = {}
+        if document_ids:
+            filters["document_ids"] = document_ids
+        if document_types:
+            filters["document_types"] = document_types
         try:
             vector = await self.embeddings.embed_query(query)
-            raw = await self.vector_store.query(user_id, vector, top_k, document_type)
+            raw = await self.vector_store.query(
+                user_id, vector, max(top_k * 3, 10), document_type, **filters
+            )
         except (EmbeddingUnavailableError, VectorStoreError) as error:
             raise APIError("RETRIEVAL_UNAVAILABLE", str(error), 503) from error
+        terms = _terms(query)
+        raw = sorted(
+            raw,
+            key=lambda item: item["similarity"] + 0.15 * _overlap(terms, item.get("text", "")),
+            reverse=True,
+        )[:top_k]
         results = []
         for item in raw:
             if item["similarity"] < threshold:
@@ -69,6 +92,24 @@ class RAGRetrievalService:
                 )
             )
         return results
+
+
+_STOP = frozenset(
+    "a an and are as at be by did do does for from how i in is it me my of on or the this to "
+    "was what when where which who why with you your am have has".split()
+)
+
+
+def _terms(text: str) -> set[str]:
+    return {t for t in re.findall(r"[a-z0-9]+", text.casefold()) if t not in _STOP and len(t) > 1}
+
+
+def _overlap(terms: set[str], text: str) -> float:
+    """Share of query terms that appear literally in the chunk text (0..1)."""
+    if not terms:
+        return 0.0
+    words = set(re.findall(r"[a-z0-9]+", text.casefold()))
+    return len(terms & words) / len(terms)
 
 
 def safe_for_llm(chunks: list[RAGSearchResult]) -> list[RAGSearchResult]:

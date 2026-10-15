@@ -26,6 +26,7 @@ from app.security.prompt_safety import sanitize_untrusted, wrap_untrusted
 logger = logging.getLogger(__name__)
 
 _LLM_MIN_CONFIDENCE = 0.6
+_FALLBACK_CEILING = 0.7
 _AMBIGUITY_MARGIN = 0.05
 # (attribute, weight) in priority order.
 _TEXT_SOURCES = (
@@ -304,6 +305,11 @@ class FieldClassifier:
                     )
             return results
         by_id = {f.field_id: f for f in fields}
+        # The fallback model (used when the primary provider failed) is measurably
+        # weaker at mapping fields; its mappings always go to the user for review.
+        primary = getattr(self.llm, "primary", None)
+        used_fallback = primary is not None and getattr(self.llm, "last_used", "") != primary.name
+        ceiling = _FALLBACK_CEILING if used_fallback else 0.95
         for item in output.classifications:
             classification = results.get(item.field_id)
             if classification is None:
@@ -330,7 +336,7 @@ class FieldClassifier:
                 and not (classification.other_person and item.concept in _OWNER_CONCEPTS)
             ):
                 classification.concept = item.concept
-                classification.confidence = round(min(item.confidence, 0.95), 3)
+                classification.confidence = round(min(item.confidence, ceiling), 3)
                 classification.method = "llm"
                 classification.ambiguous = []
             elif classification.ambiguous:

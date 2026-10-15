@@ -76,6 +76,12 @@ class StructuredFact(MongoDocument):
     confidence: float = Field(ge=0, le=1)
     provenance: dict[str, Any] = Field(default_factory=dict)
     is_user_confirmed: bool = False
+    # Type of the source document (registry id, e.g. CLASS_12_MARKSHEET). Used to
+    # prefer the official document for a field when sources disagree.
+    document_type: str | None = None
+    # True when the value should be checked by the user before it is relied on
+    # (low confidence, OCR-repaired identifier, model-only extraction).
+    needs_review: bool = False
     created_at: datetime
     updated_at: datetime
 

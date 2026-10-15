@@ -20,6 +20,23 @@ exams:
     name: NEET (UG)
     conducting_body: National Testing Agency (NTA)
     official_site: https://neet.nta.nic.in
+    # Eligibility criteria as published in recent NTA NEET (UG) bulletins (NMC
+    # regulations). Not verified against the current session's bulletin: answers
+    # always say so and never declare a candidate eligible.
+    eligibility:
+      source: NTA NEET (UG) information bulletin (NMC Graduate Medical Education Regulations)
+      verified_against_official_bulletin: false
+      rules:
+        - {id: class12_passed, type: result_passed, concept: academic.class12.result_status, label: Passed Class 12 (or equivalent)}
+        - {id: pcb_english, type: subjects_present, scope: class_12, subjects: [physics, chemistry, [biology, biotechnology], english], label: "Physics, Chemistry, Biology/Biotechnology and English in Class 12"}
+        - id: pcb_aggregate
+          type: subject_aggregate
+          scope: class_12
+          subjects: [physics, chemistry, [biology, biotechnology]]
+          label: Minimum aggregate in Physics, Chemistry and Biology/Biotechnology
+          minimum_by_category: {GENERAL: 50, GEN-EWS: 50, EWS: 50, OBC: 40, OBC-NCL: 40, SC: 40, ST: 40}
+          default_minimum: 50
+        - {id: min_age, type: min_age, years: 17, as_of_month_day: "12-31", label: At least 17 years old on 31 December of the admission year}
     last_reviewed: "2026-10-15"
     verified_against_official_bulletin: false
     note: Check every field and upload rule against the NTA information bulletin for your session.
@@ -78,6 +95,18 @@ exams:
     name: JEE (Main)
     conducting_body: National Testing Agency (NTA)
     official_site: https://jeemain.nta.nic.in
+    eligibility:
+      source: NTA JEE (Main) information bulletin
+      verified_against_official_bulletin: false
+      rules:
+        - {id: class12_passed, type: result_passed, concept: academic.class12.result_status, label: Passed Class 12 (or appearing)}
+        - {id: pcm, type: subjects_present, scope: class_12, subjects: [physics, mathematics], label: Physics and Mathematics in Class 12}
+        - id: nit_aggregate
+          type: percentage_minimum
+          concept: academic.class12.percentage
+          label: "Class 12 aggregate for NIT/IIIT/CFTI admission (not for writing the exam)"
+          minimum_by_category: {GENERAL: 75, GEN-EWS: 75, EWS: 75, OBC: 75, OBC-NCL: 75, SC: 65, ST: 65}
+          default_minimum: 75
     last_reviewed: "2026-10-15"
     verified_against_official_bulletin: false
     note: Check every field and upload rule against the NTA information bulletin for your session.

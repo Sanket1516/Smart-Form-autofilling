@@ -138,12 +138,22 @@ class ChromaClient:
         query_embedding: list[float],
         top_k: int,
         document_type: str | None = None,
+        document_ids: list[str] | None = None,
+        document_types: list[str] | None = None,
     ) -> list[dict[str, Any]]:
-        """Return chunks for this user only, best first, with cosine similarity in [0, 1]."""
+        """Return chunks for this user only, best first, with cosine similarity in [0, 1].
+
+        ``document_ids`` / ``document_types`` restrict the search to those documents
+        or document types (metadata filters, applied inside ChromaDB).
+        """
         collection_id = await self.ensure_collection()
         conditions: list[dict[str, Any]] = [{"user_id": {"$eq": user_id}}]
         if document_type:
             conditions.append({"document_type": {"$eq": document_type}})
+        if document_types:
+            conditions.append({"document_type": {"$in": list(document_types)}})
+        if document_ids:
+            conditions.append({"document_id": {"$in": list(document_ids)}})
         where = conditions[0] if len(conditions) == 1 else {"$and": conditions}
         result = await self._request(
             "POST",
@@ -165,6 +175,8 @@ class ChromaClient:
         for index, chunk_id in enumerate(ids):
             metadata = metadatas[index] or {}
             if metadata.get("user_id") != user_id:  # defence in depth
+                continue
+            if document_ids and metadata.get("document_id") not in document_ids:
                 continue
             distance = float(distances[index]) if index < len(distances) else 1.0
             chunks.append(

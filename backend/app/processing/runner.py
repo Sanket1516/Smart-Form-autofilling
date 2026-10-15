@@ -23,8 +23,8 @@ from app.processing.chunking import TextChunker
 from app.processing.extractor import (
     DocumentReadError,
     OCRUnavailableError,
-    PaddleOCRAdapter,
     UniversalDocumentExtractor,
+    build_ocr_adapter,
 )
 from app.processing.pipeline import DocumentPipeline
 from app.repositories.collections import (
@@ -52,7 +52,11 @@ class ProcessingContext:
     def pipeline(self) -> DocumentPipeline:
         return DocumentPipeline(
             extractor=UniversalDocumentExtractor(
-                PaddleOCRAdapter(language=self.settings.ocr_language),
+                build_ocr_adapter(
+                    self.settings.ocr_engine,
+                    self.settings.ocr_language,
+                    self.settings.ocr_preprocess,
+                ),
                 resolution=self.settings.ocr_resolution,
             ),
             ontology=self.ontology,
