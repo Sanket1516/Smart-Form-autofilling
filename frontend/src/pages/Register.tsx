@@ -4,7 +4,7 @@ import { authApi, ApiError } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
-import './Auth.css';
+import { AuthLayout } from '../components/layout/AuthLayout';
 
 export const Register = () => {
   const [name, setName] = useState('');
@@ -42,12 +42,8 @@ export const Register = () => {
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <div className="auth-header">
-          <h2>Create your account</h2>
-          <p className="text-secondary">Your documents and profile stay private to your account</p>
-        </div>
+    <AuthLayout title="Create your account" subtitle="Your documents and profile stay private to your account."
+      footer={<p>Already have an account? <Link to="/login">Sign in</Link></p>}>
         <form onSubmit={handleSubmit} className="auth-form" noValidate>
           {error && <div className="auth-error-banner" role="alert">{error}</div>}
           <Input label="Full name" name="full_name" value={name} onChange={(e) => setName(e.target.value)}
@@ -61,10 +57,6 @@ export const Register = () => {
             onChange={(e) => setConfirmPassword(e.target.value)} required autoComplete="new-password" />
           <Button type="submit" className="auth-submit-btn" isLoading={isLoading}>Create account</Button>
         </form>
-        <div className="auth-footer">
-          <p>Already have an account? <Link to="/login">Sign in</Link></p>
-        </div>
-      </div>
-    </div>
+    </AuthLayout>
   );
 };

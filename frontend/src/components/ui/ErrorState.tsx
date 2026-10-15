@@ -1,5 +1,4 @@
-import React from 'react';
-import { AlertTriangle } from 'lucide-react';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 import { Button } from './Button';
 import './ErrorState.css';
 
@@ -10,15 +9,15 @@ interface ErrorStateProps {
   fullScreen?: boolean;
 }
 
-export const ErrorState = ({ title = 'An error occurred', message, onRetry, fullScreen = false }: ErrorStateProps) => {
+export const ErrorState = ({ title = 'Something went wrong', message, onRetry, fullScreen = false }: ErrorStateProps) => {
   return (
     <div className={`error-state ${fullScreen ? 'full-screen' : ''}`} role="alert">
-      <AlertTriangle className="error-icon" size={48} />
+      <span className="error-icon"><AlertCircle size={20} aria-hidden="true" /></span>
       <h3>{title}</h3>
       <p className="text-secondary">{message}</p>
       {onRetry && (
         <Button onClick={onRetry} variant="secondary">
-          Try Again
+          <RefreshCw size={14} aria-hidden="true" /> Try again
         </Button>
       )}
     </div>

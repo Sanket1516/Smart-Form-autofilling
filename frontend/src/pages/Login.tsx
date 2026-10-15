@@ -4,7 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { ApiError } from '../services/api';
 import { Input } from '../components/ui/Input';
 import { Button } from '../components/ui/Button';
-import './Auth.css';
+import { AuthLayout } from '../components/layout/AuthLayout';
 
 export const Login = () => {
   const [email, setEmail] = useState('');
@@ -40,12 +40,8 @@ export const Login = () => {
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <div className="auth-header">
-          <h2>Welcome back</h2>
-          <p className="text-secondary">Sign in to manage your documents and profile</p>
-        </div>
+    <AuthLayout title="Sign in to Smart Form" subtitle="Manage your documents and the profile used to fill forms."
+      footer={<p>New to Smart Form? <Link to="/register">Create an account</Link></p>}>
         <form onSubmit={handleSubmit} className="auth-form" noValidate>
           {error && <div className="auth-error-banner" role="alert">{error}</div>}
           <Input type="email" label="Email" name="email" placeholder="name@example.com" value={email}
@@ -54,10 +50,6 @@ export const Login = () => {
             onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
           <Button type="submit" className="auth-submit-btn" isLoading={isLoading}>Sign in</Button>
         </form>
-        <div className="auth-footer">
-          <p>Don't have an account? <Link to="/register">Register</Link></p>
-        </div>
-      </div>
-    </div>
+    </AuthLayout>
   );
 };
