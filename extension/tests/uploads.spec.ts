@@ -120,7 +120,7 @@ test('recommends, checks and attaches documents, and reports what is missing', a
   await popup.getByRole('tab', { name: /Documents/ }).click();
   await expect(popup.getByText('Recognised as')).toContainText('NEET (UG)');
 
-  const card = (name: string) => popup.locator('section.card', { has: popup.getByRole('heading', { name }) });
+  const card = (name: string) => popup.locator('section.upload', { has: popup.getByRole('heading', { name }) });
 
   // Photograph: type-less file matched by name, requirements from the page beat the saved exam profile.
   const photo = card('Upload Photograph *');
@@ -139,7 +139,7 @@ test('recommends, checks and attaches documents, and reports what is missing', a
 
   // Caste validity is missing; the generic caste certificate is not substituted.
   const validity = card('Caste validity certificate');
-  await expect(validity).toContainText('requests a caste validity certificate, but no matching document was found');
+  await expect(validity).toContainText('No caste validity certificate in your documents yet. Your caste certificate cannot be used in its place.');
   await expect(validity.getByRole('radio')).toHaveCount(0);
 
   // Several resumes: nothing pre-selected, the user picks.
@@ -172,9 +172,9 @@ test('recommends, checks and attaches documents, and reports what is missing', a
 
   // A dynamically added upload field is flagged, not silently rescanned.
   await page.evaluate(() => (window as unknown as { addExtraUpload: () => void }).addExtraUpload());
-  await expect(popup.getByText('The form on the page changed.')).toBeVisible();
+  await expect(popup.getByText('The form on the page changed')).toBeVisible();
   await popup.getByRole('button', { name: /Rescan/ }).click();
-  await expect(card('EWS Certificate')).toContainText('requests an EWS certificate, but no matching document was found');
+  await expect(card('EWS Certificate')).toContainText('No EWS certificate in your documents yet.');
   await expect(card('EWS Certificate').getByRole('radio')).toHaveCount(0);
 });
 

@@ -34,9 +34,20 @@ export async function ensureContentScript(tabId: number): Promise<void> {
   }
 }
 
+/** Never leave the popup waiting on a page that stopped answering (navigated, frozen, crashed). */
+const MESSAGE_TIMEOUT_MS = 15_000;
+
 export async function sendToTab<T>(tabId: number, message: ContentRequest): Promise<T> {
   await ensureContentScript(tabId);
-  const reply = await chrome.tabs.sendMessage(tabId, message);
-  if (reply === undefined) throw new PageAccessError('The page did not respond. Reload it and try again.');
-  return reply as T;
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  const timeout = new Promise<never>((_, reject) => {
+    timer = setTimeout(() => reject(new PageAccessError('The page did not respond. Reload it and try again.')), MESSAGE_TIMEOUT_MS);
+  });
+  try {
+    const reply = await Promise.race([chrome.tabs.sendMessage(tabId, message), timeout]);
+    if (reply === undefined) throw new PageAccessError('The page did not respond. Reload it and try again.');
+    return reply as T;
+  } finally {
+    clearTimeout(timer);
+  }
 }

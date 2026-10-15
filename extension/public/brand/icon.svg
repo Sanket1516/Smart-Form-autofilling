@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" width="128" height="128">
+  <title>Smart Form</title>
+  <!-- App / store icon: ivory tile with the mark. Toolbar sizes use the bare mark
+       with ivory (not transparent) cut-outs so it reads on light and dark toolbars. -->
+  <rect x="4" y="4" width="120" height="120" rx="26" fill="#FBFAF7"/>
+  <rect x="4.5" y="4.5" width="119" height="119" rx="25.5" fill="none" stroke="#1F4F4A" stroke-opacity="0.14"/>
+  <g transform="translate(18 18) scale(2.875)">
+    <path d="M9 3h10.5L26 9.5V26a3 3 0 0 1-3 3H9a3 3 0 0 1-3-3V6a3 3 0 0 1 3-3Z" fill="#1F4F4A"/>
+    <g fill="none" stroke="#FBFAF7" stroke-linecap="round">
+      <path d="M11 12.5h10M11 17.5h6M11 23h5.5" stroke-width="2.4"/>
+      <path d="M19.5 3.6v3.9a2 2 0 0 0 2 2h3.9" stroke-width="1.5"/>
+    </g>
+    <circle cx="20.6" cy="23" r="2.5" fill="#FBFAF7"/>
+  </g>
+</svg>

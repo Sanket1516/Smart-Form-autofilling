@@ -1,16 +1,17 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import {
-  CheckCircle2, ExternalLink, FileSearch, FileUp, ListChecks, Loader2, RefreshCw, ShieldAlert, Wand2, XCircle,
+  Check, CheckCircle2, CircleDashed, ExternalLink, FileSearch, Lock, PenLine, RefreshCw, ScanSearch, TriangleAlert,
 } from 'lucide-react';
 import { api, ApiError } from '../shared/api';
 import { clearFlowState, getFlowState, saveFlowState, type Settings } from '../shared/storage';
 import { getActiveTab, PageAccessError, sendToTab } from '../shared/tabs';
+import { detectExam } from '../shared/fileRequirements';
 import { guardFor, type Guard } from '../shared/sensitivity';
 import type {
   ExtractResponse, FieldObject, FillResult, FormChangedMessage, PageInfo, Recommendation, UploadField,
 } from '../types';
 import { DocumentsPanel } from './DocumentsPanel';
-import { Notice, Pill } from './ui';
+import { Callout, plural, Progress, Spinner } from './ui';
 
 type Step = 'idle' | 'scanned' | 'analyzing' | 'review' | 'filling' | 'done';
 
@@ -86,20 +87,9 @@ export function buildDecisions(recs: Recommendation[], edits: Record<string, Row
 }
 
 
+
 type Tab = 'fields' | 'documents';
 type Filter = 'all' | 'attention';
-
-const STEPS = ['Detect', 'Analyze', 'Review', 'Fill', 'Verify'];
-const stepIndex = (step: Step | undefined): number => {
-  switch (step) {
-    case 'scanned': return 0;
-    case 'analyzing': return 1;
-    case 'review': return 2;
-    case 'filling': return 3;
-    case 'done': return 4;
-    default: return -1;
-  }
-};
 
 export const AutofillFlow = ({ settings, onSessionExpired }: { settings: Settings; onSessionExpired: () => void }) => {
   const [tabId, setTabId] = useState<number | null>(null);
@@ -277,134 +267,298 @@ export const AutofillFlow = ({ settings, onSessionExpired }: { settings: Setting
     update({ ...state, edits: { ...state.edits, [fieldId]: { ...current, ...patch } } });
   };
 
-  const host = state ? safeHost(state.page.url) : null;
-  const uploadCount = state?.uploads.length ?? 0;
+
+  const uploads = state?.uploads ?? [];
+  const recs = state?.recommendations ?? [];
+  const summary = useMemo(() => summarize(recs), [recs]);
+  const selectedCount = useMemo(
+    () => Object.values(state?.edits ?? {}).filter((edit) => edit.selected && edit.value.trim()).length,
+    [state?.edits],
+  );
+  const exam = state ? detectExam(state.page) : null;
+  const showTabs = Boolean(state && uploads.length > 0 && state.fields.length > 0);
+  const activeTab: Tab = state && state.fields.length === 0 && uploads.length > 0 ? 'documents' : tab;
+  const empty = state !== null && state.fields.length === 0 && uploads.length === 0;
+  const openSite = (path: string) => chrome.tabs.create({ url: `${settings.dashboardUrl}${path}` });
+
+  // ---- page could not be read at all (browser pages, store pages, injection refused)
+  if (!state) {
+    return (
+      <div className="scroll">
+        {error ? (
+          <section className="state-panel rise">
+            <span className="state-icon" aria-hidden="true"><FileSearch size={18} /></span>
+            <h2 className="state-title">This page can&apos;t be read</h2>
+            <p className="state-body">{error}</p>
+            <p className="state-body muted">Open Smart Form on the web page that contains your application form.</p>
+            {tabId !== null && (
+              <div className="state-actions">
+                <button className="button button-primary" onClick={rescan} disabled={busy}>
+                  {busy ? <Spinner /> : <RefreshCw size={14} />} Scan this page
+                </button>
+              </div>
+            )}
+          </section>
+        ) : (
+          <div className="context">
+            <div className="skeleton skeleton-host" />
+            <div className="skeleton skeleton-title" />
+            <Progress label="Reading the form on this page" />
+            <p className="sr-only" role="status">Reading the form on this page…</p>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
-    <div className="content">
-      {host && state && (
-        <div className="page-strip" title={state.page.title}>
-          <span className="page-host">{host}</span>
-          <span className="page-title">{state.page.title}</span>
-        </div>
-      )}
-      {error && (
-        <Notice kind="error" action={tabId !== null ? <button className="btn-text" onClick={rescan}>Retry</button> : undefined}>
-          {error}
-        </Notice>
-      )}
-      {stale && state && (
-        <Notice kind="info" action={<button className="btn-text" onClick={rescan} disabled={busy}><RefreshCw size={12} /> Rescan</button>}>
-          The form on the page changed.
-        </Notice>
-      )}
+    <>
+      <div className="scroll">
+        <PageContext state={state} exam={exam} summary={summary} busy={busy} />
 
-      {!state && !error && <div className="loading-row" role="status"><Loader2 size={14} className="spin" /> Reading the form on this page…</div>}
-      {!state && error && tabId !== null && (
-        <button className="btn-primary" onClick={rescan} disabled={busy}>
-          <FileSearch size={14} /> Scan this page
-        </button>
-      )}
+        {error && (
+          <div className="pad"><Callout kind="error" action={<button className="link" onClick={rescan}>Scan again</button>}>{error}</Callout></div>
+        )}
+        {stale && (
+          <div className="pad">
+            <Callout kind="info" title="The form on the page changed"
+              action={<button className="link" onClick={rescan} disabled={busy}><RefreshCw size={12} /> Rescan</button>}>
+              New or removed fields are not included until you rescan.
+            </Callout>
+          </div>
+        )}
 
-      {state && (
-        <>
-          <Stepper current={stepIndex(state.step)} />
-          <div className="tabs" role="tablist">
-            <button role="tab" aria-selected={tab === 'fields'} className={tab === 'fields' ? 'tab on' : 'tab'} onClick={() => setTab('fields')}>
-              <ListChecks size={13} /> Fields <span className="count">{state.fields.length}</span>
+        {empty && (
+          <section className="state-panel rise">
+            <span className="state-icon" aria-hidden="true"><FileSearch size={18} /></span>
+            <h2 className="state-title">No form on this page</h2>
+            <p className="state-body">
+              Open Smart Form on an application, registration or admission form. It matches the form&apos;s fields with your
+              profile and suggests the right documents for its uploads.
+            </p>
+            <p className="state-body muted">
+              If the form appears after a click or a step, scan again once it is visible.
+              {state.skipped > 0 && ` ${plural(state.skipped, 'protected control')} (passwords, card numbers, codes) ${state.skipped === 1 ? 'was' : 'were'} ignored.`}
+            </p>
+            <div className="state-actions">
+              <button className="link" onClick={() => openSite('/documents')}>Open your documents <ExternalLink size={11} /></button>
+            </div>
+          </section>
+        )}
+
+        {showTabs && (
+          <div className="tabs" role="tablist" aria-label="Form parts">
+            <button role="tab" aria-selected={activeTab === 'fields'} className="tab" onClick={() => setTab('fields')}>
+              Fields <span className="tab-count">{state.fields.length}</span>
             </button>
-            <button role="tab" aria-selected={tab === 'documents'} className={tab === 'documents' ? 'tab on' : 'tab'} onClick={() => setTab('documents')}>
-              <FileUp size={13} /> Documents <span className="count">{uploadCount}</span>
+            <button role="tab" aria-selected={activeTab === 'documents'} className="tab" onClick={() => setTab('documents')}>
+              Documents <span className="tab-count">{uploads.length}</span>
             </button>
           </div>
+        )}
 
-          {tab === 'documents' && tabId !== null && (
-            <DocumentsPanel settings={settings} tabId={tabId} page={state.page} uploads={state.uploads} onSessionExpired={onSessionExpired} />
-          )}
+        {activeTab === 'documents' && tabId !== null && (
+          <DocumentsPanel settings={settings} tabId={tabId} page={state.page} uploads={uploads} onSessionExpired={onSessionExpired} />
+        )}
 
-          {tab === 'fields' && (
-            <>
-              {state.step === 'scanned' && (
-                <div className="stack">
-                  <div className="summary-line">
-                    <span><strong className="field-count">{state.fields.length}</strong> fields detected</span>
-                    {uploadCount > 0 && <button className="btn-text" onClick={() => setTab('documents')}>{uploadCount} upload field{uploadCount === 1 ? '' : 's'}</button>}
-                  </div>
-                  {state.skipped > 0 && (
-                    <p className="muted">{state.skipped} hidden, disabled or sensitive controls (passwords, card numbers, codes) were ignored.</p>
-                  )}
-                  {state.fields.length === 0 ? (
-                    <Notice kind="info">No fillable fields were found. If the form appears after a step, rescan once it is visible.</Notice>
-                  ) : (
-                    <button className="btn-primary" onClick={analyze} disabled={busy}>
-                      {busy ? <Loader2 size={14} className="spin" /> : <Wand2 size={14} />} Suggest values
-                    </button>
-                  )}
-                  <button className="btn-secondary" onClick={rescan} disabled={busy}><RefreshCw size={13} /> Scan again</button>
-                </div>
-              )}
+        {activeTab === 'fields' && !empty && (
+          <>
+            {state.step === 'scanned' && <DetectedFields fields={state.fields} skipped={state.skipped} />}
+            {state.step === 'analyzing' && <SkeletonRows count={Math.min(state.fields.length, 4)} />}
+            {state.step === 'review' && (
+              <ReviewList
+                recommendations={recs}
+                fields={state.fields}
+                edits={state.edits}
+                filter={filter}
+                onFilter={setFilter}
+                onEdit={setEdit}
+                onProfile={() => openSite('/profile')}
+              />
+            )}
+            {state.step === 'done' && state.results && <ResultView results={state.results} recommendations={recs} />}
+          </>
+        )}
+      </div>
 
-              {state.step === 'analyzing' && (
-                <div className="stack" role="status">
-                  <div className="loading-row"><Loader2 size={14} className="spin" /> Matching {state.fields.length} fields with your profile…</div>
-                  {!busy && <button className="btn-primary" onClick={analyze}>Retry</button>}
-                </div>
-              )}
-
-              {state.step === 'review' && state.recommendations && (
-                <ReviewList
-                  recommendations={state.recommendations}
-                  fields={state.fields}
-                  edits={state.edits}
-                  filter={filter}
-                  onFilter={setFilter}
-                  onEdit={setEdit}
-                  busy={busy}
-                  uploadCount={uploadCount}
-                  onDocuments={() => setTab('documents')}
-                  onProfile={() => chrome.tabs.create({ url: `${settings.dashboardUrl}/profile` })}
-                  onFill={fill}
-                  onCancel={() => finish(false)}
-                />
-              )}
-
-              {state.step === 'done' && state.results && (
-                <ResultSummary results={state.results} recommendations={state.recommendations ?? []} onFinish={finish} />
-              )}
-            </>
-          )}
-        </>
-      )}
-    </div>
+      <footer className="actionbar">
+        {empty && (
+          <button className="button button-primary button-grow" onClick={rescan} disabled={busy}>
+            {busy ? <Spinner /> : <RefreshCw size={14} />} Scan again
+          </button>
+        )}
+        {!empty && state.step === 'scanned' && (state.fields.length > 0 ? (
+          <>
+            <button className="button button-primary button-grow" onClick={analyze} disabled={busy}>
+              {busy ? <Spinner /> : <ScanSearch size={15} />} Analyze this form
+            </button>
+            <button className="icon-button icon-button-framed" onClick={rescan} disabled={busy} aria-label="Scan again" title="Scan again">
+              <RefreshCw size={14} />
+            </button>
+          </>
+        ) : (
+          <p className="actionbar-note">Choose a file for each upload, then attach it to the page.</p>
+        ))}
+        {state.step === 'analyzing' && (busy ? (
+          <button className="button button-primary button-grow" disabled><Spinner /> Analyzing…</button>
+        ) : (
+          <button className="button button-primary button-grow" onClick={analyze}><RefreshCw size={14} /> Retry analysis</button>
+        ))}
+        {state.step === 'review' && (
+          <>
+            <button className="button button-primary button-grow" onClick={fill} disabled={busy || selectedCount === 0}>
+              {busy ? <Spinner /> : <PenLine size={14} />}
+              {busy ? 'Filling…' : `Fill ${selectedCount} field${selectedCount === 1 ? '' : 's'}`}
+            </button>
+            <button className="button button-quiet" onClick={() => finish(false)} disabled={busy}>Cancel</button>
+          </>
+        )}
+        {state.step === 'done' && (
+          <>
+            <button className="button button-primary button-grow" onClick={() => finish(false)}>Done</button>
+            <button className="button button-quiet" onClick={() => finish(true)}>I submitted the form</button>
+          </>
+        )}
+      </footer>
+    </>
   );
 };
 
-function safeHost(url: string): string | null {
-  try { return new URL(url).host || 'local file'; } catch { return null; }
+// ---------------------------------------------------------------------------- page context
+
+interface Summary { total: number; ready: number; attention: number; missing: number; left: number }
+
+function summarize(recs: Recommendation[]): Summary {
+  const s: Summary = { total: recs.length, ready: 0, attention: 0, missing: 0, left: 0 };
+  for (const rec of recs) {
+    const group = groupOf(rec);
+    if (group === 'ready') s.ready += 1;
+    else if (group === 'left') s.left += 1;
+    else if (rec.status === 'missing_information') s.missing += 1;
+    else s.attention += 1;
+  }
+  return s;
 }
 
-const Stepper = ({ current }: { current: number }) => (
-  <ol className="stepper" aria-label="Progress">
-    {STEPS.map((label, index) => (
-      <li key={label} className={index < current ? 'done' : index === current ? 'now' : ''} aria-current={index === current ? 'step' : undefined}>
-        {label}
-      </li>
+function safeHost(url: string): string {
+  try { return new URL(url).host || 'Local file'; } catch { return 'This page'; }
+}
+
+const FORM_WORDS = /application|registration|apply|admission|enrol|recruitment|form/i;
+
+/** What Smart Form has understood about the page, in one headline and a few facts. */
+const PageContext = ({ state, exam, summary, busy }: {
+  state: FlowState; exam: ReturnType<typeof detectExam>; summary: Summary; busy: boolean;
+}) => {
+  const host = safeHost(state.page.url);
+  const fields = state.fields.length;
+  const uploads = state.uploads.length;
+  const results = state.results ?? [];
+  const verified = results.filter((r) => r.applied && r.verified).length;
+
+  let title: string;
+  let facts: Array<{ text: string; tone?: 'attention' | 'ok' | 'muted'; node?: ReactNode }> = [];
+  if (state.step === 'done') {
+    title = `${verified} of ${plural(results.length, 'field')} filled and verified`;
+    if (results.length - verified > 0) facts.push({ text: `${results.length - verified} not filled`, tone: 'attention' });
+    facts.push({ text: 'Nothing was submitted', tone: 'muted' });
+  } else if (state.step === 'review') {
+    title = summary.ready > 0 ? `${plural(summary.ready, 'field')} ready to fill` : 'Nothing could be matched yet';
+    if (summary.attention) facts.push({ text: `${summary.attention} need your attention`, tone: 'attention' });
+    if (summary.missing) facts.push({ text: `${summary.missing} not in your documents` });
+    if (uploads) facts.push({ text: plural(uploads, 'upload') });
+  } else if (state.step === 'analyzing') {
+    title = 'Matching with your profile';
+    facts = [{ text: plural(fields, 'field') }];
+  } else if (fields === 0 && uploads === 0) {
+    title = 'No form detected';
+  } else {
+    title = FORM_WORDS.test(`${state.page.title} ${state.page.heading ?? ''}`) ? 'Application form detected' : 'Form detected';
+    if (fields) facts.push({ text: 'fields', node: <><span className="field-count">{fields}</span> {fields === 1 ? 'field' : 'fields'}</> });
+    if (uploads) facts.push({ text: plural(uploads, 'document upload') });
+  }
+  const working = state.step === 'analyzing' || (busy && state.step === 'review');
+
+  return (
+    <section className="context rise" aria-live="polite">
+      <div className="context-host">
+        <span className="monogram" aria-hidden="true">{host.replace(/^www\./, '').charAt(0).toUpperCase()}</span>
+        <span className="context-site" title={state.page.title}>{host}</span>
+        {exam && <span className="tag">{EXAM_NAMES[exam]}</span>}
+      </div>
+      {/* With nothing detected, the state panel below says so; a second headline would repeat it. */}
+      {(fields > 0 || uploads > 0) && <h2 className="context-title">{title}</h2>}
+      {facts.length > 0 && (
+        <p className="context-facts">
+          {facts.map((fact, index) => (
+            <span key={fact.text} className={fact.tone ? `fact fact-${fact.tone}` : 'fact'}>
+              {index > 0 && <span className="sep" aria-hidden="true">·</span>}{fact.node ?? fact.text}
+            </span>
+          ))}
+        </p>
+      )}
+      {working && <Progress label={state.step === 'analyzing' ? 'Matching fields with your profile' : 'Filling fields'} />}
+    </section>
+  );
+};
+
+const EXAM_NAMES = { NEET_UG: 'NEET (UG)', JEE_MAIN: 'JEE (Main)', MHT_CET: 'MHT CET' } as const;
+
+const DetectedFields = ({ fields, skipped }: { fields: FieldObject[]; skipped: number }) => {
+  const required = fields.filter((f) => f.required).length;
+  const prefilled = fields.filter((f) => f.has_value).length;
+  return (
+    <section className="section rise">
+      <ul className="detected">
+        {fields.slice(0, 8).map((field) => (
+          <li key={field.field_id}>
+            <span className="detected-label">{field.label || field.name || 'Unlabelled field'}</span>
+            <span className="detected-type">{TYPE_NAMES[field.input_type] ?? field.input_type}{field.required ? ' · required' : ''}</span>
+          </li>
+        ))}
+      </ul>
+      {fields.length > 8 && <p className="muted pad-x">and {fields.length - 8} more</p>}
+      <p className="muted pad-x">
+        {required > 0 && `${required} required. `}
+        {prefilled > 0 && `${prefilled} already filled on the page will not be replaced unless you choose to. `}
+        {skipped > 0 && `${plural(skipped, 'protected control')} ignored.`}
+      </p>
+    </section>
+  );
+};
+
+const TYPE_NAMES: Record<string, string> = {
+  text: 'Text', email: 'Email', tel: 'Phone', date: 'Date', number: 'Number', select: 'Choice', radio: 'Choice',
+  checkbox: 'Checkbox', textarea: 'Paragraph', url: 'Link', month: 'Month',
+};
+
+const SkeletonRows = ({ count }: { count: number }) => (
+  <ul className="skeleton-list" aria-hidden="true">
+    {Array.from({ length: Math.max(count, 2) }, (_, i) => (
+      <li key={i}><div className="skeleton skeleton-label" /><div className="skeleton skeleton-value" /></li>
     ))}
-  </ol>
+  </ul>
 );
 
-const STATUS_LABEL: Record<string, string> = {
-  ready: 'Match', needs_review: 'Check', missing_information: 'Missing', security_blocked: 'Protected',
-  skipped: 'Skipped', error: 'Unavailable', approved: 'Approved', edited: 'Edited', rejected: 'Rejected',
-};
-const STATUS_TONE: Record<string, 'ok' | 'warn' | 'bad' | 'muted' | 'info'> = {
-  ready: 'ok', approved: 'ok', edited: 'ok', needs_review: 'warn', missing_information: 'bad',
-  security_blocked: 'muted', skipped: 'muted', error: 'bad', rejected: 'muted',
-};
-const ATTENTION = new Set(['needs_review', 'missing_information', 'error']);
+// ---------------------------------------------------------------------------- review
+
+type Group = 'attention' | 'ready' | 'left';
+
+function groupOf(rec: Recommendation): Group {
+  const guard = guardFor(rec.field_label, rec.concept, rec.input_type);
+  if (guard === 'declaration' || !FILLABLE.has(rec.status)) return 'left';
+  if (['ready', 'approved', 'edited'].includes(rec.status)) return 'ready';
+  return 'attention';
+}
+
+const GROUPS: Array<{ id: Group; title: string; hint: string }> = [
+  { id: 'attention', title: 'Needs your attention', hint: 'Confirm, choose or add these values.' },
+  { id: 'ready', title: 'Ready to fill', hint: 'Taken from your documents and profile.' },
+  { id: 'left', title: 'Left for you', hint: 'Smart Form does not fill these.' },
+];
 
 const ReviewList = ({
-  recommendations, fields, edits, filter, onFilter, onEdit, busy, uploadCount, onDocuments, onProfile, onFill, onCancel,
+  recommendations, fields, edits, filter, onFilter, onEdit, onProfile,
 }: {
   recommendations: Recommendation[];
   fields: FieldObject[];
@@ -412,72 +566,54 @@ const ReviewList = ({
   filter: Filter;
   onFilter: (filter: Filter) => void;
   onEdit: (fieldId: string, patch: Partial<RowEdit>) => void;
-  busy: boolean;
-  uploadCount: number;
-  onDocuments: () => void;
   onProfile: () => void;
-  onFill: () => void;
-  onCancel: () => void;
 }) => {
   const byId = useMemo(() => new Map(fields.map((f) => [f.field_id, f])), [fields]);
-  const selectedCount = useMemo(
-    () => Object.values(edits).filter((edit) => edit.selected && edit.value.trim()).length,
-    [edits],
-  );
-  const counts = useMemo(() => {
-    const c = { match: 0, review: 0, missing: 0, other: 0 };
-    for (const rec of recommendations) {
-      if (['ready', 'approved', 'edited'].includes(rec.status)) c.match += 1;
-      else if (rec.status === 'needs_review') c.review += 1;
-      else if (rec.status === 'missing_information') c.missing += 1;
-      else c.other += 1;
-    }
-    return c;
+  const grouped = useMemo(() => {
+    const map: Record<Group, Recommendation[]> = { attention: [], ready: [], left: [] };
+    for (const rec of recommendations) map[groupOf(rec)].push(rec);
+    return map;
   }, [recommendations]);
-  const visible = filter === 'attention'
-    ? recommendations.filter((rec) => ATTENTION.has(rec.status) || byId.get(rec.field_id)?.has_value)
-    : recommendations;
+  const attention = grouped.attention.length;
+  const visibleGroups = GROUPS.filter((g) => grouped[g.id].length && (filter === 'all' || g.id === 'attention'));
+  const hasMissing = grouped.attention.some((rec) => rec.status === 'missing_information');
 
   return (
-    <div className="review">
-      <div className="counts" aria-label="Analysis summary">
-        <span><strong>{counts.match}</strong> matched</span>
-        <span><strong>{counts.review}</strong> to review</span>
-        <span><strong>{counts.missing}</strong> missing</span>
-        {counts.other > 0 && <span><strong>{counts.other}</strong> protected</span>}
+    <div className="review rise">
+      <div className="review-bar">
+        <div className="segmented" role="group" aria-label="Show fields">
+          <button aria-pressed={filter === 'all'} onClick={() => onFilter('all')}>All <span className="num">{recommendations.length}</span></button>
+          <button aria-pressed={filter === 'attention'} onClick={() => onFilter('attention')}>Needs attention <span className="num">{attention}</span></button>
+        </div>
       </div>
-      {counts.missing > 0 && (
-        <button className="btn-text" onClick={onProfile}><ExternalLink size={12} /> Add missing information on the website</button>
+      {visibleGroups.length === 0 && (
+        <p className="muted pad-x pad-y"><CheckCircle2 size={13} className="ok-icon" /> Nothing needs your attention.</p>
       )}
-      {uploadCount > 0 && (
-        <button className="btn-text" onClick={onDocuments}><FileUp size={12} /> {uploadCount} file upload{uploadCount === 1 ? '' : 's'} need your attention</button>
-      )}
-      <div className="filter" role="group" aria-label="Filter fields">
-        <button className={filter === 'all' ? 'on' : ''} aria-pressed={filter === 'all'} onClick={() => onFilter('all')}>All ({recommendations.length})</button>
-        <button className={filter === 'attention' ? 'on' : ''} aria-pressed={filter === 'attention'} onClick={() => onFilter('attention')}>Needs attention</button>
-      </div>
-      <p className="muted">Only ticked fields are filled. Nothing is submitted.</p>
-      <ul className="review-list">
-        {visible.map((rec) => (
-          <ReviewRow key={rec.field_id} rec={rec} field={byId.get(rec.field_id)} edit={edits[rec.field_id]} onEdit={onEdit} />
-        ))}
-        {visible.length === 0 && <li className="muted">Nothing needs attention.</li>}
-      </ul>
-      <div className="sticky-actions">
-        <button className="btn-primary" onClick={onFill} disabled={busy || selectedCount === 0}>
-          {busy ? <Loader2 size={14} className="spin" /> : <Wand2 size={14} />} Fill {selectedCount} field{selectedCount === 1 ? '' : 's'}
-        </button>
-        <button className="btn-secondary" onClick={onCancel} disabled={busy}>Cancel</button>
-      </div>
+      {visibleGroups.map((group) => (
+        <section key={group.id} className="group" aria-labelledby={`grp-${group.id}`}>
+          <header className="group-head">
+            <h3 id={`grp-${group.id}`}>{group.title} <span className="num">{grouped[group.id].length}</span></h3>
+            <p>{group.hint}</p>
+          </header>
+          <ul className="rows">
+            {grouped[group.id].map((rec) => (
+              <ReviewRow key={rec.field_id} rec={rec} field={byId.get(rec.field_id)} edit={edits[rec.field_id]} onEdit={onEdit} />
+            ))}
+          </ul>
+          {group.id === 'attention' && hasMissing && (
+            <p className="group-foot">
+              Missing details can be added to your profile.{' '}
+              <button className="link" onClick={onProfile}>Open your profile <ExternalLink size={11} /></button>
+            </p>
+          )}
+        </section>
+      ))}
+      <p className="muted pad-x pad-y">Only ticked fields are filled. Smart Form never submits the form.</p>
     </div>
   );
 };
 
-const GUARD_TEXT: Record<Exclude<Guard, null>, string> = {
-  declaration: 'Declarations and consents must be ticked by you on the page.',
-  sensitive: 'Sensitive field: confirm the value before ticking.',
-};
-
+/** One field: what the page asks, what Smart Form proposes, where it came from, and what you can do. */
 const ReviewRow = ({
   rec, field, edit, onEdit,
 }: {
@@ -491,58 +627,102 @@ const ReviewRow = ({
   const editable = FILLABLE.has(rec.status) && guard !== 'declaration';
   const original = initialEdit(rec).value;
   const changed = value !== original;
+  const [open, setOpen] = useState(editable && (rec.status === 'needs_review' || rec.status === 'error'));
   const inputId = `sfa-${rec.field_id}`;
+  const labelId = `${inputId}-label`;
   const change = (next: string) => onEdit(rec.field_id, { value: next, selected: next.trim() !== '' });
   const source = rec.source?.document_name
-    ? `${rec.source.document_name}${rec.source.page ? `, p.${rec.source.page}` : ''}`
-    : rec.source?.type === 'user' ? 'Your saved profile' : null;
-  const status = guard === 'declaration' ? 'security_blocked' : rec.status;
+    ? `${rec.source.document_name}${rec.source.page ? `, page ${rec.source.page}` : ''}`
+    : rec.source?.type === 'user' ? 'Your saved profile' : rec.source?.type === 'profile' ? 'Your profile' : null;
+  const shown = rec.options.find((o) => o.value === value)?.label || value;
+  const status = rowStatus(rec, guard);
 
   return (
-    <li className={`review-row status-${status}`}>
-      <div className="row-head">
-        {editable ? (
-          <input
-            type="checkbox"
-            aria-label={`Fill ${rec.field_label}`}
-            checked={Boolean(edit?.selected)}
-            disabled={!value.trim()}
-            onChange={(e) => onEdit(rec.field_id, { selected: e.target.checked })}
-          />
-        ) : (
-          <ShieldAlert size={14} aria-hidden="true" />
+    <li className={`review-row tone-${status.tone}`} data-open={open || undefined}>
+      <div className="row-main">
+        <span className="row-check">
+          {editable ? (
+            <input
+              type="checkbox"
+              aria-label={`Fill ${rec.field_label}`}
+              checked={Boolean(edit?.selected)}
+              disabled={!value.trim()}
+              onChange={(e) => onEdit(rec.field_id, { selected: e.target.checked })}
+            />
+          ) : <Lock size={13} aria-label="Not filled by Smart Form" />}
+        </span>
+        <div className="row-text">
+          <p className="row-label" id={labelId}>
+            {rec.field_label}{rec.required && <><span className="required" aria-hidden="true"> *</span><span className="sr-only"> (required)</span></>}
+          </p>
+          {editable && value.trim() && <p className="row-value" title={shown}>{shown}</p>}
+          {editable && !value.trim() && <p className="row-value row-value-empty">{status.empty}</p>}
+          <p className="row-meta">
+            {/* The group heading already says "Ready"; repeating it on every row is noise. */}
+            {status.tone === 'ready' && rec.status !== 'edited'
+              ? <span className="sr-only">Ready. </span>
+              : <span className={`row-status status-${status.tone}`}>{status.icon}{status.text}</span>}
+            {editable && source && <span className="row-source" title={source}>{source}</span>}
+            {rec.confidence > 0 && editable && rec.status !== 'missing_information' && (
+              <span className="row-confidence">{Math.round(rec.confidence * 100)}%</span>
+            )}
+            {!editable && <span className="row-why">{guard === 'declaration' ? status.empty : rec.reason || status.empty}</span>}
+            {editable && !value.trim() && !open && rec.reason && <span className="row-why">{rec.reason}</span>}
+          </p>
+          {field?.has_value && editable && (
+            <p className="row-note">Already filled on the page. Ticking replaces it.</p>
+          )}
+          {guard === 'sensitive' && editable && (
+            <p className="row-note">Sensitive. Check the value before ticking.</p>
+          )}
+        </div>
+        {editable && (
+          <button className="row-toggle" aria-expanded={open} aria-controls={`${inputId}-detail`}
+            onClick={() => setOpen(!open)}>
+            {open ? 'Close' : value.trim() ? 'Edit' : 'Add'}
+          </button>
         )}
-        <label htmlFor={inputId} className="row-label">
-          {rec.field_label}{rec.required ? ' *' : ''}
-        </label>
-        <Pill tone={STATUS_TONE[status] ?? 'muted'}>{STATUS_LABEL[status] ?? status}</Pill>
       </div>
-      {editable && <ValueInput rec={rec} id={inputId} value={value} onChange={change} />}
-      <p className="row-reason">
-        {guard === 'declaration' ? GUARD_TEXT.declaration : rec.reason}
-        {source && <> · <span className="row-source">{source}</span></>}
-        {rec.confidence > 0 && editable && <> · {Math.round(rec.confidence * 100)}%</>}
-      </p>
-      {editable && guard === 'sensitive' && <p className="warn-text">{GUARD_TEXT.sensitive}</p>}
-      {editable && field?.has_value && (
-        <p className="warn-text">Already filled on the page. Ticking this replaces it.</p>
-      )}
-      {editable && changed && value.trim() && (
-        <label className="save-toggle">
-          <input type="checkbox" checked={Boolean(edit?.save)} onChange={(e) => onEdit(rec.field_id, { save: e.target.checked })} />
-          Save for future forms
-        </label>
+      {editable && (
+        <div className="row-detail" id={`${inputId}-detail`} hidden={!open}>
+          {rec.reason && <p className="row-reason">{rec.reason}</p>}
+          <ValueInput rec={rec} id={inputId} labelledBy={labelId} value={value} onChange={change} />
+          {changed && value.trim() && (
+            <label className="check-line">
+              <input type="checkbox" checked={Boolean(edit?.save)} onChange={(e) => onEdit(rec.field_id, { save: e.target.checked })} />
+              Save to my profile for future forms
+            </label>
+          )}
+        </div>
       )}
     </li>
   );
 };
 
+function rowStatus(rec: Recommendation, guard: Guard) {
+  if (guard === 'declaration') {
+    return { tone: 'left', text: 'Your decision', empty: 'Tick this on the page yourself', icon: <Lock size={11} aria-hidden="true" /> };
+  }
+  switch (rec.status) {
+    case 'ready': case 'approved': case 'edited':
+      return { tone: 'ready', text: rec.status === 'edited' ? 'Edited' : 'Ready', empty: '', icon: <Check size={11} aria-hidden="true" /> };
+    case 'needs_review':
+      return { tone: 'attention', text: rec.candidates.length > 1 ? 'Choose a value' : 'Confirm', empty: 'Choose or type the value', icon: <TriangleAlert size={11} aria-hidden="true" /> };
+    case 'missing_information':
+      return { tone: 'missing', text: 'Missing', empty: 'Not in your documents', icon: <CircleDashed size={11} aria-hidden="true" /> };
+    case 'error':
+      return { tone: 'attention', text: 'Could not be matched', empty: 'Type the value if you know it', icon: <TriangleAlert size={11} aria-hidden="true" /> };
+    default:
+      return { tone: 'left', text: rec.status === 'security_blocked' ? 'Protected' : 'Skipped', empty: 'Not filled by Smart Form', icon: <Lock size={11} aria-hidden="true" /> };
+  }
+}
+
 const ValueInput = ({
-  rec, id, value, onChange,
-}: { rec: Recommendation; id: string; value: string; onChange: (value: string) => void }) => {
+  rec, id, labelledBy, value, onChange,
+}: { rec: Recommendation; id: string; labelledBy: string; value: string; onChange: (value: string) => void }) => {
   if (rec.options.length) {
     return (
-      <select id={id} value={value} onChange={(e) => onChange(e.target.value)}>
+      <select id={id} aria-labelledby={labelledBy} value={value} onChange={(e) => onChange(e.target.value)}>
         <option value="">Choose…</option>
         {rec.options.map((option) => (
           <option key={`${option.value}|${option.label}`} value={option.value}>{option.label || option.value}</option>
@@ -552,28 +732,31 @@ const ValueInput = ({
   }
   if (rec.candidates.length > 1) {
     return (
-      <div className="candidates" role="radiogroup" aria-label={`Values found for ${rec.field_label}`}>
+      <div className="choices" role="radiogroup" aria-labelledby={labelledBy}>
         {rec.candidates.map((candidate, index) => {
           const text = String(candidate.value ?? '');
           return (
-            <label key={index} className="candidate">
-              <input type="radio" name={id} checked={value === text} onChange={() => onChange(text)} />
-              <span>{text}</span>
-              {candidate.source?.document_name && <small> ({candidate.source.document_name})</small>}
+            <label key={index} className="choice">
+              {/* onClick too: choosing the value that is already proposed must still count as a choice. */}
+              <input type="radio" name={id} checked={value === text} onChange={() => onChange(text)} onClick={() => onChange(text)} />
+              <span className="choice-value">{text}</span>
+              {candidate.source?.document_name && <span className="choice-source">{candidate.source.document_name}</span>}
             </label>
           );
         })}
-        <input id={id} placeholder="Or type the correct value" value={rec.candidates.some((c) => String(c.value) === value) ? '' : value}
+        <input id={id} aria-label="Or type the correct value" placeholder="Or type the correct value"
+          value={rec.candidates.some((c) => String(c.value) === value) ? '' : value}
           onChange={(e) => onChange(e.target.value)} />
       </div>
     );
   }
   if (rec.input_type === 'textarea') {
-    return <textarea id={id} rows={3} value={value} onChange={(e) => onChange(e.target.value)} placeholder="Type a value" />;
+    return <textarea id={id} aria-labelledby={labelledBy} rows={3} value={value} onChange={(e) => onChange(e.target.value)} placeholder="Type a value" />;
   }
   return (
     <input
       id={id}
+      aria-labelledby={labelledBy}
       type={rec.input_type === 'date' ? 'date' : rec.input_type === 'email' ? 'email' : 'text'}
       value={value}
       placeholder="Type a value"
@@ -582,30 +765,50 @@ const ValueInput = ({
   );
 };
 
-const ResultSummary = ({
-  results, recommendations, onFinish,
-}: { results: FillResult[]; recommendations: Recommendation[]; onFinish: (submitted: boolean) => void }) => {
+// ---------------------------------------------------------------------------- result
+
+const ResultView = ({ results, recommendations }: { results: FillResult[]; recommendations: Recommendation[] }) => {
   const labels = new Map(recommendations.map((rec) => [rec.field_id, rec.field_label]));
   const ok = results.filter((r) => r.applied && r.verified);
   const failed = results.filter((r) => !(r.applied && r.verified));
   return (
-    <div className="stack" role="status">
-      <h3 className="result-head"><CheckCircle2 size={15} className="ok" /> {ok.length} field{ok.length === 1 ? '' : 's'} filled and verified</h3>
+    <div className="review rise" role="status">
       {failed.length > 0 && (
-        <Notice kind="warning">
-          <strong>{failed.length} not filled</strong>
-          <ul className="failures">
+        <section className="group">
+          <header className="group-head">
+            <h3>Not filled <span className="num">{failed.length}</span></h3>
+            <p>Fill these on the page yourself, or correct them and try again.</p>
+          </header>
+          <ul className="rows">
             {failed.map((result) => (
-              <li key={result.field_id}>
-                <XCircle size={12} className="bad" /> {labels.get(result.field_id) ?? result.field_id}: {result.reason ?? 'not filled'}
+              <li key={result.field_id} className="result-row tone-attention">
+                <TriangleAlert size={13} aria-hidden="true" className="attention-icon" />
+                <div>
+                  <p className="row-label">{labels.get(result.field_id) ?? 'Field'}</p>
+                  <p className="row-reason">{result.reason ?? 'The page did not keep the value.'}</p>
+                </div>
               </li>
             ))}
           </ul>
-        </Notice>
+        </section>
       )}
-      <p className="muted">Check the page, correct anything if needed, then submit the form yourself. Uploads are on the Documents tab.</p>
-      <button className="btn-primary" onClick={() => onFinish(true)}>I submitted the form</button>
-      <button className="btn-secondary" onClick={() => onFinish(false)}>Done without submitting</button>
+      {ok.length > 0 && (
+        <section className="group">
+          <header className="group-head">
+            <h3>Filled and verified <span className="num">{ok.length}</span></h3>
+            <p>The page kept each of these values after it re-rendered.</p>
+          </header>
+          <ul className="rows">
+            {ok.map((result) => (
+              <li key={result.field_id} className="result-row tone-ready">
+                <Check size={13} aria-hidden="true" className="ok-icon" />
+                <p className="row-label">{labels.get(result.field_id) ?? 'Field'}</p>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      <p className="muted pad-x pad-y">Check the page, correct anything you need, then submit the form yourself.</p>
     </div>
   );
 };
