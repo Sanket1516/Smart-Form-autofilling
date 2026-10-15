@@ -1,4 +1,12 @@
-# Optional OCR engine for scanned PDFs and images (large download).
+# Optional OCR engine for scanned PDFs and images (INSTALL_OCR=true).
 # Without it, scanned documents are marked "requires_review".
-paddleocr>=2.7,<3.0
-paddlepaddle>=2.6,<3.0
+#
+# Default engine (OCR_ENGINE=rapidocr): PaddleOCR's PP-OCR models on ONNX Runtime.
+# The English detection/recognition models it uses are in backend/models/ocr
+# (converted from PaddleOCR's "en" models, Apache-2.0). Peak memory measured
+# ~0.45 GB per page versus ~2.5 GB for PaddlePaddle inference.
+rapidocr_onnxruntime==1.4.4
+onnxruntime>=1.17,<2
+#
+# Legacy engine (OCR_ENGINE=paddle), only if you need it:
+#   pip install "paddleocr>=2.7,<3.0" "paddlepaddle>=2.6,<3.0"

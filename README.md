@@ -8,7 +8,7 @@ A privacy-first form assistant that extracts profile facts from a user's documen
 - **Extraction and retrieval:** deterministic fact extraction plus an optional LLM track; `all-MiniLM-L6-v2` embeddings (384 dimensions) by default.
 - **Dashboard:** React, TypeScript and Vite, served by Nginx in Compose.
 - **Browser extension:** Chrome Manifest V3, with on-demand site access, review-before-fill and no password-field collection.
-- **Document processing:** PDF, DOCX, TXT and image parsing. PaddleOCR is an optional install; scanned pages without it require review.
+- **Document processing:** PDF, DOCX, TXT and image parsing with layout-aware OCR (RapidOCR, optional install); scanned pages without it require review. See [docs/RUNBOOK.md](docs/RUNBOOK.md) for the tested startup procedure.
 
 The default LLM provider is `mock`, so startup and automated tests do not make paid API calls. Set `LLM_PROVIDER` and its API key to use a real provider. See the [security guide](docs/SECURITY.md) before deployment.
 
@@ -30,7 +30,7 @@ Compose uses `PROCESSING_MODE=celery` and Redis. For local API development outsi
 
 The first embedding request downloads the configured sentence-transformer model. If changing the model, set its correct `EMBEDDING_DIMENSION`, choose a new `CHROMADB_COLLECTION`, and run the [reindex command](docs/DATABASE_SCHEMA.md#chromadb) from `backend`. The old collection is left in place until you verify the replacement.
 
-Scanned documents need the optional PaddleOCR engine. Set `INSTALL_OCR=true` in `.env` and run `docker compose up --build -d` to include it in both the API and worker images. Then open the document and choose **Process again**. The OCR model downloads on first use.
+Scanned documents need the optional OCR engine (RapidOCR running the PP-OCR English models). Set `INSTALL_OCR=true` in `.env` and run `docker compose up --build -d` to include it in both the API and worker images. Then open the document and choose **Process again**. The OCR models ship in `backend/models/ocr`.
 
 ## Development setup
 

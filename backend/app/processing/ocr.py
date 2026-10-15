@@ -221,7 +221,11 @@ def read_page(engine: OCREngine, image: Any, preprocess: str = "auto") -> PageRe
         return best
 
     sideways = _sideways_ratio(boxes) > 0.5
-    poor = not boxes or best.mean_confidence < 0.8
+    # Measured: upright pages read at ~0.99 mean confidence with ~12 characters per
+    # box; sideways pages either come back as tall boxes or as short, low-confidence
+    # fragments (engine-dependent), so both signs trigger the orientation check.
+    mean_length = statistics.fmean(len(b.text) for b in boxes) if boxes else 0.0
+    poor = not boxes or best.mean_confidence < 0.9 or mean_length < 5
     if sideways or poor:
         baseline = _score(best.boxes)
         chosen = 0

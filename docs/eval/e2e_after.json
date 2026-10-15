@@ -1,11 +1,11 @@
 {
  "summary": {
-  "uploads_processed": 6,
+  "uploads_processed": 7,
   "uploads": 7,
   "questions": 9,
-  "correct": 8,
+  "correct": 9,
   "cited": 9,
-  "forbidden_hits": 1,
+  "forbidden_hits": 0,
   "http_errors": 0,
   "median_seconds": 0.11,
   "cross_user_leak": false
@@ -17,25 +17,25 @@
    "document_type": "CLASS_12_MARKSHEET",
    "facts": 22,
    "chunks": 2,
-   "seconds": 160.8,
+   "seconds": 73.2,
    "error": null
   },
   {
    "file": "class10_cbse_table.clean.png",
-   "status": "processing",
-   "document_type": null,
-   "facts": 0,
-   "chunks": 0,
-   "seconds": 242.5,
+   "status": "processed",
+   "document_type": "CLASS_10_MARKSHEET",
+   "facts": 16,
+   "chunks": 2,
+   "seconds": 18.9,
    "error": null
   },
   {
    "file": "caste_certificate_clean.digital.pdf",
    "status": "processed",
    "document_type": "CASTE_CERTIFICATE",
-   "facts": 9,
+   "facts": 8,
    "chunks": 1,
-   "seconds": 28.9,
+   "seconds": 12.7,
    "error": null
   },
   {
@@ -44,7 +44,7 @@
    "document_type": "CASTE_VALIDITY_CERTIFICATE",
    "facts": 7,
    "chunks": 1,
-   "seconds": 22.8,
+   "seconds": 22.9,
    "error": null
   },
   {
@@ -53,7 +53,7 @@
    "document_type": "INCOME_CERTIFICATE",
    "facts": 8,
    "chunks": 1,
-   "seconds": 14.8,
+   "seconds": 19.1,
    "error": null
   },
   {
@@ -62,7 +62,7 @@
    "document_type": "AADHAAR_CARD",
    "facts": 4,
    "chunks": 1,
-   "seconds": 12.9,
+   "seconds": 54.7,
    "error": null
   },
   {
@@ -71,7 +71,7 @@
    "document_type": "BANK_PASSBOOK",
    "facts": 9,
    "chunks": 1,
-   "seconds": 15.0,
+   "seconds": 28.4,
    "error": null
   }
  ],
@@ -91,12 +91,12 @@
    "question": "What is my Class 10 percentage?",
    "kind": "exact",
    "http": 200,
-   "status": "insufficient_evidence",
+   "status": "partial",
    "correct": true,
    "forbidden": [],
    "cited": true,
-   "seconds": 42.5,
-   "answer": "Class 10 percentage as printed or computed from printed totals: not found. No uploaded document states this. Usually found on: Class 10 marksheet."
+   "seconds": 3.05,
+   "answer": "Your Class 10 percentage is missing [MISSING]. Your marksheet (from document class10_cbse_table.clean.png) [C2] does not print a percentage or total maximum marks, and boards calculate percentages differently [MISSING]."
   },
   {
    "question": "What is my caste certificate number and what is my caste validity certificate number?",
@@ -106,7 +106,7 @@
    "correct": true,
    "forbidden": [],
    "cited": true,
-   "seconds": 0.03,
+   "seconds": 0.02,
    "answer": "Caste certificate number: CC/2024/PUN/012345 — from caste_certificate_clean.digital.pdf, page 1\nCaste validity certificate number: CVC/2025/PUN/009876 — from caste_validity_clean.clean.png, page 1"
   },
   {
@@ -114,11 +114,11 @@
    "kind": "document",
    "http": 200,
    "status": "answered",
-   "correct": false,
+   "correct": true,
    "forbidden": [],
    "cited": true,
    "seconds": 0.06,
-   "answer": "Annual Income: **0000 — from income_certificate_clean.digital.pdf, page 1"
+   "answer": "Annual Income: 450000 — from income_certificate_clean.digital.pdf, page 1"
   },
   {
    "question": "Compare the information in my uploaded marksheets.",
@@ -128,8 +128,8 @@
    "correct": true,
    "forbidden": [],
    "cited": true,
-   "seconds": 4.02,
-   "answer": "Only a Class 12 marksheet (class12_hsc_table.digital.pdf) is uploaded, so a comparison between multiple marksheets cannot be performed. The uploaded document shows the following facts: Class 12 examination board is MAHARASHTRA STATE BOARD OF SECONDARY AND HIGHER SECONDARY EDUCATION, PUNE DIVISIONAL BOARD [F1], school is EXAMPLE JUNIOR COLLEGE OF SCIENCE, PUNE [F2], month and year of examination are February 2025 [F3, F4], year of passing is 2025 [F5], result is PASS [F6], total maximum marks are 600 [F7], total marks obtained are 532 [F8], and percentage is 88.67 [F9]. Subject-wise marks are: "
+   "seconds": 2.86,
+   "answer": "Comparing your marksheets: Class 10 examination board is CENTRAL BOARD OF SECONDARY EDUCATION [F1] from class10_cbse_table.clean.png, with roll number 12345678 [F5], school 98765 EXAMPLE PUBLIC SCHOOL PUNE MAHARASHTRA [F3], passing year 2023 [F9], and result PASS [F11]. Class 12 examination board is MAHARASHTRA STATE BOARD OF SECONDARY AND HIGHER SECONDARY EDUCATION, PUNE DIVISIONAL BOARD [F2] from class12_hsc_table.digital.pdf, with roll or seat number conflict [CONFLICT], junior college EXAMPLE JUNIOR COLLEGE OF SCIENCE, PUNE [F4], exam month February [F6], exam year and passing year 2025 [F"
   },
   {
    "question": "How many marks did I get in Physics in Class 12?",
@@ -150,8 +150,8 @@
    "correct": true,
    "forbidden": [],
    "cited": true,
-   "seconds": 2.11,
-   "answer": "Based on your NEET (UG) requirement profile (reviewed 2026-10-15; not verified against the official bulletin, https://neet.nta.nic.in), the following required information is marked as missing:\n- Nationality or Citizenship: not_met — Missing [R1]\n- Permanent address: not_met — Missing [R6]\n- Correspondence (communication) address: not_met — Missing [R7]\n- Postal / PIN / ZIP code: not_met — Missing [R8]\n- Class 10 examination board: not_met — Missing (usually from: Class 10 marksheet) [R9]\n- Year of passing Class 10: not_met — Missing [R10]\n- Class 10 roll or seat number: not_met — Missing [R11]"
+   "seconds": 4.66,
+   "answer": "Based on the NEET (UG) requirement profile (reviewed 2026-10-15; not verified against the official bulletin, https://neet.nta.nic.in), the following required information is marked as missing (not_met):\n- Nationality or Citizenship (source: R2)\n- Permanent address (source: R7)\n- Correspondence (communication) address (source: R8)\n- Postal / PIN / ZIP code (source: R9)\n\nAdditionally, the following information is marked as unknown and must be entered yourself:\n- Identity document chosen for the application (source: R3)\n- Email address (source: R5)\n- Phone number (source: R6)\n- Official qualifying"
   },
   {
    "question": "Am I eligible for NEET UG based on my uploaded documents?",
@@ -159,12 +159,10 @@
    "http": 200,
    "status": "answered",
    "correct": true,
-   "forbidden": [
-    "you are eligible"
-   ],
+   "forbidden": [],
    "cited": true,
-   "seconds": 2.02,
-   "answer": "Based on the provided rules and facts, I cannot state that you are eligible. Here is the evaluation of the criteria: \n- Passed Class 12 (or equivalent): met — Result 'PASS' on class12_hsc_table.digital.pdf (source: R1).\n- Physics, Chemistry, Biology/Biotechnology and English in Class 12: met — All required subjects appear on the marksheet (source: R2).\n- Minimum aggregate in Physics, Chemistry and Biology/Biotechnology: needs_confirmation — Aggregate 90.67% [D1] vs minimum 40% for category OBC; confirm your category (source: R3).\n- At least 17 years old on 31 December of the admission year: me"
+   "seconds": 2.26,
+   "answer": "A document being uploaded does not mean its conditions are met. Never state that you are eligible. Based on the rules and facts: Passed Class 12 (or equivalent): met [R1]. Physics, Chemistry, Biology/Biotechnology and English in Class 12: met [R2]. Minimum aggregate in Physics, Chemistry and Biology/Biotechnology: needs_confirmation — Aggregate 90.67% vs minimum 40% for category OBC; confirm your category [R3]. At least 17 years old on 31 December of the admission year: met — Age 19 on 2026-12-31 (minimum 17) [R4]. Minimum aggregate (calculated): 90.67 (calculated: (PHYSICS 91/100 + CHEMISTRY "
   },
   {
    "question": "What is my passport number?",
@@ -174,7 +172,7 @@
    "correct": true,
    "forbidden": [],
    "cited": true,
-   "seconds": 0.09,
+   "seconds": 0.06,
    "answer": "Passport Number: not found. No uploaded document states this. Usually found on: Passport."
   }
  ]

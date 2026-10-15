@@ -23,6 +23,7 @@ RUN pip install --no-deps --index-url https://download.pytorch.org/whl/cpu "torc
 COPY requirements-ocr.txt ./
 ARG INSTALL_OCR=false
 RUN if [ "$INSTALL_OCR" = "true" ]; then pip install -r requirements-ocr.txt; fi
+COPY models ./models
 COPY app ./app
 RUN useradd --create-home --uid 10001 appuser \
     && mkdir -p /data/uploads \

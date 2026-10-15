@@ -1,0 +1,1034 @@
+{
+ "generated_at": "2026-10-15T18:20:21",
+ "engine": "PaddleOCR 2.x (en), CPU",
+ "results": {
+  "rapid_auto": {
+   "clean": {
+    "documents": 30,
+    "word_recall": 0.983,
+    "classification_accuracy": 1.0,
+    "field_recall": 0.9482,
+    "record_recall": 0.7317,
+    "seconds_per_page": 2.58
+   },
+   "skew": {
+    "documents": 30,
+    "word_recall": 0.9701,
+    "classification_accuracy": 1.0,
+    "field_recall": 0.8497,
+    "record_recall": 0.7073,
+    "seconds_per_page": 4.92
+   },
+   "rot90": {
+    "documents": 30,
+    "word_recall": 0.983,
+    "classification_accuracy": 1.0,
+    "field_recall": 0.9482,
+    "record_recall": 0.7317,
+    "seconds_per_page": 7.81
+   },
+   "photo": {
+    "documents": 30,
+    "word_recall": 0.9701,
+    "classification_accuracy": 0.9667,
+    "field_recall": 0.8549,
+    "record_recall": 0.561,
+    "seconds_per_page": 3.95
+   }
+  }
+ },
+ "documents": {
+  "rapid_auto": [
+   {
+    "file": "aadhaar_front_bilingual.clean.png",
+    "type_ok": true,
+    "fields": "4/4",
+    "records": "0/0",
+    "steps": []
+   },
+   {
+    "file": "aadhaar_front_bilingual.skew.png",
+    "type_ok": true,
+    "fields": "4/4",
+    "records": "0/0",
+    "steps": []
+   },
+   {
+    "file": "aadhaar_front_bilingual.rot90.png",
+    "type_ok": true,
+    "fields": "4/4",
+    "records": "0/0",
+    "steps": [
+     "rotate_270"
+    ]
+   },
+   {
+    "file": "aadhaar_front_bilingual.photo.png",
+    "type_ok": true,
+    "fields": "4/4",
+    "records": "0/0",
+    "steps": [
+     "contrast"
+    ]
+   },
+   {
+    "file": "aadhaar_back_ocr.clean.png",
+    "type_ok": true,
+    "fields": "4/4",
+    "records": "0/0",
+    "steps": []
+   },
+   {
+    "file": "aadhaar_back_ocr.skew.png",
+    "type_ok": true,
+    "fields": "3/4",
+    "records": "0/0",
+    "steps": []
+   },
+   {
+    "file": "aadhaar_back_ocr.rot90.png",
+    "type_ok": true,
+    "fields": "4/4",
+    "records": "0/0",
+    "steps": [
+     "rotate_270"
+    ]
+   },
+   {
+    "file": "aadhaar_back_ocr.photo.png",
+    "type_ok": true,
+    "fields": "3/4",
+    "records": "0/0",
+    "steps": [
+     "contrast",
+     "deskew_-1.6"
+    ]
+   },
+   {
+    "file": "pan_card_bilingual.clean.png",
+    "type_ok": true,
+    "fields": "4/4",
+    "records": "0/0",
+    "steps": []
+   },
+   {
+    "file": "pan_card_bilingual.skew.png",
+    "type_ok": true,
+    "fields": "4/4",
+    "records": "0/0",
+    "steps": [
+     "deskew_-4.3"
+    ]
+   },
+   {
+    "file": "pan_card_bilingual.rot90.png",
+    "type_ok": true,
+    "fields": "4/4",
+    "records": "0/0",
+    "steps": [
+     "rotate_270"
+    ]
+   },
+   {
+    "file": "pan_card_bilingual.photo.png",
+    "type_ok": true,
+    "fields": "4/4",
+    "records": "0/0",
+    "steps": [
+     "contrast"
+    ]
+   },
+   {
+    "file": "voter_id_clean.clean.png",
+    "type_ok": true,
+    "fields": "7/7",
+    "records": "0/0",
+    "steps": []
+   },
+   {
+    "file": "voter_id_clean.skew.png",
+    "type_ok": true,
+    "fields": "5/7",
+    "records": "0/0",
+    "steps": [
+     "deskew_-3.1"
+    ]
+   },
+   {
+    "file": "voter_id_clean.rot90.png",
+    "type_ok": true,
+    "fields": "7/7",
+    "records": "0/0",
+    "steps": [
+     "rotate_270"
+    ]
+   },
+   {
+    "file": "voter_id_clean.photo.png",
+    "type_ok": true,
+    "fields": "6/7",
+    "records": "0/0",
+    "steps": [
+     "contrast"
+    ]
+   },
+   {
+    "file": "driving_licence_clean.clean.png",
+    "type_ok": true,
+    "fields": "10/10",
+    "records": "0/0",
+    "steps": []
+   },
+   {
+    "file": "driving_licence_clean.skew.png",
+    "type_ok": true,
+    "fields": "8/10",
+    "records": "0/0",
+    "steps": []
+   },
+   {
+    "file": "driving_licence_clean.rot90.png",
+    "type_ok": true,
+    "fields": "10/10",
+    "records": "0/0",
+    "steps": [
+     "rotate_270"
+    ]
+   },
+   {
+    "file": "driving_licence_clean.photo.png",
+    "type_ok": true,
+    "fields": "7/10",
+    "records": "0/0",
+    "steps": [
+     "contrast"
+    ]
+   },
+   {
+    "file": "passport_clean.clean.png",
+    "type_ok": true,
+    "fields": "10/10",
+    "records": "0/0",
+    "steps": []
+   },
+   {
+    "file": "passport_clean.skew.png",
+    "type_ok": true,
+    "fields": "9/10",
+    "records": "0/0",
+    "steps": [
+     "deskew_3.1"
+    ]
+   },
+   {
+    "file": "passport_clean.rot90.png",
+    "type_ok": true,
+    "fields": "10/10",
+    "records": "0/0",
+    "steps": [
+     "rotate_270"
+    ]
+   },
+   {
+    "file": "passport_clean.photo.png",
+    "type_ok": true,
+    "fields": "10/10",
+    "records": "0/0",
+    "steps": [
+     "contrast"
+    ]
+   },
+   {
+    "file": "class10_cbse_table.clean.png",
+    "type_ok": true,
+    "fields": "11/11",
+    "records": "0/5",
+    "steps": []
+   },
+   {
+    "file": "class10_cbse_table.skew.png",
+    "type_ok": true,
+    "fields": "11/11",
+    "records": "0/5",
+    "steps": []
+   },
+   {
+    "file": "class10_cbse_table.rot90.png",
+    "type_ok": true,
+    "fields": "11/11",
+    "records": "0/5",
+    "steps": [
+     "rotate_270"
+    ]
+   },
+   {
+    "file": "class10_cbse_table.photo.png",
+    "type_ok": true,
+    "fields": "10/11",
+    "records": "0/5",
+    "steps": [
+     "contrast",
+     "deskew_-1.6"
+    ]
+   },
+   {
+    "file": "class12_hsc_table.clean.png",
+    "type_ok": true,
+    "fields": "13/14",
+    "records": "7/7",
+    "steps": []
+   },
+   {
+    "file": "class12_hsc_table.skew.png",
+    "type_ok": true,
+    "fields": "11/14",
+    "records": "7/7",
+    "steps": []
+   },
+   {
+    "file": "class12_hsc_table.rot90.png",
+    "type_ok": true,
+    "fields": "13/14",
+    "records": "7/7",
+    "steps": [
+     "rotate_270"
+    ]
+   },
+   {
+    "file": "class12_hsc_table.photo.png",
+    "type_ok": true,
+    "fields": "10/14",
+    "records": "7/7",
+    "steps": [
+     "contrast"
+    ]
+   },
+   {
+    "file": "class12_hsc_scanned.clean.png",
+    "type_ok": true,
+    "fields": "11/12",
+    "records": "6/6",
+    "steps": []
+   },
+   {
+    "file": "class12_hsc_scanned.skew.png",
+    "type_ok": true,
+    "fields": "11/12",
+    "records": "5/6",
+    "steps": []
+   },
+   {
+    "file": "class12_hsc_scanned.rot90.png",
+    "type_ok": true,
+    "fields": "11/12",
+    "records": "6/6",
+    "steps": [
+     "rotate_270"
+    ]
+   },
+   {
+    "file": "class12_hsc_scanned.photo.png",
+    "type_ok": true,
+    "fields": "11/12",
+    "records": "5/6",
+    "steps": [
+     "contrast"
+    ]
+   },
+   {
+    "file": "birth_certificate_clean.clean.png",
+    "type_ok": true,
+    "fields": "9/9",
+    "records": "0/0",
+    "steps": []
+   },
+   {
+    "file": "birth_certificate_clean.skew.png",
+    "type_ok": true,
+    "fields": "7/9",
+    "records": "0/0",
+    "steps": [
+     "deskew_4.1"
+    ]
+   },
+   {
+    "file": "birth_certificate_clean.rot90.png",
+    "type_ok": true,
+    "fields": "9/9",
+    "records": "0/0",
+    "steps": [
+     "rotate_270"
+    ]
+   },
+   {
+    "file": "birth_certificate_clean.photo.png",
+    "type_ok": true,
+    "fields": "9/9",
+    "records": "0/0",
+    "steps": [
+     "contrast"
+    ]
+   },
+   {
+    "file": "bank_passbook_table.clean.png",
+    "type_ok": true,
+    "fields": "9/9",
+    "records": "1/3",
+    "steps": []
+   },
+   {
+    "file": "bank_passbook_table.skew.png",
+    "type_ok": true,
+    "fields": "8/9",
+    "records": "1/3",
+    "steps": [
+     "deskew_-4.0"
+    ]
+   },
+   {
+    "file": "bank_passbook_table.rot90.png",
+    "type_ok": true,
+    "fields": "9/9",
+    "records": "1/3",
+    "steps": [
+     "rotate_270"
+    ]
+   },
+   {
+    "file": "bank_passbook_table.photo.png",
+    "type_ok": true,
+    "fields": "8/9",
+    "records": "0/3",
+    "steps": [
+     "contrast"
+    ]
+   },
+   {
+    "file": "bank_statement_table.clean.png",
+    "type_ok": true,
+    "fields": "7/7",
+    "records": "2/4",
+    "steps": []
+   },
+   {
+    "file": "bank_statement_table.skew.png",
+    "type_ok": true,
+    "fields": "5/7",
+    "records": "2/4",
+    "steps": [
+     "deskew_4.0"
+    ]
+   },
+   {
+    "file": "bank_statement_table.rot90.png",
+    "type_ok": true,
+    "fields": "7/7",
+    "records": "2/4",
+    "steps": [
+     "rotate_270"
+    ]
+   },
+   {
+    "file": "bank_statement_table.photo.png",
+    "type_ok": true,
+    "fields": "4/7",
+    "records": "1/4",
+    "steps": [
+     "contrast"
+    ]
+   },
+   {
+    "file": "bank_statement_ocr.clean.png",
+    "type_ok": true,
+    "fields": "2/3",
+    "records": "3/3",
+    "steps": []
+   },
+   {
+    "file": "bank_statement_ocr.skew.png",
+    "type_ok": true,
+    "fields": "3/3",
+    "records": "3/3",
+    "steps": []
+   },
+   {
+    "file": "bank_statement_ocr.rot90.png",
+    "type_ok": true,
+    "fields": "2/3",
+    "records": "3/3",
+    "steps": [
+     "rotate_270"
+    ]
+   },
+   {
+    "file": "bank_statement_ocr.photo.png",
+    "type_ok": true,
+    "fields": "2/3",
+    "records": "3/3",
+    "steps": [
+     "contrast"
+    ]
+   },
+   {
+    "file": "electricity_bill_clean.clean.png",
+    "type_ok": true,
+    "fields": "11/11",
+    "records": "0/0",
+    "steps": []
+   },
+   {
+    "file": "electricity_bill_clean.skew.png",
+    "type_ok": true,
+    "fields": "11/11",
+    "records": "0/0",
+    "steps": [
+     "deskew_3.1"
+    ]
+   },
+   {
+    "file": "electricity_bill_clean.rot90.png",
+    "type_ok": true,
+    "fields": "11/11",
+    "records": "0/0",
+    "steps": [
+     "rotate_270"
+    ]
+   },
+   {
+    "file": "electricity_bill_clean.photo.png",
+    "type_ok": true,
+    "fields": "10/11",
+    "records": "0/0",
+    "steps": [
+     "contrast"
+    ]
+   },
+   {
+    "file": "ration_card_table.clean.png",
+    "type_ok": true,
+    "fields": "4/4",
+    "records": "3/3",
+    "steps": []
+   },
+   {
+    "file": "ration_card_table.skew.png",
+    "type_ok": true,
+    "fields": "3/4",
+    "records": "3/3",
+    "steps": [
+     "deskew_-4.0"
+    ]
+   },
+   {
+    "file": "ration_card_table.rot90.png",
+    "type_ok": true,
+    "fields": "4/4",
+    "records": "3/3",
+    "steps": [
+     "rotate_270"
+    ]
+   },
+   {
+    "file": "ration_card_table.photo.png",
+    "type_ok": true,
+    "fields": "4/4",
+    "records": "2/3",
+    "steps": [
+     "contrast"
+    ]
+   },
+   {
+    "file": "income_certificate_clean.clean.png",
+    "type_ok": true,
+    "fields": "8/8",
+    "records": "0/0",
+    "steps": []
+   },
+   {
+    "file": "income_certificate_clean.skew.png",
+    "type_ok": true,
+    "fields": "8/8",
+    "records": "0/0",
+    "steps": [
+     "deskew_-3.0"
+    ]
+   },
+   {
+    "file": "income_certificate_clean.rot90.png",
+    "type_ok": true,
+    "fields": "8/8",
+    "records": "0/0",
+    "steps": [
+     "rotate_270"
+    ]
+   },
+   {
+    "file": "income_certificate_clean.photo.png",
+    "type_ok": true,
+    "fields": "8/8",
+    "records": "0/0",
+    "steps": [
+     "contrast"
+    ]
+   },
+   {
+    "file": "caste_certificate_clean.clean.png",
+    "type_ok": true,
+    "fields": "7/7",
+    "records": "0/0",
+    "steps": []
+   },
+   {
+    "file": "caste_certificate_clean.skew.png",
+    "type_ok": true,
+    "fields": "4/7",
+    "records": "0/0",
+    "steps": []
+   },
+   {
+    "file": "caste_certificate_clean.rot90.png",
+    "type_ok": true,
+    "fields": "7/7",
+    "records": "0/0",
+    "steps": [
+     "rotate_270"
+    ]
+   },
+   {
+    "file": "caste_certificate_clean.photo.png",
+    "type_ok": true,
+    "fields": "5/7",
+    "records": "0/0",
+    "steps": [
+     "contrast"
+    ]
+   },
+   {
+    "file": "caste_validity_clean.clean.png",
+    "type_ok": true,
+    "fields": "7/7",
+    "records": "0/0",
+    "steps": []
+   },
+   {
+    "file": "caste_validity_clean.skew.png",
+    "type_ok": true,
+    "fields": "6/7",
+    "records": "0/0",
+    "steps": []
+   },
+   {
+    "file": "caste_validity_clean.rot90.png",
+    "type_ok": true,
+    "fields": "7/7",
+    "records": "0/0",
+    "steps": [
+     "rotate_270"
+    ]
+   },
+   {
+    "file": "caste_validity_clean.photo.png",
+    "type_ok": true,
+    "fields": "7/7",
+    "records": "0/0",
+    "steps": [
+     "contrast"
+    ]
+   },
+   {
+    "file": "ncl_certificate_clean.clean.png",
+    "type_ok": true,
+    "fields": "4/4",
+    "records": "0/0",
+    "steps": []
+   },
+   {
+    "file": "ncl_certificate_clean.skew.png",
+    "type_ok": true,
+    "fields": "3/4",
+    "records": "0/0",
+    "steps": []
+   },
+   {
+    "file": "ncl_certificate_clean.rot90.png",
+    "type_ok": true,
+    "fields": "4/4",
+    "records": "0/0",
+    "steps": [
+     "rotate_270"
+    ]
+   },
+   {
+    "file": "ncl_certificate_clean.photo.png",
+    "type_ok": true,
+    "fields": "3/4",
+    "records": "0/0",
+    "steps": [
+     "contrast"
+    ]
+   },
+   {
+    "file": "domicile_certificate_marathi.clean.png",
+    "type_ok": true,
+    "fields": "5/6",
+    "records": "0/0",
+    "steps": []
+   },
+   {
+    "file": "domicile_certificate_marathi.skew.png",
+    "type_ok": true,
+    "fields": "5/6",
+    "records": "0/0",
+    "steps": []
+   },
+   {
+    "file": "domicile_certificate_marathi.rot90.png",
+    "type_ok": true,
+    "fields": "5/6",
+    "records": "0/0",
+    "steps": [
+     "rotate_270"
+    ]
+   },
+   {
+    "file": "domicile_certificate_marathi.photo.png",
+    "type_ok": true,
+    "fields": "5/6",
+    "records": "0/0",
+    "steps": [
+     "contrast"
+    ]
+   },
+   {
+    "file": "ho_aadhaar_yob.clean.png",
+    "type_ok": true,
+    "fields": "2/3",
+    "records": "0/0",
+    "steps": []
+   },
+   {
+    "file": "ho_aadhaar_yob.skew.png",
+    "type_ok": true,
+    "fields": "3/3",
+    "records": "0/0",
+    "steps": []
+   },
+   {
+    "file": "ho_aadhaar_yob.rot90.png",
+    "type_ok": true,
+    "fields": "2/3",
+    "records": "0/0",
+    "steps": [
+     "rotate_270"
+    ]
+   },
+   {
+    "file": "ho_aadhaar_yob.photo.png",
+    "type_ok": true,
+    "fields": "3/3",
+    "records": "0/0",
+    "steps": [
+     "contrast"
+    ]
+   },
+   {
+    "file": "ho_pan_old_format.clean.png",
+    "type_ok": true,
+    "fields": "1/1",
+    "records": "0/0",
+    "steps": []
+   },
+   {
+    "file": "ho_pan_old_format.skew.png",
+    "type_ok": true,
+    "fields": "1/1",
+    "records": "0/0",
+    "steps": []
+   },
+   {
+    "file": "ho_pan_old_format.rot90.png",
+    "type_ok": true,
+    "fields": "1/1",
+    "records": "0/0",
+    "steps": [
+     "rotate_270"
+    ]
+   },
+   {
+    "file": "ho_pan_old_format.photo.png",
+    "type_ok": true,
+    "fields": "1/1",
+    "records": "0/0",
+    "steps": [
+     "contrast",
+     "deskew_-1.6"
+    ]
+   },
+   {
+    "file": "ho_cbse_class12.clean.png",
+    "type_ok": true,
+    "fields": "9/9",
+    "records": "5/5",
+    "steps": []
+   },
+   {
+    "file": "ho_cbse_class12.skew.png",
+    "type_ok": true,
+    "fields": "8/9",
+    "records": "5/5",
+    "steps": []
+   },
+   {
+    "file": "ho_cbse_class12.rot90.png",
+    "type_ok": true,
+    "fields": "9/9",
+    "records": "5/5",
+    "steps": [
+     "rotate_270"
+    ]
+   },
+   {
+    "file": "ho_cbse_class12.photo.png",
+    "type_ok": true,
+    "fields": "8/9",
+    "records": "5/5",
+    "steps": [
+     "contrast"
+    ]
+   },
+   {
+    "file": "ho_icse_class10.clean.png",
+    "type_ok": true,
+    "fields": "4/5",
+    "records": "3/3",
+    "steps": []
+   },
+   {
+    "file": "ho_icse_class10.skew.png",
+    "type_ok": true,
+    "fields": "4/5",
+    "records": "3/3",
+    "steps": [
+     "deskew_3.1"
+    ]
+   },
+   {
+    "file": "ho_icse_class10.rot90.png",
+    "type_ok": true,
+    "fields": "4/5",
+    "records": "3/3",
+    "steps": [
+     "rotate_270"
+    ]
+   },
+   {
+    "file": "ho_icse_class10.photo.png",
+    "type_ok": true,
+    "fields": "5/5",
+    "records": "0/3",
+    "steps": [
+     "contrast"
+    ]
+   },
+   {
+    "file": "ho_bank_statement.clean.png",
+    "type_ok": true,
+    "fields": "4/6",
+    "records": "0/2",
+    "steps": []
+   },
+   {
+    "file": "ho_bank_statement.skew.png",
+    "type_ok": true,
+    "fields": "5/6",
+    "records": "0/2",
+    "steps": []
+   },
+   {
+    "file": "ho_bank_statement.rot90.png",
+    "type_ok": true,
+    "fields": "4/6",
+    "records": "0/2",
+    "steps": [
+     "rotate_270"
+    ]
+   },
+   {
+    "file": "ho_bank_statement.photo.png",
+    "type_ok": true,
+    "fields": "3/6",
+    "records": "0/2",
+    "steps": [
+     "contrast",
+     "deskew_1.7"
+    ]
+   },
+   {
+    "file": "ho_caste_certificate_sc.clean.png",
+    "type_ok": true,
+    "fields": "4/5",
+    "records": "0/0",
+    "steps": []
+   },
+   {
+    "file": "ho_caste_certificate_sc.skew.png",
+    "type_ok": true,
+    "fields": "4/5",
+    "records": "0/0",
+    "steps": [
+     "deskew_4.0"
+    ]
+   },
+   {
+    "file": "ho_caste_certificate_sc.rot90.png",
+    "type_ok": true,
+    "fields": "4/5",
+    "records": "0/0",
+    "steps": [
+     "rotate_270"
+    ]
+   },
+   {
+    "file": "ho_caste_certificate_sc.photo.png",
+    "type_ok": true,
+    "fields": "4/5",
+    "records": "0/0",
+    "steps": [
+     "contrast"
+    ]
+   },
+   {
+    "file": "ho_income_certificate.clean.png",
+    "type_ok": true,
+    "fields": "2/2",
+    "records": "0/0",
+    "steps": []
+   },
+   {
+    "file": "ho_income_certificate.skew.png",
+    "type_ok": true,
+    "fields": "2/2",
+    "records": "0/0",
+    "steps": []
+   },
+   {
+    "file": "ho_income_certificate.rot90.png",
+    "type_ok": true,
+    "fields": "2/2",
+    "records": "0/0",
+    "steps": [
+     "rotate_270"
+    ]
+   },
+   {
+    "file": "ho_income_certificate.photo.png",
+    "type_ok": true,
+    "fields": "2/2",
+    "records": "0/0",
+    "steps": [
+     "contrast"
+    ]
+   },
+   {
+    "file": "ho_electricity_bill.clean.png",
+    "type_ok": true,
+    "fields": "4/4",
+    "records": "0/0",
+    "steps": []
+   },
+   {
+    "file": "ho_electricity_bill.skew.png",
+    "type_ok": true,
+    "fields": "4/4",
+    "records": "0/0",
+    "steps": [
+     "deskew_4.1"
+    ]
+   },
+   {
+    "file": "ho_electricity_bill.rot90.png",
+    "type_ok": true,
+    "fields": "4/4",
+    "records": "0/0",
+    "steps": [
+     "rotate_270"
+    ]
+   },
+   {
+    "file": "ho_electricity_bill.photo.png",
+    "type_ok": true,
+    "fields": "4/4",
+    "records": "0/0",
+    "steps": [
+     "contrast"
+    ]
+   },
+   {
+    "file": "ho_voter_id.clean.png",
+    "type_ok": true,
+    "fields": "5/5",
+    "records": "0/0",
+    "steps": []
+   },
+   {
+    "file": "ho_voter_id.skew.png",
+    "type_ok": true,
+    "fields": "4/5",
+    "records": "0/0",
+    "steps": []
+   },
+   {
+    "file": "ho_voter_id.rot90.png",
+    "type_ok": true,
+    "fields": "5/5",
+    "records": "0/0",
+    "steps": [
+     "rotate_270"
+    ]
+   },
+   {
+    "file": "ho_voter_id.photo.png",
+    "type_ok": true,
+    "fields": "5/5",
+    "records": "0/0",
+    "steps": [
+     "contrast"
+    ]
+   },
+   {
+    "file": "ho_domicile_certificate.clean.png",
+    "type_ok": true,
+    "fields": "1/2",
+    "records": "0/0",
+    "steps": []
+   },
+   {
+    "file": "ho_domicile_certificate.skew.png",
+    "type_ok": true,
+    "fields": "0/2",
+    "records": "0/0",
+    "steps": [
+     "deskew_-4.0"
+    ]
+   },
+   {
+    "file": "ho_domicile_certificate.rot90.png",
+    "type_ok": true,
+    "fields": "1/2",
+    "records": "0/0",
+    "steps": [
+     "rotate_270"
+    ]
+   },
+   {
+    "file": "ho_domicile_certificate.photo.png",
+    "type_ok": false,
+    "fields": "0/2",
+    "records": "0/0",
+    "steps": [
+     "contrast"
+    ]
+   }
+  ]
+ }
+}

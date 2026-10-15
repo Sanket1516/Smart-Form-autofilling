@@ -87,8 +87,9 @@ class Settings(BaseSettings):
     redis_url: str = "redis://localhost:6379/0"
     processing_max_retries: int = Field(default=2, ge=0, le=5)
     processing_stale_after_minutes: int = Field(default=15, ge=1)
-    # paddle: PaddleOCR (optional install); none: scanned pages are marked for review.
-    ocr_engine: Literal["paddle", "none"] = "paddle"
+    # rapidocr: PP-OCR English models on ONNX Runtime (default, ~0.45 GB per page);
+    # paddle: PaddlePaddle inference (~2.5 GB per page); none: scanned pages need review.
+    ocr_engine: Literal["rapidocr", "paddle", "none"] = "rapidocr"
     # auto: upscale/contrast/orientation/deskew only when a page needs it; none: read as-is.
     ocr_preprocess: Literal["auto", "none"] = "auto"
     ocr_language: str = "en"

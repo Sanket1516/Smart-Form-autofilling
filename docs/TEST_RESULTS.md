@@ -35,3 +35,25 @@ flow on pushes and pull requests.
 | Playwright browser E2E (isolated Compose stack) | 1 passed on the final code |
 | Accuracy evaluation | See `docs/EVALUATION.md` (baseline vs upgrade vs held-out) |
 | Real Chroma integration (`-m chroma`), real-provider LLM tests, OCR on real scans | Not run in this session |
+
+## 2026-10-15 (second pass): OCR, retrieval, Ask Documents, model fallback, stability
+
+| Check | Result |
+|---|---|
+| `python -m pytest` (repo root, needs MongoDB) | 288 passed, 7 deselected (`chroma`, `real_llm`) |
+| Real ChromaDB integration (`-m chroma`, real `all-MiniLM-L6-v2`) | 3 passed |
+| `ruff check backend tests` / `black --check` | Pass |
+| Frontend Vitest | 27 passed (new: `ask.test.tsx`) |
+| Frontend `npm run lint` / `npm run build` | Pass (1 pre-existing warning in `AuthContext.tsx`) |
+| Extension Vitest / typecheck | 112 passed / pass |
+| Extension Playwright (Chromium, built extension, host API on :8010) | 7 passed |
+| Existing extraction evaluation (`tests.eval.run_eval`) | All 29 metrics unchanged (no regression) |
+| OCR benchmark, 120 rendered images | See `EVALUATION.md` (legacy vs PaddleOCR layout vs RapidOCR) |
+| LLM comparison (Gemini, qwen2:7b, gemma:2b) | See `EVALUATION.md` |
+| Full-stack probe (Compose stack, Gemini, real uploads incl. OCR images) | 7/7 uploads processed, 9/9 questions correct, 0 HTTP errors, no cross-user leak |
+| Real-provider pytest (`-m real_llm`) | Not run (opt-in) |
+
+Operational finding: with PaddleOCR in two Celery processes the 8 GB Docker VM ran out of
+memory and the Docker engine stopped (twice, needed `docker desktop restart`). Fixed by the
+RapidOCR engine, worker concurrency 1, `mem_limit` on API/worker with `restart: unless-stopped`,
+and marking documents whose worker died as failed.
