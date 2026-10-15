@@ -1,18 +1,50 @@
+/* Smart Form — website design system, shared with the browser extension.
+ * Paper and ink: warm ivory surfaces, charcoal type, hairline structure.
+ * One petrol accent (mark, selection, focus). Green only for verified outcomes,
+ * amber for things that need the user, red only for real errors. */
+
 :root {
-  /* Typography Scale */
-  --font-family-base: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-size-h1: 2rem;       /* 32px */
-  --font-size-h2: 1.5rem;     /* 24px */
-  --font-size-h3: 1.25rem;    /* 20px */
-  --font-size-body: 1rem;     /* 16px */
-  --font-size-caption: 0.875rem; /* 14px */
-  --font-size-label: 0.75rem; /* 12px */
-  
+  --bg: #fbfaf7;
+  --raised: #ffffff;
+  --sunk: #f3f1ec;
+  --ink: #1c1b19;
+  --ink-2: #57534c;
+  --ink-3: #8a857c;
+  --line: #e9e5dd;
+  --line-strong: #d7d2c7;
+  --accent: #1f4f4a;
+  --accent-ink: #1a4440;
+  --accent-wash: #e7efed;
+  --primary-bg: #1c1b19;
+  --primary-hover: #34322e;
+  --primary-fg: #fbfaf7;
+  --ok: #2c6d45;
+  --ok-wash: #e9f2eb;
+  --attention: #92600a;
+  --attention-wash: #fbf3e2;
+  --attention-line: #e8d29f;
+  --error: #ad3329;
+  --error-wash: #fbecea;
+  --error-line: #ecc2bd;
+  --shadow-card: 0 1px 2px rgba(28, 27, 25, 0.04);
+  --shadow-pop: 0 10px 28px rgba(28, 27, 25, 0.12), 0 1px 3px rgba(28, 27, 25, 0.08);
+
+  --font: "Inter var", "Inter", "Geist", "Segoe UI Variable Text", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --mono: "Geist Mono", "JetBrains Mono", "Cascadia Mono", Consolas, ui-monospace, monospace;
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+
+  /* Older token names used across pages and inline styles. */
+  --font-family-base: var(--font);
+  --font-size-h1: 1.75rem;
+  --font-size-h2: 1.25rem;
+  --font-size-h3: 1rem;
+  --font-size-body: 0.9375rem;
+  --font-size-caption: 0.8125rem;
+  --font-size-label: 0.75rem;
   --font-weight-regular: 400;
   --font-weight-medium: 500;
   --font-weight-bold: 600;
 
-  /* Spacing Scale (4, 8, 12, 16, 24, 32, 48) */
   --spacing-4: 0.25rem;
   --spacing-8: 0.5rem;
   --spacing-12: 0.75rem;
@@ -21,47 +53,66 @@
   --spacing-32: 2rem;
   --spacing-48: 3rem;
 
-  /* Color Palette - Light Mode */
-  --color-bg-root: #f8fafc;
-  --color-bg-surface: #ffffff;
-  --color-bg-subtle: #f1f5f9;
-  
-  --color-text-primary: #0f172a;
-  --color-text-secondary: #475569;
-  --color-text-tertiary: #94a3b8;
-  --color-text-inverse: #ffffff;
-  
-  --color-border: #e2e8f0;
-  --color-border-hover: #cbd5e1;
+  --color-bg-root: var(--bg);
+  --color-bg-surface: var(--raised);
+  --color-bg-subtle: var(--sunk);
+  --color-text-primary: var(--ink);
+  --color-text-secondary: var(--ink-2);
+  --color-text-tertiary: var(--ink-3);
+  --color-text-inverse: var(--primary-fg);
+  --color-border: var(--line);
+  --color-border-hover: var(--line-strong);
+  --color-primary: var(--accent);
+  --color-primary-hover: var(--accent-ink);
+  --color-success: var(--ok);
+  --color-success-bg: var(--ok-wash);
+  --color-warning: var(--attention);
+  --color-warning-bg: var(--attention-wash);
+  --color-error: var(--error);
+  --color-error-bg: var(--error-wash);
+  --color-info: var(--accent);
+  --color-info-bg: var(--accent-wash);
 
-  --color-primary: #2563eb;
-  --color-primary-hover: #1d4ed8;
+  --sidebar-width: 248px;
+  --navbar-height: 56px;
 
-  /* Semantic Colors for Status/Confidence */
-  --color-success: #22c55e;
-  --color-success-bg: #dcfce7;
-  
-  --color-warning: #f59e0b;
-  --color-warning-bg: #fef3c7;
-  
-  --color-error: #ef4444;
-  --color-error-bg: #fee2e2;
-
-  --color-info: #3b82f6;
-  --color-info-bg: #dbeafe;
-
-  /* Layout */
-  --sidebar-width: 250px;
-  --navbar-height: 64px;
-  
-  /* Radii */
   --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  
-  /* Shadows */
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  --shadow-sm: var(--shadow-card);
+  --shadow-md: var(--shadow-pop);
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #141412;
+    --raised: #1c1b19;
+    --sunk: #22211e;
+    --ink: #edeae3;
+    --ink-2: #b9b4aa;
+    --ink-3: #8d887f;
+    --line: #2c2a26;
+    --line-strong: #3d3b36;
+    --accent: #7dbfb2;
+    --accent-ink: #9fd3c8;
+    --accent-wash: #1a2c29;
+    --primary-bg: #edeae3;
+    --primary-hover: #ffffff;
+    --primary-fg: #141412;
+    --ok: #74c494;
+    --ok-wash: #16251b;
+    --attention: #e3b75c;
+    --attention-wash: #29210f;
+    --attention-line: #574521;
+    --error: #ef8c81;
+    --error-wash: #2e1917;
+    --error-line: #5b2c27;
+    --shadow-card: none;
+    --shadow-pop: 0 10px 28px rgba(0, 0, 0, 0.45), 0 1px 3px rgba(0, 0, 0, 0.4);
+    color-scheme: dark;
+  }
 }
 
 * {
@@ -70,31 +121,48 @@
   padding: 0;
 }
 
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
 body {
-  font-family: var(--font-family-base);
+  font-family: var(--font);
   font-size: var(--font-size-body);
-  color: var(--color-text-primary);
-  background-color: var(--color-bg-root);
-  line-height: 1.5;
+  font-feature-settings: "cv11", "ss01";
+  color: var(--ink);
+  background-color: var(--bg);
+  line-height: 1.55;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 h1 {
   font-size: var(--font-size-h1);
   font-weight: var(--font-weight-bold);
+  letter-spacing: -0.02em;
+  line-height: 1.2;
   margin-bottom: var(--spacing-16);
 }
 
 h2 {
   font-size: var(--font-size-h2);
   font-weight: var(--font-weight-bold);
+  letter-spacing: -0.01em;
+  line-height: 1.3;
   margin-bottom: var(--spacing-16);
 }
 
 h3 {
   font-size: var(--font-size-h3);
-  font-weight: var(--font-weight-medium);
+  font-weight: var(--font-weight-bold);
+  line-height: 1.35;
   margin-bottom: var(--spacing-12);
+}
+
+h1 svg, h2 svg, h3 svg {
+  vertical-align: -0.15em;
+  margin-right: 0.35em;
+  color: var(--ink-3);
 }
 
 p {
@@ -102,21 +170,67 @@ p {
 }
 
 a {
-  color: var(--color-primary);
-  text-decoration: none;
+  color: var(--accent-ink);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, currentColor 35%, transparent);
+  text-underline-offset: 0.18em;
+  transition: text-decoration-color 120ms var(--ease);
 }
 
 a:hover {
-  text-decoration: underline;
+  text-decoration-color: currentColor;
 }
 
-button {
+a svg {
+  vertical-align: -0.15em;
+}
+
+code {
+  font-family: var(--mono);
+  font-size: 0.875em;
+  background: var(--sunk);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 0.05em 0.35em;
+}
+
+button, input, select, textarea {
   font-family: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+::selection {
+  background: var(--accent-wash);
+  color: var(--ink);
+}
+
+input[type="checkbox"], input[type="radio"] {
+  accent-color: var(--accent);
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 
 /* Utilities */
 .text-secondary {
-  color: var(--color-text-secondary);
+  color: var(--ink-2);
 }
 
 .text-caption {
@@ -126,4 +240,13 @@ button {
 .text-label {
   font-size: var(--font-size-label);
   font-weight: var(--font-weight-medium);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

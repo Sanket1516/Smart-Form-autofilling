@@ -193,7 +193,7 @@ const FieldRow = ({ field, run }: {
               {revealed ? <EyeOff size={14} /> : <Eye size={14} />}
             </button>
           )}
-          <span className="spacer" />
+          <span className="row-actions">
           {field.status === 'resolved' && !field.is_user_confirmed && (
             <Button variant="secondary" onClick={() => void run(() => factsApi.update(primary.fact_id, field.value), 'Value confirmed.')}>
               <Check size={14} /> Confirm
@@ -210,6 +210,7 @@ const FieldRow = ({ field, run }: {
             }, 'Value removed from your profile.')}>
             <Trash2 size={14} />
           </Button>
+          </span>
         </div>
       )}
       <div className="row" style={{ marginTop: 4 }}>

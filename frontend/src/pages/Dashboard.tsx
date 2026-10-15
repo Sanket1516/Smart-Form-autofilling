@@ -34,6 +34,7 @@ export const Dashboard = () => {
     <div className="page">
       <div className="page-header">
         <div>
+          <span className="eyebrow">Overview</span>
           <h1>Hello{user?.full_name ? `, ${user.full_name.split(' ')[0]}` : ''}</h1>
           <p className="muted">Your documents, profile and form-filling activity at a glance.</p>
         </div>
@@ -93,11 +94,11 @@ export const Dashboard = () => {
         </div>
         <div className="card">
           <h2><Puzzle size={18} /> Fill a form with the browser extension</h2>
-          <ol className="stack small" style={{ paddingLeft: '1.2rem' }}>
+          <ol className="steps small">
             <li>Load the extension from <code>extension/dist</code> (see the README).</li>
-            <li>Open the form you want to fill and click the extension icon.</li>
-            <li>Sign in, choose <strong>Scan this page</strong>, then <strong>Suggest values</strong>.</li>
-            <li>Check every suggestion, edit anything that is wrong, and fill only what you approve.</li>
+            <li>Open the form you want to fill and click the Smart Form icon. The form is detected automatically.</li>
+            <li>Choose <strong>Analyze this form</strong> to match its fields with your profile.</li>
+            <li>Check every suggestion, fix anything that is wrong, then choose <strong>Fill</strong> for the fields you approve.</li>
             <li>Review the page and submit the form yourself.</li>
           </ol>
           <Link to="/profile" className="small">Check your profile values first</Link>
