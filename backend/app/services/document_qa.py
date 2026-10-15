@@ -354,7 +354,8 @@ Rules:
   eligible; say which criteria appear met, not met or cannot be checked, and that the official
   bulletin must be checked.
 - A document being uploaded does not mean its conditions are met.
-- Be concise: short sentences or bullet lines.
+- Be concise: short sentences or bullet lines. Name documents by file name; do not write the
+  evidence labels ([F1], [C2], [MISSING]...) in the answer text and do not repeat these rules.
 Return JSON only: {"answer": "...", "used_fact_ids": ["F1"], "used_chunk_ids": ["C1"],
 "inferences": ["..."], "confidence": 0.0-1.0}"""
 
@@ -1162,7 +1163,7 @@ class DocumentQAService:
                 "straight from your documents."
             )
             return None
-        answer = output.answer.strip()
+        answer = _clean_answer(output.answer)
         used_chunks = [chunks[c] for c in dict.fromkeys(output.used_chunk_ids) if c in chunks]
         used_facts = [facts[f] for f in dict.fromkeys(output.used_fact_ids) if f in facts]
         if not answer:
@@ -1231,8 +1232,31 @@ class DocumentQAService:
 # ---------------------------------------------------------------------- helpers
 
 
+_EVIDENCE_LABELS = re.compile(r"\s*\[(?:(?:[FCDR]\d+|MISSING|CONFLICT)(?:\s*,\s*)?)+\]", re.I)
+_PROMPT_ECHO = re.compile(
+    r"[^.\n]*\b(?:never state that you are eligible|a document being uploaded does not mean)"
+    r"[^.\n]*[.\n]?",
+    re.I,
+)
+
+
+def _clean_answer(text: str) -> str:
+    """Remove evidence labels ("[F1]", "[MISSING]") and echoed instructions from model text;
+    the sources are returned separately."""
+    text = _EVIDENCE_LABELS.sub("", text)
+    text = _PROMPT_ECHO.sub("", text)
+    return re.sub(r"[ \t]+([.,;:])", r"\1", text).strip()
+
+
 def _display(ontology: FieldOntology, concept: str, value: Any) -> Any:
-    if ontology.is_sensitive(concept) and isinstance(value, str) and len(value) > 4:
+    """Mask sensitive identifiers (Aadhaar, PAN, account numbers) in answers; the owner's
+    own amounts, dates and names are shown as stored."""
+    if (
+        ontology.is_sensitive(concept)
+        and ontology.data_type(concept) == "identifier"
+        and isinstance(value, str)
+        and len(value) > 4
+    ):
         return mask(value)
     return value
 

@@ -24,6 +24,8 @@ logger = logging.getLogger(__name__)
 
 _MIN_WORDS_PER_PAGE = 10
 _MIN_WORDS_WITH_IMAGE = 80
+OCR_MODEL_DIR = Path(__file__).resolve().parents[2] / "models" / "ocr"
+_ENGLISH_MODELS = ("en_PP-OCRv3_det_infer.onnx", "en_PP-OCRv4_rec_infer.onnx", "en_dict.txt")
 
 
 class DocumentReadError(RuntimeError):
@@ -88,6 +90,55 @@ class PaddleOCRAdapter:
         return spans_from_boxes(reading.boxes, page_number)
 
 
+class RapidOCRAdapter(PaddleOCRAdapter):
+    """The PP-OCR detection and recognition models run on ONNX Runtime (RapidOCR).
+
+    Same models and the same layout/orientation/deskew pipeline as the Paddle
+    adapter, but a fraction of the memory: PaddlePaddle's CPU inference keeps
+    buffers for every distinct crop shape (measured 2.5 GB for one page),
+    which got the worker killed under a 3.5 GB container limit.
+    """
+
+    name = "rapidocr"
+
+    def _get_engine(self) -> Any:
+        if self._engine is None:
+            try:
+                from rapidocr_onnxruntime import RapidOCR  # type: ignore[import-not-found]
+            except ImportError as error:
+                raise OCRUnavailableError(
+                    "This document needs OCR, but the OCR engine is not installed "
+                    "(see backend/requirements-ocr.txt)."
+                ) from error
+            threads = max(1, int(os.getenv("OCR_CPU_THREADS", "2")))
+            options: dict[str, Any] = {
+                "use_cls": False,
+                "intra_op_num_threads": threads,
+                "inter_op_num_threads": 1,
+                # PaddleOCR's detection sizing (longest side 960)
+                "det_limit_side_len": 960,
+                "det_limit_type": "max",
+            }
+            model_dir = Path(os.getenv("OCR_MODEL_DIR") or OCR_MODEL_DIR)
+            det, rec, keys = (model_dir / name for name in _ENGLISH_MODELS)
+            if det.exists() and rec.exists() and keys.exists():
+                # English PP-OCR models (converted from PaddleOCR's "en" models):
+                # RapidOCR's bundled Chinese recogniser drops the spaces between
+                # English words ("DateofResult"), which breaks label matching.
+                options.update(
+                    det_model_path=str(det), rec_model_path=str(rec), rec_keys_path=str(keys)
+                )
+            else:
+                logger.warning("ocr_english_models_missing", extra={"model_dir": str(model_dir)})
+            self._engine = RapidOCR(**options)
+        return self._engine
+
+    def read(self, image: Any) -> list[OCRBox]:
+        result, _elapsed = self._get_engine()(image, use_cls=False)
+        # RapidOCR returns [quad, text, score]; reuse the Paddle conversion
+        return boxes_from_paddle([[[quad, (text, score)] for quad, text, score in result or []]])
+
+
 class NoOCRAdapter:
     """OCR disabled by configuration (``OCR_ENGINE=none``)."""
 
@@ -99,11 +150,13 @@ class NoOCRAdapter:
 
 
 def build_ocr_adapter(
-    engine: str = "paddle", language: str = "en", preprocess: str = "auto"
+    engine: str = "rapidocr", language: str = "en", preprocess: str = "auto"
 ) -> Any:
     if engine == "none":
         return NoOCRAdapter()
-    return PaddleOCRAdapter(language=language, preprocess=preprocess)
+    if engine == "paddle":
+        return PaddleOCRAdapter(language=language, preprocess=preprocess)
+    return RapidOCRAdapter(language=language, preprocess=preprocess)
 
 
 class UniversalDocumentExtractor:

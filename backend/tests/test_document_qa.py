@@ -297,3 +297,54 @@ def test_invalid_requests_are_rejected(harness: Harness) -> None:
     headers = harness.register()
     assert harness.client.post(ASK, headers=headers, json={"question": ""}).status_code == 422
     assert harness.client.post(ASK, json={"question": "hi"}).status_code == 401
+
+
+@pytestmark_api
+def test_owner_sees_amounts_but_identifiers_stay_masked(harness: Harness) -> None:
+    from tests.indian_fixtures import AADHAAR_FRONT
+
+    headers = harness.register()
+    _upload(harness, headers, INCOME_CERTIFICATE)
+    _upload(harness, headers, AADHAAR_FRONT)
+    income = _ask(harness, headers, "What is my annual income according to my income certificate?")
+    assert "450000" in json.dumps(income)
+    aadhaar = _ask(harness, headers, "What is my Aadhaar number?")
+    value = str(aadhaar["facts"][0]["value"])
+    assert value.startswith("*") and value[-4:].isdigit()
+
+
+@pytestmark_api
+def test_document_stuck_in_processing_is_reported_failed(harness: Harness) -> None:
+    from datetime import UTC, datetime, timedelta
+
+    from bson import ObjectId
+    from pymongo import MongoClient
+
+    headers = harness.register()
+    document_id = _upload(harness, headers, INCOME_CERTIFICATE)
+    import os
+
+    client: MongoClient = MongoClient(os.environ["MONGODB_URL"])
+    client[os.environ["MONGODB_DATABASE"]]["documents"].update_one(
+        {"_id": ObjectId(document_id)},
+        {
+            "$set": {
+                "status": "processing",
+                "processing_started_at": datetime.now(UTC) - timedelta(hours=2),
+            }
+        },
+    )
+    client.close()
+    data = harness.client.get(f"/api/v1/documents/{document_id}", headers=headers).json()["data"]
+    assert data["status"] == "failed"
+    assert "Try processing the document again" in data["processing_error"]
+
+
+def test_model_answers_lose_internal_labels_and_echoed_rules() -> None:
+    from app.services.document_qa import _clean_answer
+
+    text = (
+        "A document being uploaded does not mean its conditions are met. "
+        "Passed Class 12: met [R1]. Aggregate 90.67% [D1, F2]. Percentage missing [MISSING]."
+    )
+    assert _clean_answer(text) == "Passed Class 12: met. Aggregate 90.67%. Percentage missing."

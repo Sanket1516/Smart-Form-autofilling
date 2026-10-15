@@ -43,7 +43,7 @@ os.environ.setdefault("LOG_LEVEL", "ERROR")
 from app.extraction.normalize import comparison_key  # noqa: E402
 from app.extraction.service import DocumentExtractionService  # noqa: E402
 from app.ontology.loader import FieldOntology  # noqa: E402
-from app.processing.extractor import PaddleOCRAdapter  # noqa: E402
+from app.processing.extractor import PaddleOCRAdapter, RapidOCRAdapter  # noqa: E402
 from app.processing.ocr import boxes_from_paddle  # noqa: E402
 from app.processing.schemas import (  # noqa: E402
     ExtractedSpan,
@@ -155,15 +155,15 @@ async def run(
     ontology = FieldOntology()
     service = DocumentExtractionService(ontology, llm_extractor=None)
     paddle_auto = PaddleOCRAdapter(preprocess="auto")
-    adapters = {
-        "legacy": LegacyAdapter(paddle_auto),
-        "layout_none": PaddleOCRAdapter(preprocess="none"),
-        "layout_auto": paddle_auto,
+    factories = {
+        "legacy": lambda: LegacyAdapter(paddle_auto),
+        "layout_none": lambda: PaddleOCRAdapter(preprocess="none"),
+        "layout_auto": lambda: paddle_auto,
+        "rapid_auto": lambda: RapidOCRAdapter(preprocess="auto"),
     }
-    adapters["layout_none"]._engine = paddle_auto._get_engine()
     results: dict[str, Any] = {}
     for config in configs:
-        adapter = adapters[config]
+        adapter = factories[config]()
         per_variant: dict[str, dict[str, list[float]]] = defaultdict(lambda: defaultdict(list))
         rows = []
         for entry in manifest:

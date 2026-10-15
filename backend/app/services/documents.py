@@ -141,6 +141,7 @@ class DocumentService:
             filters["document_type"] = document_type
         total = await self.repository.count(user_id, filters)
         records = await self.repository.list_page(user_id, filters, (page - 1) * limit, limit)
+        records = [await self._expire_if_stale(user_id, record) for record in records]
         return DocumentListData(
             documents=[document_data(record) for record in records],
             page=page,
@@ -149,7 +150,30 @@ class DocumentService:
         )
 
     async def get(self, user_id: str, document_id: str) -> DocumentData:
-        return document_data(await self._get(user_id, document_id))
+        record = await self._expire_if_stale(user_id, await self._get(user_id, document_id))
+        return document_data(record)
+
+    async def _expire_if_stale(self, user_id: str, record: dict[str, Any]) -> dict[str, Any]:
+        """Report a document stuck in 'processing' past the limit as failed (its worker
+        died), so the user sees an error and a retry instead of an endless spinner."""
+        if record.get("status") != "processing":
+            return record
+        started = record.get("processing_started_at")
+        if started is None:
+            return record
+        if started.tzinfo is None:
+            started = started.replace(tzinfo=UTC)
+        if datetime.now(UTC) - started < timedelta(
+            minutes=self.settings.processing_stale_after_minutes
+        ):
+            return record
+        update = {
+            "status": "failed",
+            "current_stage": "failed",
+            "processing_error": "Processing did not finish. Try processing the document again.",
+        }
+        await self.repository.update(user_id, str(record["_id"]), update)
+        return {**record, **update}
 
     async def status(self, user_id: str, document_id: str) -> ProcessingStatusData:
         record = await self._get(user_id, document_id)

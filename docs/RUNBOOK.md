@@ -26,10 +26,11 @@ Keep `CHROMADB_URL` on the same port as `CHROMADB_PORT`.
    * fully local: `LLM_PROVIDER=ollama`, `LLM_MODEL=qwen2:7b`,
      `LLM_BASE_URL=http://host.docker.internal:11434`
    * optional fallback: `LLM_FALLBACK_PROVIDER=ollama`, `LLM_FALLBACK_MODEL=qwen2:7b`
-3. Scanned documents need OCR: `INSTALL_OCR=true` (PaddleOCR is built into the images).
+3. Scanned documents need OCR: `INSTALL_OCR=true` (RapidOCR with the English PP-OCR models in
+   `backend/models/ocr` is built into the images; `OCR_ENGINE=paddle` is optional).
 4. On machines where Docker has 8 GB RAM or less keep `CELERY_WORKER_CONCURRENCY=1`:
-   every worker process loads its own OCR model, and running OCR in several processes
-   at once exhausted an 8 GB Docker VM during testing (the engine had to be restarted).
+   every worker process loads its own OCR and embedding models; with PaddleOCR (2.5 GB per page)
+   two processes exhausted an 8 GB Docker VM during testing (the engine had to be restarted).
 
 ## 3. Start
 
@@ -85,7 +86,7 @@ cd extension; npm run build; npx playwright test               # browser E2E (ho
 cd backend
 python -m tests.eval.run_eval --out ../docs/eval/current.json           # extraction accuracy
 python -m tests.eval.render_documents --out ../test-data/rendered       # synthetic scans/PDFs
-docker compose exec backend python -m tests.eval.ocr_benchmark ...      # OCR (needs PaddleOCR)
+docker compose exec worker python -m tests.eval.ocr_benchmark --configs rapid_auto ...  # OCR
 python -m tests.eval.llm_benchmark --providers configured,ollama:qwen2:7b
 python -m tests.eval.e2e_probe --api http://localhost:8000              # full stack, real APIs
 ```

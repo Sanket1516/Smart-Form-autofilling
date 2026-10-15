@@ -23,6 +23,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import secrets
 import statistics
 import sys
@@ -220,7 +221,14 @@ def main() -> None:
             data.get("status") if response.status_code == 200 else f"HTTP {response.status_code}"
         )
         correct = bool(text) and all(e.casefold() in text for e in item["expect"])
-        forbidden = [f for f in item["forbid"] if f.casefold() in answer_text.casefold()]
+        # "I cannot state that you are eligible" is a refusal, not a forbidden claim
+        forbidden = [
+            f
+            for f in item["forbid"]
+            if re.search(
+                rf"(?<!state that )(?<!say that )(?<!not ){re.escape(f)}", answer_text, re.I
+            )
+        ]
         cited = not item["cite"] or any(c in text for c in item["cite"])
         if "expect_status" in item:
             correct = status in item["expect_status"]

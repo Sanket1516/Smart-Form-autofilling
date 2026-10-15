@@ -175,6 +175,17 @@ async def lifespan(app: FastAPI):
         await vector_store.ensure_collection()
     except VectorStoreError as error:
         logger.error("chromadb_initialization_failed", extra={"error": str(error)})
+
+    async def warm_up_embeddings() -> None:
+        # The first question would otherwise wait ~40 s for the model to load.
+        try:
+            await embeddings.embed_query("warm up")
+        except Exception:
+            logger.warning("embedding_warmup_failed: the model loads on first use")
+
+    warmup = asyncio.create_task(warm_up_embeddings())
+    background.add(warmup)
+    warmup.add_done_callback(background.discard)
     logger.info(
         "application_started",
         extra={
