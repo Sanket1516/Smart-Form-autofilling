@@ -303,6 +303,7 @@ def document_data(record: dict[str, Any]) -> DocumentData:
         file_type=record["file_type"],
         file_size=record.get("file_size", 0),
         document_type=record.get("document_type"),
+        document_type_confidence=record.get("document_type_confidence"),
         status=record["status"],
         current_stage=record.get("current_stage"),
         progress=record.get("progress", 0),

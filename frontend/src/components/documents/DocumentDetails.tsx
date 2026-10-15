@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Download, Eye, RefreshCw, Trash2 } from 'lucide-react';
 import { useLoader } from '../../hooks/useLoader';
-import { conceptLabel, documentApi, factsApi, formatValue } from '../../services/api';
+import { conceptLabel, documentApi, documentTypeLabel, factsApi, formatValue, isRecord } from '../../services/api';
+import { RecordTable } from './RecordTable';
 import { Button } from '../ui/Button';
 import { ErrorState } from '../ui/ErrorState';
 import { LoadingState } from '../ui/LoadingState';
@@ -49,8 +50,16 @@ export const DocumentDetails = () => {
   if (loading && !data) return <LoadingState message="Loading document…" />;
   if (error && !data) return <ErrorState message={error} onRetry={() => reload()} />;
   if (!data) return null;
-  const { document, facts, discovered } = data;
-  const unmapped = discovered.filter((item) => !item.ontology);
+  const { document } = data;
+  const facts = data.facts.filter((fact) => !isRecord(fact.value));
+  const unmapped = data.discovered.filter((item) => !item.ontology);
+  // subject marks, transactions and household members: one table per record type
+  const records = new Map<string, Array<Record<string, unknown>>>();
+  for (const item of data.discovered) {
+    if (item.ontology && isRecord(item.value)) {
+      records.set(item.ontology, [...(records.get(item.ontology) ?? []), item.value]);
+    }
+  }
 
   return (
     <div className="page">
@@ -61,7 +70,11 @@ export const DocumentDetails = () => {
           <div className="row">
             <DocumentStatusPill status={document.status} />
             {document.status === 'processed' && <IndexStatusPill status={document.index_status} />}
-            {document.document_type && <span className="pill">{document.document_type}</span>}
+            {document.document_type && (
+              <span className="pill" title={document.document_type_confidence ? `Identified with ${Math.round(document.document_type_confidence * 100)}% confidence` : undefined}>
+                {documentTypeLabel(document.document_type)}
+              </span>
+            )}
             {document.page_count ? <span className="muted tiny">{document.page_count} page(s)</span> : null}
           </div>
         </div>
@@ -168,6 +181,13 @@ export const DocumentDetails = () => {
         </div>
       )}
 
+      {[...records.entries()].map(([concept, rows]) => (
+        <div className="card" key={concept}>
+          <h2>{conceptLabel(concept)} ({rows.length})</h2>
+          <RecordTable rows={rows} caption="Each row as printed on the document; amounts and marks normalised, references kept with leading zeros." />
+        </div>
+      ))}
+
       {unmapped.length > 0 && (
         <div className="card">
           <h2>Other details found ({unmapped.length})</h2>
@@ -175,7 +195,7 @@ export const DocumentDetails = () => {
           <ul className="list">
             {unmapped.slice(0, 50).map((item) => (
               <li key={item.id} className="list-item">
-                <span className="tiny muted">{item.semantic_type.replace(/_/g, ' ').toLowerCase()}</span>
+                <span className="tiny muted">{item.original_label ?? item.semantic_type.replace(/_/g, ' ').toLowerCase()}</span>
                 <div>{formatValue(item.value)}</div>
               </li>
             ))}

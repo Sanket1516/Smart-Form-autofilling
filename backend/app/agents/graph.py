@@ -25,7 +25,7 @@ from typing import Any, TypedDict
 from langgraph.graph import END, START, StateGraph
 from pydantic import BaseModel, Field
 
-from app.agents.field_classifier import Classification, FieldClassifier
+from app.agents.field_classifier import SUBJECTS, Classification, FieldClassifier
 from app.agents.json_output import LLMOutputError, parse_model
 from app.agents.llm_provider import TASK_FIELD_VALUES, LLMProvider, LLMProviderError
 from app.agents.value_formatting import format_for_field
@@ -33,6 +33,7 @@ from app.core.api_errors import APIError
 from app.core.config import Settings
 from app.db.repositories.recommendations import RecommendationsRepository
 from app.extraction.normalize import appears_in
+from app.extraction.registry import get_registry
 from app.ontology.loader import FieldOntology
 from app.schemas.facts import ConceptView
 from app.schemas.form_sessions import FieldObject
@@ -261,6 +262,7 @@ class FormFillGraph:
                 classification.concept = None
             item["concept"] = classification.concept
             item["narrative"] = classification.narrative
+            item["qualifier"] = classification.qualifier
             if item["quarantined"] and not classification.concept:
                 item["status"] = "security_blocked"
                 item["reason"] = (
@@ -268,7 +270,12 @@ class FormFillGraph:
                 )
                 continue
             if classification.concept is None:
-                if classification.error and not classification.narrative:
+                if classification.needs_context:
+                    item["reason"] = (
+                        "The label alone does not say which record it means (for example "
+                        "Class 10 or Class 12, obtained or maximum marks); fill it yourself."
+                    )
+                elif classification.error and not classification.narrative:
                     item["status"], item["reason"] = (
                         "error",
                         f"{classification.error}; fill this field yourself.",
@@ -278,16 +285,143 @@ class FormFillGraph:
             if not self.ontology.is_fillable(concept):
                 item["status"], item["reason"] = (
                     "skipped",
-                    "Consent and signatures must be given by you.",
+                    "Consent, declarations and signatures must be given by you.",
                 )
+                continue
+            if self.ontology.is_user_only(concept):
+                self._apply_user_choice(item, concept, views)
+                continue
+            if self.ontology.resolve_from(concept):
+                self._apply_subject(item, concept, views)
                 continue
             self._apply_view(item, concept, views)
         return {"views": views}
+
+    def _apply_user_choice(
+        self, item: dict[str, Any], concept: str, views: dict[str, ConceptView]
+    ) -> None:
+        """Preferences, declarations and official codes: only what the user entered."""
+        view = views.get(concept)
+        confirmed = [c for c in (view.candidates if view else []) if c.is_user_confirmed]
+        if len(confirmed) == 1:
+            candidate = confirmed[0]
+            item.update(
+                recommended_value=candidate.value,
+                confidence=1.0,
+                origin="user_confirmed",
+                retrieval_type="profile",
+                source={
+                    "type": "user",
+                    "document_id": None,
+                    "document_name": "Entered by you",
+                    "page": None,
+                    "snippet": None,
+                    "fact_ids": [s.fact_id for s in candidate.sources],
+                },
+                reason="Your saved choice.",
+            )
+            return
+        item["status"] = "missing_information"
+        item["reason"] = (
+            "This is your own choice or declaration, so it is never taken from documents; "
+            "select it yourself."
+        )
+
+    def _apply_subject(
+        self, item: dict[str, Any], concept: str, views: dict[str, ConceptView]
+    ) -> None:
+        """Marks in one subject, read from the marksheet's subject records."""
+        qualifier = item.get("qualifier") or {}
+        subject, measure = qualifier.get("subject"), qualifier.get("measure", "marks_obtained")
+        source_concept = self.ontology.resolve_from(concept) or ""
+        view = views.get(source_concept)
+        label = self.ontology.description(source_concept).replace(" subject-wise marks", "")
+        if not subject or view is None:
+            item["reason"] = f"No {label} subject marks are stored yet; upload the marksheet."
+            return
+        rows = [
+            (candidate, row)
+            for candidate in view.candidates
+            for row in ([candidate.value] if isinstance(candidate.value, dict) else [])
+        ]
+        matches = match_subject(subject, rows)
+        values = []
+        for candidate, row in matches:
+            value = row.get(measure)
+            if measure == "marks_obtained" and value is None:
+                value = row.get("total")
+            if value not in (None, ""):
+                values.append((candidate, row, str(value)))
+        distinct = {value for _c, _r, value in values}
+        if not values:
+            item["reason"] = (
+                f"{subject.title()} {measure.replace('_', ' ')} is not on your {label} marksheet."
+            )
+            return
+        if len(distinct) > 1:
+            item["status"] = "needs_review"
+            item["retrieval_type"] = "profile"
+            item["candidates"] = [
+                {
+                    "value": value,
+                    "confidence": candidate.confidence,
+                    "source": {
+                        "type": "profile",
+                        "document_id": candidate.document_id,
+                        "document_name": candidate.document_name,
+                        "page": candidate.page,
+                        "snippet": candidate.evidence,
+                        "fact_ids": [s.fact_id for s in candidate.sources],
+                    },
+                }
+                for candidate, _row, value in values
+            ]
+            item["reason"] = (
+                f"More than one {subject.title()} record matches; choose the correct one."
+            )
+            return
+        candidate, row, value = values[0]
+        item.update(
+            recommended_value=value,
+            confidence=1.0 if candidate.is_user_confirmed else candidate.confidence,
+            origin="user_confirmed" if candidate.is_user_confirmed else "extracted",
+            retrieval_type="profile",
+            source={
+                "type": "profile",
+                "document_id": candidate.document_id,
+                "document_name": candidate.document_name,
+                "page": candidate.page,
+                "snippet": candidate.evidence,
+                "fact_ids": [s.fact_id for s in candidate.sources],
+            },
+            reason=f"{row.get('name', subject.title())} on your {label} marksheet.",
+        )
 
     def _apply_view(
         self, item: dict[str, Any], concept: str, views: dict[str, ConceptView]
     ) -> None:
         view = views.get(concept)
+        fallback = self.ontology.fallback(concept)
+        if (
+            view is None
+            and fallback
+            and views.get(fallback)
+            and views[fallback].status == "resolved"
+        ):
+            base = views[fallback]
+            item.update(
+                recommended_value=base.value,
+                confidence=round(base.confidence * 0.9, 3),
+                origin="derived",
+                retrieval_type="profile",
+                requires_confirmation=True,
+                reason=(
+                    f"Copied from your {self.ontology.description(fallback).lower()}; confirm it is "
+                    f"also your {self.ontology.description(concept).lower()}."
+                ),
+                source=_view_source(base, "derived"),
+            )
+            return
         if view is None:
             base = self.ontology.derived_from(concept)
             if base and views.get(base) and views[base].status == "resolved":
@@ -349,6 +483,10 @@ class FormFillGraph:
             concept = item.get("concept")
             if concept and (self.ontology.is_sensitive(concept) or concept in self.sensitive):
                 continue  # sensitive values come only from reviewed facts, never from free text
+            if concept and (
+                self.ontology.is_user_only(concept) or self.ontology.resolve_from(concept)
+            ):
+                continue  # user choices and per-subject marks never come from free-text search
             if concept or item.get("narrative"):
                 selected.append(field_obj)
         return selected
@@ -370,9 +508,7 @@ class FormFillGraph:
                 if part
             )
             try:
-                chunks = safe_for_llm(
-                    await self.retrieval.search(state["user_id"], query, self.settings.rag_top_k)
-                )
+                chunks = safe_for_llm(await self._search(state["user_id"], query, concept))
             except APIError as error:
                 item["status"] = "error"
                 item["reason"] = "Document search is unavailable; fill this field yourself."
@@ -441,6 +577,16 @@ class FormFillGraph:
             )
         return {"work": work}
 
+    async def _search(self, user_id: str, query: str, concept: str | None) -> list[Any]:
+        """Search the document types that state this concept first, then everything."""
+        top_k = self.settings.rag_top_k
+        found: list[Any] = []
+        for document_type in get_registry().document_types_for(concept):
+            found += await self.retrieval.search(user_id, query, top_k, document_type=document_type)
+        if found:
+            return sorted(found, key=lambda chunk: chunk.similarity, reverse=True)[:top_k]
+        return await self.retrieval.search(user_id, query, top_k)
+
     @staticmethod
     def _is_prose(item: dict[str, Any]) -> bool:
         """Open questions get a short grounded answer; factual fields need a verbatim value."""
@@ -454,6 +600,7 @@ class FormFillGraph:
         fields = {f.field_id: f for f in state["fields"]}
         for field_id, item in work.items():
             item.pop("quarantined", None)
+            item.pop("qualifier", None)
             narrative = item.pop("narrative", False)
             if item["status"] in ("security_blocked", "skipped", "error", "needs_review"):
                 continue
@@ -525,6 +672,40 @@ def _derive(concept: str, full_name: str) -> tuple[str, bool] | None:
     if concept == "personal.middle_name":
         return (" ".join(parts[1:-1]), True) if len(parts) > 2 else None
     return None
+
+
+_SUBJECT_FILLER = {"standard", "course", "a", "b", "lng", "lit", "and", "paper", "i", "ii"}
+
+
+def match_subject(
+    subject: str, rows: list[tuple[Any, dict[str, Any]]]
+) -> list[tuple[Any, dict[str, Any]]]:
+    """Records whose subject name contains the requested subject.
+
+    'mathematics' matches 'MATHEMATICS & STATISTICS'; 'science' prefers 'SCIENCE' over
+    'SOCIAL SCIENCE' (an exact name wins over a longer one)."""
+    aliases = [set(alias.split()) for alias in SUBJECTS.get(subject, (subject,))]
+    found = []
+    for candidate, row in rows:
+        tokens = set(re.sub(r"[^a-z]+", " ", str(row.get("name", "")).casefold()).split())
+        if any(alias <= tokens for alias in aliases):
+            found.append((candidate, row, tokens))
+    exact = [
+        (c, r)
+        for c, r, tokens in found
+        if any((tokens - _SUBJECT_FILLER) == alias for alias in aliases)
+    ]
+    if exact:
+        return exact
+    other_subjects = {
+        word
+        for name, spellings in SUBJECTS.items()
+        if name != subject
+        for spelling in spellings
+        for word in spelling.split()
+    } - {word for alias in aliases for word in alias}
+    # 'science' must not match 'SOCIAL SCIENCE' or 'COMPUTER SCIENCE'
+    return [(c, r) for c, r, tokens in found if not (tokens & other_subjects)]
 
 
 def _view_source(view: ConceptView, source_type: str) -> dict[str, Any]:

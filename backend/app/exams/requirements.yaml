@@ -1,0 +1,178 @@
+# Entrance-examination requirement profiles.
+#
+# Forms and rules change every session: these profiles are configuration, kept
+# apart from extraction and form filling. Each profile records when it was last
+# reviewed and whether it was checked against the official information bulletin.
+# Upload limits below were cross-checked only against secondary sources (which
+# disagree), so they are marked `verified: false` and are reported as warnings,
+# never used to reject a file.
+#
+# requirement fields:
+#   concept   ontology concept the form asks for
+#   required  the form cannot be submitted without it
+#   source    document (default) | user (preferences, declarations, codes) | either
+#   confirm   true: even when documents supply it, the user must confirm (eligibility claims)
+#   subjects  for subject-record concepts: subjects the exam needs
+#   evidence  documents that normally support a value (shown to the user, never a proof of eligibility)
+version: 1
+exams:
+  NEET_UG:
+    name: NEET (UG)
+    conducting_body: National Testing Agency (NTA)
+    official_site: https://neet.nta.nic.in
+    last_reviewed: "2026-10-15"
+    verified_against_official_bulletin: false
+    note: Check every field and upload rule against the NTA information bulletin for your session.
+    sections:
+      - title: Personal details
+        requirements:
+          - {concept: personal.full_name, required: true, evidence: [CLASS_10_MARKSHEET]}
+          - {concept: personal.father_name, required: true}
+          - {concept: personal.mother_name, required: true}
+          - {concept: personal.date_of_birth, required: true, evidence: [CLASS_10_MARKSHEET, BIRTH_CERTIFICATE]}
+          - {concept: identity.gender, required: true}
+          - {concept: identity.nationality, required: true}
+      - title: Identity
+        requirements:
+          - {concept: exam.identification_type, required: true, source: user}
+          - {concept: identity.aadhaar_number, required: false, evidence: [AADHAAR_CARD]}
+      - title: Contact and address
+        requirements:
+          - {concept: personal.email, required: true, source: user}
+          - {concept: personal.phone, required: true, source: user}
+          - {concept: address.permanent_address, required: true}
+          - {concept: address.correspondence_address, required: true}
+          - {concept: address.zipcode, required: true}
+      - title: Class 10
+        requirements:
+          - {concept: academic.class10.board, required: true, evidence: [CLASS_10_MARKSHEET]}
+          - {concept: academic.class10.passing_year, required: true}
+          - {concept: academic.class10.roll_number, required: true}
+          - {concept: academic.class10.school, required: false}
+      - title: Class 12 / qualifying examination
+        requirements:
+          - {concept: academic.class12.result_status, required: true, evidence: [CLASS_12_MARKSHEET]}
+          - {concept: academic.class12.board, required: true}
+          - {concept: academic.class12.passing_year, required: false}
+          - {concept: academic.class12.roll_number, required: false}
+          - {concept: academic.class12.school, required: false}
+          - {concept: academic.class12.subjects, required: true, subjects: [physics, chemistry, biology, english]}
+          - {concept: exam.qualifying_exam_code, required: true, source: user}
+      - title: Category and eligibility
+        requirements:
+          - {concept: category.social_category, required: true, confirm: true, evidence: [CASTE_CERTIFICATE, NON_CREAMY_LAYER_CERTIFICATE]}
+          - {concept: category.pwbd_status, required: true, source: user}
+      - title: Exam choices
+        requirements:
+          - {concept: exam.city_preference, required: true, source: user}
+          - {concept: exam.question_paper_language, required: true, source: user}
+    uploads:
+      - {id: photograph, label: Passport-size photograph, required: true, formats: [jpg, jpeg], min_kb: 10, max_kb: 200, verified: false}
+      - {id: postcard_photograph, label: Postcard-size photograph, required: true, formats: [jpg, jpeg], min_kb: 10, max_kb: 200, verified: false}
+      - {id: signature, label: Signature, required: true, formats: [jpg, jpeg], min_kb: 4, max_kb: 30, verified: false}
+      - {id: thumb_impressions, label: Left and right thumb impressions, required: true, formats: [jpg, jpeg], min_kb: 10, max_kb: 200, verified: false}
+      - {id: category_certificate, label: Category certificate, required_if: {category.social_category: [OBC, OBC-NCL, SC, ST, EWS, GEN-EWS]}, formats: [pdf], min_kb: 50, max_kb: 300, verified: false}
+      - {id: pwbd_certificate, label: PwBD certificate, required_if: {category.pwbd_status: ["Yes"]}, formats: [pdf], min_kb: 50, max_kb: 300, verified: false}
+
+  JEE_MAIN:
+    name: JEE (Main)
+    conducting_body: National Testing Agency (NTA)
+    official_site: https://jeemain.nta.nic.in
+    last_reviewed: "2026-10-15"
+    verified_against_official_bulletin: false
+    note: Check every field and upload rule against the NTA information bulletin for your session.
+    sections:
+      - title: Personal details
+        requirements:
+          - {concept: personal.full_name, required: true, evidence: [CLASS_10_MARKSHEET]}
+          - {concept: personal.father_name, required: true}
+          - {concept: personal.mother_name, required: true}
+          - {concept: personal.date_of_birth, required: true}
+          - {concept: identity.gender, required: true}
+          - {concept: identity.nationality, required: true}
+      - title: Contact and address
+        requirements:
+          - {concept: personal.email, required: true, source: user}
+          - {concept: personal.phone, required: true, source: user}
+          - {concept: address.permanent_address, required: true}
+          - {concept: address.correspondence_address, required: true}
+      - title: Class 10
+        requirements:
+          - {concept: academic.class10.board, required: true}
+          - {concept: academic.class10.passing_year, required: true}
+          - {concept: academic.class10.school, required: true}
+      - title: Class 12 / qualifying examination
+        requirements:
+          - {concept: academic.class12.result_status, required: true}
+          - {concept: academic.class12.board, required: true}
+          - {concept: academic.class12.school, required: true}
+          - {concept: academic.class12.passing_year, required: false}
+          - {concept: academic.class12.subjects, required: true, subjects: [physics, chemistry, mathematics]}
+          - {concept: academic.class12.marks_obtained, required: false}
+          - {concept: academic.class12.max_marks, required: false}
+      - title: Category and eligibility
+        requirements:
+          - {concept: category.social_category, required: true, confirm: true, evidence: [CASTE_CERTIFICATE, NON_CREAMY_LAYER_CERTIFICATE]}
+          - {concept: category.pwbd_status, required: true, source: user}
+      - title: Exam choices
+        requirements:
+          - {concept: exam.course_choice, required: true, source: user}
+          - {concept: exam.session, required: true, source: user}
+          - {concept: exam.city_preference, required: true, source: user}
+          - {concept: exam.question_paper_language, required: true, source: user}
+    uploads:
+      - {id: photograph, label: Photograph, required: true, formats: [jpg, jpeg], min_kb: 10, max_kb: 200, verified: false}
+      - {id: signature, label: Signature, required: true, formats: [jpg, jpeg], min_kb: 10, max_kb: 100, verified: false}
+      - {id: category_certificate, label: Category certificate, required_if: {category.social_category: [OBC, OBC-NCL, SC, ST, EWS, GEN-EWS]}, formats: [pdf], min_kb: 50, max_kb: 300, verified: false}
+      - {id: pwbd_certificate, label: PwD certificate, required_if: {category.pwbd_status: ["Yes"]}, formats: [pdf], min_kb: 50, max_kb: 300, verified: false}
+
+  MHT_CET:
+    name: MHT CET
+    conducting_body: State CET Cell, Maharashtra
+    official_site: https://cetcell.mahacet.org
+    last_reviewed: "2026-10-15"
+    verified_against_official_bulletin: false
+    note: Check every field and upload rule against the State CET Cell brochure for your session.
+    sections:
+      - title: Personal details
+        requirements:
+          - {concept: personal.full_name, required: true}
+          - {concept: personal.father_name, required: true}
+          - {concept: personal.mother_name, required: true}
+          - {concept: personal.date_of_birth, required: true}
+          - {concept: identity.gender, required: true}
+      - title: Contact and address
+        requirements:
+          - {concept: personal.email, required: true, source: user}
+          - {concept: personal.phone, required: true, source: user}
+          - {concept: address.permanent_address, required: true}
+      - title: SSC (Class 10)
+        requirements:
+          - {concept: academic.class10.roll_number, required: true, evidence: [CLASS_10_MARKSHEET]}
+          - {concept: academic.class10.passing_year, required: true}
+          - {concept: academic.class10.board, required: true}
+      - title: HSC (Class 12)
+        requirements:
+          - {concept: academic.class12.board, required: true, evidence: [CLASS_12_MARKSHEET]}
+          - {concept: academic.class12.result_status, required: true}
+          - {concept: academic.class12.percentage, required: false}
+          - {concept: academic.class12.subjects, required: true, subjects: [physics, chemistry]}
+      - title: Domicile and category
+        requirements:
+          - {concept: category.domicile_declaration, required: true, source: user, evidence: [DOMICILE_CERTIFICATE]}
+          - {concept: domicile_certificate.number, required: false, evidence: [DOMICILE_CERTIFICATE]}
+          - {concept: category.social_category, required: true, confirm: true, evidence: [CASTE_CERTIFICATE]}
+          - {concept: caste_certificate.number, required: false, evidence: [CASTE_CERTIFICATE]}
+          - {concept: caste_validity.number, required: false, evidence: [CASTE_VALIDITY_CERTIFICATE]}
+          - {concept: ncl_certificate.number, required: false, evidence: [NON_CREAMY_LAYER_CERTIFICATE]}
+          - {concept: financial.annual_income, required: false, confirm: true, evidence: [INCOME_CERTIFICATE]}
+      - title: Exam choices
+        requirements:
+          - {concept: exam.course_choice, required: true, source: user}
+          - {concept: exam.question_paper_language, required: true, source: user}
+          - {concept: exam.city_preference, required: true, source: user}
+    uploads:
+      - {id: photograph, label: Photograph, required: true, formats: [jpg, jpeg], min_kb: 20, max_kb: 5120, verified: false}
+      - {id: signature, label: Signature, required: true, formats: [jpg, jpeg], min_kb: null, max_kb: null, verified: false}
+      - {id: caste_certificate, label: Caste certificate, required_if: {category.social_category: [OBC, SC, ST, VJ, NT, SBC, SEBC]}, formats: [pdf], verified: false}
+      - {id: domicile_certificate, label: Domicile certificate, required: false, formats: [pdf], verified: false}

@@ -22,3 +22,16 @@ was run separately against a temporary Compose service; the test project and its
 were removed afterward. Playwright also ran in the isolated test Compose project and cleaned
 up its containers and volumes. The CI workflow runs the same marked Chroma suite and browser
 flow on pushes and pull requests.
+
+## 2026-10-15: Indian document intelligence upgrade
+
+| Check | Result |
+|---|---|
+| `python -m pytest` (repo root) | 239 passed, 7 deselected (was 146); new: `test_indian_documents.py`, `test_exam_forms.py`, `test_indian_api.py` |
+| `python -m ruff check backend tests` / `black --check` | Pass for all changed files. `backend/app/processing/preprocessing.py` (unchanged here, from commit 86b6423) still fails both and needs `ruff --fix` + `black` |
+| Frontend Vitest | 23 passed (1 new: profile subject tables, exam readiness, user choice, upload check) |
+| Extension Vitest | 25 passed (1 new: nearest-heading section context) |
+| `npm run lint` (frontend lint + both typechecks) / `npm run build` | Passed |
+| Playwright browser E2E (isolated Compose stack) | 1 passed on the final code |
+| Accuracy evaluation | See `docs/EVALUATION.md` (baseline vs upgrade vs held-out) |
+| Real Chroma integration (`-m chroma`), real-provider LLM tests, OCR on real scans | Not run in this session |

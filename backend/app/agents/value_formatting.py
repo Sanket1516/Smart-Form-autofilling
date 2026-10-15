@@ -27,7 +27,14 @@ _SYNONYMS = {
     "n": "no",
     "false": "no",
     "0": "no",
+    "pass": "passed",
+    "qualified": "passed",
+    "appeared": "appearing",
+    "transgender": "transgender",
+    "third gender": "transgender",
 }
+_RANGE_NUMBER = re.compile(r"(\d[\d,]*(?:\.\d+)?)\s*(lakhs?|lacs?|l\b|crores?)?", re.I)
+_UNITS = {"lakh": 100000, "lac": 100000, "l": 100000, "crore": 10000000}
 _TRUTHY = {"yes", "true", "1", "on", "checked"}
 
 
@@ -62,6 +69,10 @@ def format_for_field(field_obj: FieldObject, data_type: str, value: Any) -> Form
     if field_obj.input_type in ("select", "select-one", "radio") or (
         field_obj.options and field_obj.input_type != "checkbox"
     ):
+        if data_type == "amount":
+            ranged = _match_amount_range(field_obj, text)
+            if ranged is not None:
+                return ranged
         return _match_option(field_obj, text)
     if field_obj.input_type == "checkbox":
         if _norm(text) in _TRUTHY:
@@ -101,6 +112,48 @@ def format_for_field(field_obj: FieldObject, data_type: str, value: Any) -> Form
             None, problem=f"Value is longer than the field allows ({field_obj.max_length})"
         )
     return Formatted(text)
+
+
+def _option_range(label: str) -> tuple[float, float] | None:
+    """(low, high] described by an option such as 'Above 2.5 Lakh and up to 6 Lakh'."""
+    found = [(m.group(1), (m.group(2) or "").lower()) for m in _RANGE_NUMBER.finditer(label)]
+    if not found:
+        return None
+    last_unit = next((unit for _n, unit in reversed(found) if unit), "")
+    numbers = []
+    for raw, unit in found:
+        unit = (unit or last_unit).rstrip("s")
+        numbers.append(float(raw.replace(",", "")) * _UNITS.get(unit, 1))
+    lowered = label.lower()
+    if len(numbers) >= 2:
+        return numbers[0], numbers[1]
+    if re.search(r"\b(up\s*to|upto|below|less than|not exceeding|under)\b", lowered):
+        return float("-inf"), numbers[0]
+    if re.search(r"\b(above|more than|exceeding|over|and above)\b", lowered):
+        return numbers[0], float("inf")
+    return None
+
+
+def _match_amount_range(field_obj: FieldObject, text: str) -> Formatted | None:
+    try:
+        amount = float(text.replace(",", ""))
+    except ValueError:
+        return None
+    ranged = [(o, _option_range(o.label or o.value)) for o in field_obj.options if not o.disabled]
+    ranged = [(o, r) for o, r in ranged if r is not None]
+    if not ranged:
+        return None
+    matching = [
+        o
+        for o, (low, high) in ranged
+        if low < amount <= high or (low == float("-inf") and amount <= high)
+    ]
+    if len(matching) == 1:
+        option = matching[0]
+        return Formatted(
+            option.value or option.label, {"label": option.label, "value": option.value}
+        )
+    return Formatted(None, problem=f"No single income range option fits {text}")
 
 
 def _match_option(field_obj: FieldObject, text: str) -> Formatted:

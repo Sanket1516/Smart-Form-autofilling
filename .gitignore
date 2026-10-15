@@ -21,3 +21,5 @@ test-results/
 playwright-report/
 *.tsbuildinfo
 report-requirements/
+graphify-out/
+.codegraph/

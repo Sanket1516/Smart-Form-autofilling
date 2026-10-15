@@ -32,6 +32,24 @@ describe('field detector', () => {
     expect(JSON.stringify(fields)).not.toContain('a@b.c');
   });
 
+  it('gives each field the nearest heading above it, not the first heading of the form', () => {
+    document.body.innerHTML = `
+      <form id="neet">
+        <h3>Personal Details</h3>
+        <label for="name">Candidate's Name</label><input id="name">
+        <div class="panel-heading">Class 10th Details</div>
+        <label for="roll10">Roll Number</label><input id="roll10">
+        <h3>Class 12th / Qualifying Examination Details</h3>
+        <label for="roll12">Roll Number</label><input id="roll12">
+      </form>`;
+    const fields = Object.fromEntries(extractFieldObjects(document).map((f) => [f.id, f.section]));
+    expect(fields).toEqual({
+      name: 'Personal Details',
+      roll10: 'Class 10th Details',
+      roll12: 'Class 12th / Qualifying Examination Details',
+    });
+  });
+
   it('resolves aria-labelledby, aria-describedby, sections and nearby text', () => {
     document.body.innerHTML = `
       <section><h2>Correspondence address</h2>

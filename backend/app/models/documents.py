@@ -34,6 +34,7 @@ class DocumentRecord(MongoDocument):
     file_size: int = Field(ge=0)
     storage_reference: str = Field(min_length=1)
     document_type: str | None = None
+    document_type_confidence: float | None = Field(default=None, ge=0, le=1)
     language: str | None = None
     status: Literal["uploaded", "processing", "processed", "failed", "requires_review", "deleted"]
     uploaded_at: datetime
@@ -91,6 +92,8 @@ class DiscoveredFact(BaseModel):
     field: str = Field(min_length=1)
     semantic_type: str = Field(min_length=1)
     value: Any
+    raw_value: Any = None
+    original_label: str | None = None
     data_type: str = "string"
     confidence: float = Field(ge=0.0, le=1.0)
     evidence_text: str = ""

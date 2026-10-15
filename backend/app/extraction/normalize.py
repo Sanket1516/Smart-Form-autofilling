@@ -95,6 +95,98 @@ def normalize_name(raw: Any) -> str:
     return text
 
 
+def normalize_identifier(raw: Any) -> str | None:
+    """Upper-case, whitespace removed; digits-only ids also lose hyphens. Leading zeros stay."""
+    text = re.sub(r"\s+", "", str(raw or "")).strip(".,;:").upper()
+    if not text or not re.search(r"[A-Z0-9]", text):
+        return None
+    if re.fullmatch(r"[\d-]+", text):
+        text = text.replace("-", "")
+    return text
+
+
+_AMOUNT_MULTIPLIERS = {
+    "lakh": 100000,
+    "lakhs": 100000,
+    "lac": 100000,
+    "lacs": 100000,
+    "crore": 10000000,
+    "crores": 10000000,
+}
+
+
+def normalize_amount(raw: Any) -> str | None:
+    """Indian currency text to a plain number string: 'Rs. 4,50,000/-' -> '450000'.
+
+    Decimal places are kept as printed ('5,000.00' -> '5000.00')."""
+    text = str(raw or "").strip().lower()
+    text = re.sub(r"(rs\.?|inr|₹|/-|only)", " ", text)
+    match = re.search(r"(\d[\d,]*(?:\.\d+)?)\s*(lakhs?|lacs?|crores?)?", text)
+    if not match:
+        return None
+    number = match.group(1).replace(",", "")
+    if match.group(2):
+        value = float(number) * _AMOUNT_MULTIPLIERS[match.group(2)]
+        return str(int(value)) if value == int(value) else f"{value:.2f}"
+    return number
+
+
+def amount_value(raw: Any) -> float | None:
+    normalized = normalize_amount(raw)
+    try:
+        return float(normalized) if normalized is not None else None
+    except ValueError:
+        return None
+
+
+def normalize_number(raw: Any) -> str | None:
+    """Marks and counts: '082' -> '82'. Non-numeric values (AB, grades) are rejected."""
+    text = str(raw or "").strip().replace(",", "")
+    if not re.fullmatch(r"\d+(?:\.\d+)?", text):
+        return None
+    if "." in text:
+        whole, fraction = text.split(".", 1)
+        return f"{int(whole)}.{fraction}"
+    return str(int(text))
+
+
+def normalize_percentage(raw: Any) -> str | None:
+    match = re.fullmatch(r"\s*(\d{1,3}(?:\.\d+)?)\s*%?\s*", str(raw or ""))
+    if not match or float(match.group(1)) > 100:
+        return None
+    return match.group(1)
+
+
+def normalize_year(raw: Any) -> str | None:
+    match = re.search(r"(?<!\d)(19[5-9]\d|20\d{2})(?!\d)", str(raw or ""))
+    return match.group(1) if match else None
+
+
+_GENDERS = {
+    "m": "Male",
+    "male": "Male",
+    "पुरुष": "Male",
+    "f": "Female",
+    "female": "Female",
+    "स्त्री": "Female",
+    "महिला": "Female",
+    "t": "Transgender",
+    "tg": "Transgender",
+    "transgender": "Transgender",
+    "third gender": "Transgender",
+}
+
+
+def normalize_gender(raw: Any) -> str | None:
+    text = " ".join(str(raw or "").casefold().split())
+    if text in _GENDERS:
+        return _GENDERS[text]
+    for part in re.split(r"\s*/\s*", text):
+        if part in _GENDERS:
+            return _GENDERS[part]
+    return None
+
+
 def normalize_value(data_type: str, raw: Any) -> tuple[Any, bool]:
     """Return (value, changed). Unparseable typed values are returned unchanged."""
     if raw is None:
@@ -107,6 +199,12 @@ def normalize_value(data_type: str, raw: Any) -> tuple[Any, bool]:
         "phone": normalize_phone,
         "email": normalize_email,
         "postal_code": normalize_postal_code,
+        "identifier": normalize_identifier,
+        "amount": normalize_amount,
+        "number": normalize_number,
+        "percentage": normalize_percentage,
+        "year": normalize_year,
+        "gender": normalize_gender,
     }
     normalizer = normalizers.get(data_type)
     if normalizer is None:
@@ -126,10 +224,44 @@ def comparison_key(data_type: str, value: Any) -> str:
         return digits[-10:]
     if data_type == "date":
         return normalize_date(value) or str(value).strip().lower()
-    if isinstance(value, (list, dict)):
+    if isinstance(value, dict):
+        return "|".join(
+            f"{key}={comparison_key('string', value[key])}" for key in sorted(value) if value[key]
+        )
+    if isinstance(value, list):
         return str(value).lower()
+    if data_type == "identifier":
+        return re.sub(r"[^0-9A-Z]", "", str(value).upper())
+    if data_type in ("amount", "number", "percentage"):
+        number = amount_value(value) if data_type == "amount" else _float(value)
+        if number is not None:
+            return f"{number:.4f}"
+    if data_type == "gender":
+        return (normalize_gender(value) or str(value)).casefold()
     text = re.sub(r"[^\w@.+]+", " ", str(value).casefold())
     return " ".join(text.split())
+
+
+def _float(value: Any) -> float | None:
+    try:
+        return float(str(value).replace(",", "").rstrip("%").strip())
+    except ValueError:
+        return None
+
+
+def address_tokens(value: Any) -> set[str]:
+    return set(re.sub(r"[^0-9a-z]+", " ", str(value or "").casefold()).split())
+
+
+def same_address(a: Any, b: Any) -> bool:
+    """Two addresses describe the same place when one's words are all in the other
+    and they share the same 6-digit PIN code ("Pune 411001" vs "Pune, Maharashtra 411001")."""
+    pins_a = set(re.findall(r"(?<!\d)[1-9]\d{5}(?!\d)", str(a or "")))
+    pins_b = set(re.findall(r"(?<!\d)[1-9]\d{5}(?!\d)", str(b or "")))
+    if not pins_a or pins_a != pins_b:
+        return False
+    tokens_a, tokens_b = address_tokens(a), address_tokens(b)
+    return tokens_a <= tokens_b or tokens_b <= tokens_a
 
 
 def appears_in(value: Any, text: str) -> bool:

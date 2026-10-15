@@ -17,6 +17,7 @@ from app.api.v1.agent import router as agent_router
 from app.api.v1.auth import router as auth_router
 from app.api.v1.corrections import router as corrections_router
 from app.api.v1.documents import router as documents_router
+from app.api.v1.exams import router as exams_router
 from app.api.v1.facts import router as facts_router
 from app.api.v1.forms import router as forms_router
 from app.api.v1.health import router as health_router
@@ -41,6 +42,7 @@ from app.db.mongo_database import MongoDatabase
 from app.db.repositories.form_sessions import FormSessionsRepository
 from app.db.repositories.recommendations import RecommendationsRepository
 from app.db.revocations import MongoRevocationStore
+from app.exams.service import ExamService
 from app.ontology.loader import FieldOntology
 from app.processing.runner import ProcessingContext, build_storage, process_document
 from app.repositories.collections import (
@@ -94,6 +96,7 @@ async def lifespan(app: FastAPI):
     state.corrections_service = CorrectionsService(corrections_repo)
     state.fact_service = FactService(facts_repo, ontology, corrections_repo)
     state.profile_service = ProfileService(state.fact_service, ontology)
+    state.exam_service = ExamService(state.fact_service, ontology)
     state.user_memory_service = UserMemoryService(database, vector_store, embeddings)
     state.retrieval_service = RAGRetrievalService(
         vector_store, embeddings, settings.rag_min_similarity
@@ -208,5 +211,6 @@ for router in (
     agent_router,
     reviews_router,
     recommendations_router,
+    exams_router,
 ):
     app.include_router(router, prefix="/api/v1")

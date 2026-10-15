@@ -20,8 +20,8 @@ from datetime import UTC, datetime
 from app.db.chroma_client import ChromaClient, VectorStoreError
 from app.extraction.deterministic import DeterministicExtractor
 from app.extraction.llm_extraction import LLMFactExtractor
-from app.extraction.merge import merge_candidates
 from app.extraction.schemas import CandidateFact
+from app.extraction.service import DocumentExtractionService
 from app.models.documents import DiscoveredFact, StructuredFact
 from app.ontology.loader import FieldOntology
 from app.processing.chunking import TextChunker
@@ -53,6 +53,7 @@ OnUpdate = Callable[[dict[str, object]], Awaitable[None]]
 class PipelineResult:
     normalized: NormalizedDocument
     document_type: str = "UNKNOWN"
+    document_type_confidence: float | None = None
     fact_count: int = 0
     discovered_count: int = 0
     warnings: list[str] = field(default_factory=list)
@@ -86,6 +87,7 @@ class DocumentPipeline:
         self.chunker = chunker
         self.embeddings = embeddings
         self.vector_store = vector_store
+        self.extraction = DocumentExtractionService(ontology, llm_extractor, deterministic)
 
     async def run(
         self,
@@ -102,13 +104,12 @@ class DocumentPipeline:
         result = PipelineResult(normalized=normalized, warnings=list(normalized.warnings))
 
         await self._stage(user_id, document_id, "extraction", on_update)
-        candidates = self.deterministic.extract(normalized)
-        if self.llm_extractor is not None:
-            llm_result = await self.llm_extractor.extract(normalized)
-            candidates.extend(llm_result.facts)
-            result.warnings.extend(llm_result.warnings)
-            result.document_type = llm_result.document_type
-        merged = merge_candidates(candidates)
+        extraction = await self.extraction.extract(normalized, document_name)
+        result.warnings.extend(extraction.warnings)
+        result.document_type = extraction.document_type
+        if extraction.classification.document_type != "UNKNOWN":
+            result.document_type_confidence = extraction.classification.confidence
+        merged = extraction.candidates
 
         await self._stage(user_id, document_id, "storage", on_update)
         now = datetime.now(UTC)
@@ -176,6 +177,7 @@ class DocumentPipeline:
             evidence_text=candidate.evidence_text or None,
             extraction_method=candidate.method,
             confidence=candidate.confidence,
+            provenance=_provenance(candidate),
             created_at=now,
             updated_at=now,
         )
@@ -192,6 +194,8 @@ class DocumentPipeline:
             field=candidate.field or "value",
             semantic_type=candidate.semantic_type or "UNKNOWN",
             value=candidate.value,
+            raw_value=candidate.raw_value,
+            original_label=str(candidate.extra.get("original_label") or "") or None,
             data_type=candidate.data_type,
             confidence=candidate.confidence,
             evidence_text=candidate.evidence_text,
@@ -202,3 +206,9 @@ class DocumentPipeline:
             created_at=now,
             updated_at=now,
         )
+
+
+def _provenance(candidate: CandidateFact) -> dict[str, object]:
+    """Where a value came from and how it was checked (no document text beyond the evidence)."""
+    keep = ("document_type", "original_label", "validation", "derivation")
+    return {key: str(candidate.extra[key]) for key in keep if candidate.extra.get(key)}

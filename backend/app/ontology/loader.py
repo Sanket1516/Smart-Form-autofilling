@@ -84,7 +84,18 @@ class FieldOntology:
         with open(self.path, encoding="utf-8") as handle:
             data = yaml.safe_load(handle) or {}
         self.version = str(data.get("version", "0"))
-        self.concepts = data.get("concepts", {})
+        self.concepts = dict(data.get("concepts", {}))
+        for include in data.get("includes", []):
+            with open(self.path.parent / include, encoding="utf-8") as handle:
+                extra = (yaml.safe_load(handle) or {}).get("concepts", {})
+            duplicates = set(extra) & set(self.concepts)
+            if duplicates:
+                raise ValueError(f"Ontology include {include} redefines {sorted(duplicates)}")
+            self.concepts.update(extra)
+        for key, entry in self.concepts.items():
+            for scoped in (entry.get("scopes") or {}).values():
+                if scoped not in self.concepts:
+                    raise ValueError(f"Concept {key} scopes to unknown concept {scoped}")
         self._aliases.clear()
         self._autocomplete.clear()
         for key, entry in self.concepts.items():
@@ -110,7 +121,32 @@ class FieldOntology:
         return bool(self.concepts.get(concept, {}).get("sensitive", False))
 
     def is_fillable(self, concept: str) -> bool:
-        return bool(self.concepts.get(concept, {}).get("fillable", True))
+        entry = self.concepts.get(concept, {})
+        return bool(entry.get("fillable", True)) and not entry.get("abstract", False)
+
+    def is_abstract(self, concept: str | None) -> bool:
+        return bool(concept) and bool(self.concepts.get(concept, {}).get("abstract", False))
+
+    def is_user_only(self, concept: str | None) -> bool:
+        return bool(concept) and bool(self.concepts.get(concept, {}).get("user_only", False))
+
+    def fallback(self, concept: str) -> str | None:
+        return self.concepts.get(concept, {}).get("fallback")
+
+    def resolve_from(self, concept: str) -> str | None:
+        return self.concepts.get(concept, {}).get("resolve_from")
+
+    def validator(self, concept: str) -> str | None:
+        return self.concepts.get(concept, {}).get("validator")
+
+    def scoped(self, concept: str, scope: str | None) -> str:
+        """The specific concept for ``scope`` (e.g. Class 12 percentage), or ``concept``."""
+        if not scope:
+            return concept
+        return (self.concepts.get(concept, {}).get("scopes") or {}).get(scope, concept)
+
+    def has_scopes(self, concept: str | None) -> bool:
+        return bool(concept) and bool(self.concepts.get(concept, {}).get("scopes"))
 
     def is_single_valued(self, concept: str) -> bool:
         return self.concepts.get(concept, {}).get("cardinality", "single") == "single"
@@ -163,10 +199,67 @@ class FieldOntology:
         """Backward-compatible (concept, score) pairs."""
         return [(match.concept, match.score) for match in self.match_text(text)]
 
-    def catalog(self) -> list[tuple[str, str]]:
-        """(concept, description) pairs for fillable concepts, for LLM prompts."""
+    def catalog(self, purpose: str = "classification") -> list[tuple[str, str]]:
+        """(concept, description) pairs for LLM prompts.
+
+        Abstract and record concepts are never offered. Extraction also leaves out
+        user-only concepts: those come from the user, never from a document.
+        """
         return [
             (key, str(entry.get("description", key)))
             for key, entry in self.concepts.items()
             if entry.get("fillable", True)
+            and not entry.get("abstract", False)
+            and entry.get("data_type") != "record"
+            and not (purpose == "extraction" and entry.get("user_only", False))
         ]
+
+
+# ---------------------------------------------------------------------- context scopes
+
+_SCOPE_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
+    (
+        "class_12",
+        re.compile(
+            r"\b(?:class|std|standard|grade)\s*[-.]?\s*(?:xii|12)(?:th)?\b|\b12th\b|\bxiith\b|\bhsc\b|"
+            r"\bhigher secondary\b|\bsenior secondary\b|\bsenior school certificate\b|"
+            r"\bintermediate\b|\bqualifying exam(?:ination)?\b|\bplus two\b|(?<!\w)\+\s?2\b|\bpuc\b",
+            re.I,
+        ),
+    ),
+    (
+        "class_10",
+        re.compile(
+            r"\b(?:class|std|standard|grade)\s*[-.]?\s*(?:x|10)(?:th)?\b|\b10th\b|\bxth\b|\bssc\b|"
+            r"\bmatric(?:ulation)?\b|(?<!higher )(?<!senior )\bsecondary school\b",
+            re.I,
+        ),
+    ),
+    ("caste_validity", re.compile(r"\bcaste validity\b|\bvalidity certificate\b", re.I)),
+    ("ncl_certificate", re.compile(r"\bnon[\s-]?creamy\b|\bncl\b", re.I)),
+    ("caste_certificate", re.compile(r"\bcaste certificate\b", re.I)),
+    ("income_certificate", re.compile(r"\bincome certificate\b", re.I)),
+    ("domicile_certificate", re.compile(r"\bdomicile\b", re.I)),
+    ("birth_certificate", re.compile(r"\bbirth certificate\b", re.I)),
+    ("passport", re.compile(r"\bpassport\b", re.I)),
+    ("driving_licence", re.compile(r"\bdriving\s+licen[cs]e\b", re.I)),
+)
+_MIXED_CLASSES = re.compile(
+    r"\b(?:x|10)(?:th)?\s*(?:and|&|/|,|or)\s*(?:xii|12)(?:th)?\b|\bssc\s*(?:and|&|/|,|or)\s*hsc\b",
+    re.I,
+)
+# A more specific scope suppresses the scopes it contains.
+_SUBSUMES = {"caste_validity": {"caste_certificate"}, "ncl_certificate": {"caste_certificate"}}
+
+
+def detect_scope(text: str | None) -> str | None:
+    """The single document/education scope a piece of text refers to, if unambiguous.
+
+    "Class 12th Details" -> class_12; "Class 10 and 12 marks" -> None (ambiguous).
+    """
+    if not text or _MIXED_CLASSES.search(text):
+        return None
+    found = {name for name, pattern in _SCOPE_PATTERNS if pattern.search(text)}
+    for name in list(found):
+        found -= _SUBSUMES.get(name, set())
+    return found.pop() if len(found) == 1 else None

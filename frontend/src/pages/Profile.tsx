@@ -2,7 +2,9 @@ import { useMemo, useState, type FormEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, Eye, EyeOff, Pencil, Plus, Trash2, X } from 'lucide-react';
 import { useLoader } from '../hooks/useLoader';
-import { factsApi, formatValue, profileApi, type ProfileField } from '../services/api';
+import { factsApi, formatValue, isRecord, profileApi, type ProfileField } from '../services/api';
+import { RecordTable } from '../components/documents/RecordTable';
+import { ExamReadiness } from '../components/profile/ExamReadiness';
 import { Button } from '../components/ui/Button';
 import { ErrorState } from '../components/ui/ErrorState';
 import { LoadingState } from '../components/ui/LoadingState';
@@ -12,6 +14,9 @@ const SECTION_TITLES: Record<string, string> = {
   personal: 'Personal', identity: 'Identity', address: 'Address', contact: 'Contact', education: 'Education',
   experience: 'Experience', skills: 'Skills', financial: 'Financial', medical: 'Medical',
 };
+
+const recordRows = (field: ProfileField): Array<Record<string, unknown>> =>
+  (field.status === 'resolved' ? [field.value] : field.values).filter(isRecord);
 
 export const Profile = () => {
   const { data, error, loading, reload } = useLoader(async () => {
@@ -25,12 +30,15 @@ export const Profile = () => {
   const [newValue, setNewValue] = useState('');
 
   const sections = useMemo(() => {
-    const grouped = new Map<string, ProfileField[]>();
+    const labels = new Map((data?.profile.groups ?? []).map((g) => [g.key, g.label]));
+    const grouped = new Map<string, ProfileField[]>([...labels.keys()].map((key) => [key, []]));
     for (const field of data?.profile.fields ?? []) {
-      const section = field.concept.split('.')[0];
+      const section = field.group ?? field.concept.split('.')[0];
       grouped.set(section, [...(grouped.get(section) ?? []), field]);
     }
-    return [...grouped.entries()];
+    return [...grouped.entries()]
+      .filter(([, fields]) => fields.length > 0)
+      .map(([key, fields]) => [labels.get(key) ?? SECTION_TITLES[key] ?? key, fields] as const);
   }, [data]);
 
   const run = async (action: () => Promise<unknown>, success: string) => {
@@ -78,16 +86,24 @@ export const Profile = () => {
         </div>
       )}
 
-      {sections.map(([section, fields]) => (
-        <div className="card" key={section}>
-          <h2>{SECTION_TITLES[section] ?? section}</h2>
+      {sections.map(([title, fields]) => (
+        <div className="card" key={title}>
+          <h2>{title}</h2>
           <ul className="list">
-            {fields.map((field) => (
-              <FieldRow key={field.concept} field={field} run={run} />
-            ))}
+            {fields.map((field) =>
+              field.data_type === 'record' ? (
+                <li key={field.concept} className="list-item">
+                  <RecordTable rows={recordRows(field)}
+                    caption={`${field.label} — from ${[...new Set(field.sources.map((s) => s.document_name ?? 'document'))].join(', ')}`} />
+                </li>
+              ) : (
+                <FieldRow key={field.concept} field={field} run={run} />
+              ))}
           </ul>
         </div>
       ))}
+
+      <ExamReadiness onSaved={() => void reload(true)} />
 
       <div className="card">
         <h2><Plus size={18} /> Add a value</h2>

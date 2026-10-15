@@ -19,7 +19,7 @@ from pydantic import BaseModel, Field
 
 from app.agents.json_output import LLMOutputError, parse_model
 from app.agents.llm_provider import TASK_FIELD_CLASSIFICATION, LLMProvider, LLMProviderError
-from app.ontology.loader import FieldOntology
+from app.ontology.loader import FieldOntology, detect_scope
 from app.schemas.form_sessions import FieldObject
 from app.security.prompt_safety import sanitize_untrusted, wrap_untrusted
 
@@ -58,6 +58,62 @@ _NARRATIVE = re.compile(
 )
 
 
+# canonical subject -> spellings used on forms (longest first wins)
+SUBJECTS: dict[str, tuple[str, ...]] = {
+    "physics": ("physics",),
+    "chemistry": ("chemistry",),
+    "biology": ("biology", "bio"),
+    "botany": ("botany",),
+    "zoology": ("zoology",),
+    "mathematics": ("mathematics", "maths", "math"),
+    "english": ("english",),
+    "hindi": ("hindi",),
+    "marathi": ("marathi",),
+    "sanskrit": ("sanskrit",),
+    "social science": ("social science", "social studies"),
+    "computer science": ("computer science",),
+    "information technology": ("information technology",),
+    "biotechnology": ("biotechnology",),
+    "economics": ("economics",),
+    "accountancy": ("accountancy",),
+    "geography": ("geography",),
+    "history": ("history",),
+    "political science": ("political science",),
+    "physical education": ("physical education",),
+    "science": ("science",),
+}
+_SUBJECT_PATTERNS = sorted(
+    ((canonical, alias) for canonical, aliases in SUBJECTS.items() for alias in aliases),
+    key=lambda item: len(item[1]),
+    reverse=True,
+)
+_PARENTHETICAL = re.compile(r"\([^)]*\)")
+_MARK_WORDS = re.compile(
+    r"\b(marks?|score|obtained|secured|max(imum)?|out of|grade|theory|practical)\b", re.I
+)
+
+
+def subject_qualifier(text: str) -> dict[str, str] | None:
+    """{'subject', 'measure'} for labels such as 'Physics Marks Obtained' or 'Max marks in Maths'."""
+    if not text or not _MARK_WORDS.search(text):
+        return None
+    lowered = text.casefold()
+    for canonical, alias in _SUBJECT_PATTERNS:
+        if re.search(rf"\b{re.escape(alias)}\b", lowered):
+            if re.search(r"\bmax(imum)?\b|\bout of\b", lowered):
+                measure = "max_marks"
+            elif re.search(r"\bgrade\b", lowered):
+                measure = "grade"
+            elif re.search(r"\btheory\b", lowered):
+                measure = "theory"
+            elif re.search(r"\bpractical\b", lowered):
+                measure = "practical"
+            else:
+                measure = "marks_obtained"
+            return {"subject": canonical, "measure": measure}
+    return None
+
+
 @dataclass
 class Classification:
     field_id: str
@@ -68,6 +124,8 @@ class Classification:
     narrative: bool = False
     other_person: bool = False
     error: str | None = None
+    qualifier: dict[str, str] = field(default_factory=dict)
+    needs_context: bool = False
 
 
 class _LLMClassification(BaseModel):
@@ -108,29 +166,54 @@ class FieldClassifier:
             result.concept, result.confidence, result.method = auto, 0.97, "autocomplete"
             return result
 
+        qualifier = subject_qualifier(field_obj.question or field_obj.label or field_obj.aria_label)
+        if qualifier:
+            result.qualifier = qualifier
+            result.concept, result.confidence, result.method = (
+                "education.subject_marks",
+                0.9,
+                "subject",
+            )
+            return self._apply_scope(field_obj, result)
+
+        scope = self.scope_for(field_obj)
         for attribute, weight in _TEXT_SOURCES:
             text = getattr(field_obj, attribute)
             if not text:
                 continue
-            matches = self.ontology.match_text(text)
+            # "Candidate Name (as per Class 10th certificate)": the bracket qualifies the field
+            main = _PARENTHETICAL.sub(" ", text).strip()
+            matches = (
+                main and main != text and self.ontology.match_text(main)
+            ) or self.ontology.match_text(text)
             if not matches:
                 continue
             top = matches[0]
             tied = [m.concept for m in matches[1:] if top.score - m.score <= _AMBIGUITY_MARGIN]
             if tied:
-                result.ambiguous = [top.concept, *tied]
+                candidates = [top.concept, *tied]
+                # The page context can break the tie ("Result" in a Class 12 section).
+                scoped = [c for c in candidates if scope and self.ontology.scoped(c, scope) != c]
+                if len(scoped) == 1 and top.score >= 0.98:
+                    result.concept, result.confidence = scoped[0], round(top.score * weight, 3)
+                    result.method = f"{attribute}+context"
+                    return self._apply_scope(field_obj, result)
+                result.ambiguous = candidates
                 # A name/id attribute can break the tie.
                 for tie_breaker in (field_obj.name, field_obj.id):
                     hint = self.ontology.match_text(tie_breaker)
                     if hint and hint[0].concept in result.ambiguous:
                         result.concept, result.confidence = hint[0].concept, 0.8
                         result.method, result.ambiguous = "label+name", []
-                        return result
+                        return self._apply_scope(field_obj, result)
                 return result
             result.concept = top.concept
             result.confidence = round(top.score * weight, 3)
             result.method = attribute
             break
+        self._apply_scope(field_obj, result)
+        if result.needs_context:
+            return result
 
         if result.concept in _OWNER_CONCEPTS and _OTHER_PERSON.search(
             f"{field_obj.section} {field_obj.nearby_text} {field_obj.name} {field_obj.id}"
@@ -155,6 +238,32 @@ class FieldClassifier:
                 )
         elif field_obj.input_type == "email" and result.concept != "personal.email":
             result.confidence = min(result.confidence, 0.5)
+        return result
+
+    @staticmethod
+    def scope_for(field_obj: FieldObject) -> str | None:
+        """The Class 10/12 or certificate context of a field: its own label first, then
+        its name/id, then the form section, then nearby text."""
+        for text in (
+            field_obj.question or field_obj.label,
+            field_obj.aria_label,
+            field_obj.name,
+            field_obj.id,
+            field_obj.section,
+            field_obj.nearby_text,
+        ):
+            scope = detect_scope(text)
+            if scope:
+                return scope
+        return None
+
+    def _apply_scope(self, field_obj: FieldObject, result: Classification) -> Classification:
+        """Generic concepts become specific in context; abstract ones without context are dropped."""
+        if result.concept and self.ontology.has_scopes(result.concept):
+            result.concept = self.ontology.scoped(result.concept, self.scope_for(field_obj))
+        if result.concept and self.ontology.is_abstract(result.concept):
+            result.concept, result.confidence, result.method = None, 0.0, "none"
+            result.needs_context = True
         return result
 
     def is_resolved(self, classification: Classification) -> bool:
@@ -194,10 +303,24 @@ class FieldClassifier:
                         else "AI classification returned invalid output"
                     )
             return results
+        by_id = {f.field_id: f for f in fields}
         for item in output.classifications:
             classification = results.get(item.field_id)
             if classification is None:
                 continue
+            if item.concept and self.ontology.has_scopes(item.concept):
+                item.concept = self.ontology.scoped(
+                    item.concept, self.scope_for(by_id[item.field_id])
+                )
+            if item.concept and self.ontology.is_abstract(item.concept):
+                item.concept = None
+            if item.concept and self.ontology.resolve_from(item.concept):
+                field_obj = by_id[item.field_id]
+                qualifier = subject_qualifier(field_obj.question or field_obj.label)
+                if qualifier is None:
+                    item.concept = None  # per-subject marks need a recognisable subject
+                else:
+                    classification.qualifier = qualifier
             classification.narrative = classification.narrative or item.open_question
             if (
                 item.concept

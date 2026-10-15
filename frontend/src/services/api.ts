@@ -90,6 +90,7 @@ export interface DocumentData {
   file_type: string;
   file_size: number;
   document_type?: string | null;
+  document_type_confidence?: number | null;
   status: DocumentStatus;
   current_stage?: string | null;
   progress: number;
@@ -163,6 +164,8 @@ export interface ProfileField {
   is_user_confirmed: boolean;
   origin: string;
   sensitive: boolean;
+  group?: string;
+  data_type?: string;
   sources: FactSource[];
 }
 
@@ -170,6 +173,67 @@ export interface Profile {
   user_id: string;
   sections: Record<string, Record<string, unknown>>;
   fields: ProfileField[];
+  groups?: Array<{ key: string; label: string }>;
+}
+
+export type RequirementStatus = 'available' | 'needs_confirmation' | 'conflict' | 'missing' | 'needs_user_input';
+
+export interface ExamRequirement {
+  concept: string;
+  label: string;
+  required: boolean;
+  sensitive: boolean;
+  status: RequirementStatus;
+  value?: unknown;
+  candidates?: unknown[];
+  sources: string[];
+  reason?: string;
+  missing_subjects?: string[];
+  evidence: Array<{ document_type: string; label: string }>;
+}
+
+export interface ExamUpload {
+  id: string;
+  label: string;
+  required: boolean | null;
+  reason?: string | null;
+  formats: string[];
+  min_kb?: number | null;
+  max_kb?: number | null;
+  verified: boolean;
+  note?: string | null;
+}
+
+export interface ExamReadiness {
+  exam_id: string;
+  name: string;
+  last_reviewed?: string;
+  verified_against_official_bulletin: boolean;
+  note?: string;
+  summary: Partial<Record<RequirementStatus, number>>;
+  sections: Array<{ title: string; requirements: ExamRequirement[] }>;
+  uploads: ExamUpload[];
+}
+
+export interface ExamSummary {
+  exam_id: string;
+  name: string;
+  conducting_body?: string;
+  official_site?: string;
+  last_reviewed?: string;
+  verified_against_official_bulletin: boolean;
+  note?: string;
+}
+
+export interface UploadCheck {
+  upload_id: string;
+  file_name: string;
+  size_kb: number;
+  dimensions?: { width: number; height: number } | null;
+  ok: boolean;
+  problems: string[];
+  verified_rules: boolean;
+  note?: string | null;
 }
 
 export interface Concept {
@@ -196,12 +260,15 @@ export interface DiscoveredFact {
   field: string;
   semantic_type: string;
   value: unknown;
+  raw_value?: unknown;
+  original_label?: string | null;
   confidence: number;
   evidence_text: string;
   ontology?: string | null;
   origin: string;
   extraction_method: string;
   document_type?: string | null;
+  masked?: boolean;
 }
 
 export interface Review {
@@ -322,6 +389,37 @@ export const formsApi = {
 export const ragApi = {
   ask: (question: string) => request<RagAnswer>('/retrieval/rag/answer', { method: 'POST', body: { question } }),
 };
+
+export const examsApi = {
+  list: () => request<ExamSummary[]>('/exams'),
+  readiness: (examId: string) => request<ExamReadiness>(`/exams/${encodeURIComponent(examId)}/readiness`),
+  checkUpload: (examId: string, uploadId: string, file: File) => {
+    const form = new FormData();
+    form.append('file', file);
+    return request<UploadCheck>(
+      `/exams/${encodeURIComponent(examId)}/uploads/${encodeURIComponent(uploadId)}/check`,
+      { method: 'POST', form },
+    );
+  },
+};
+
+const DOCUMENT_TYPE_LABELS: Record<string, string> = {
+  AADHAAR_CARD: 'Aadhaar card', PAN_CARD: 'PAN card', VOTER_ID: 'Voter ID', DRIVING_LICENCE: 'Driving licence',
+  PASSPORT: 'Passport', CLASS_10_MARKSHEET: 'Class 10 marksheet', CLASS_12_MARKSHEET: 'Class 12 marksheet',
+  BIRTH_CERTIFICATE: 'Birth certificate', BANK_PASSBOOK: 'Bank passbook', BANK_STATEMENT: 'Bank statement',
+  ELECTRICITY_BILL: 'Electricity bill', RATION_CARD: 'Ration card', INCOME_CERTIFICATE: 'Income certificate',
+  CASTE_CERTIFICATE: 'Caste certificate', CASTE_VALIDITY_CERTIFICATE: 'Caste validity certificate',
+  NON_CREAMY_LAYER_CERTIFICATE: 'Non-creamy layer certificate', DOMICILE_CERTIFICATE: 'Domicile certificate',
+};
+
+export function documentTypeLabel(type: string): string {
+  return DOCUMENT_TYPE_LABELS[type] ?? type.replace(/_/g, ' ').toLowerCase().replace(/^\w/, (c) => c.toUpperCase());
+}
+
+/** Rows of a record table (subjects, transactions, household members). */
+export function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
 
 export const healthApi = {
   services: () => request<ServiceHealth>('/health/services', { auth: false }),

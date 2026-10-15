@@ -28,6 +28,9 @@ _REDACTIONS = (
         r"\1\2[REDACTED]",
     ),
     (re.compile(r"[\w.+-]+@[\w-]+(?:\.[\w-]+)+"), "[EMAIL]"),
+    (re.compile(r"\b[A-Z]{3}[ABCFGHJLPT][A-Z]\d{4}[A-Z]\b"), "[PAN]"),
+    (re.compile(r"\b[A-Z]{4}0[A-Z0-9]{6}\b"), "[IFSC]"),
+    (re.compile(r"\b[A-Z]{3}\d{7}\b"), "[EPIC]"),
     (re.compile(r"(?<!\d)\+?\d[\d -]{7,}\d(?!\d)"), "[NUMBER]"),
 )
 _SENSITIVE_KEY = re.compile(r"(?i)(authorization|api[_-]?key|password|secret|token|credential)")
