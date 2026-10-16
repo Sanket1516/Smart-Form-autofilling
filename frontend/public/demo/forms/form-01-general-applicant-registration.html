@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>General Applicant Registration — DemoGov Portal (synthetic demo form)</title>
+<link rel="stylesheet" href="demo-forms.css">
+</head>
+<body data-demo-form="01" style="--accent:#1f4e79">
+<header class="site"><div class="brand">DemoGov Portal <span>fictional</span></div><nav><a href="index.html">All 15 demo forms</a></nav></header>
+<div class="ribbon">SYNTHETIC DEMO FORM — fictional portal, not an official application. Nothing on this page is submitted anywhere.</div>
+<main>
+<h1>General Applicant Registration</h1>
+<p class="intro">Create an applicant record for the demo portal. Nothing is submitted anywhere.</p>
+<div id="status-panel" role="status" aria-live="polite"><strong>Field status</strong><span class="chip"><span class="dot verified"></span>Verified: <b data-count="verified">0</b></span><span class="chip"><span class="dot filled"></span>Filled: <b data-count="filled">0</b></span><span class="chip"><span class="dot review"></span>Review: <b data-count="review">0</b></span><span class="chip"><span class="dot missing"></span>Missing: <b data-count="missing">0</b></span><span class="chip"><span class="dot choice"></span>Your choice: <b data-count="choice">0</b></span><span class="chip"><span class="dot empty"></span>Optional: <b data-count="empty">0</b></span></div>
+<form id="demo-form" novalidate autocomplete="off">
+<section class="card"><h2>Personal details</h2><div class="grid"><div class="field req" data-field data-required><label class="lbl" for="full_name">Full name</label><input type="text" name="full_name" id="full_name" required><span class="badge" data-badge data-state="empty"></span></div><div class="field req" data-field data-required><label class="lbl" for="dob">Date of birth</label><input type="date" name="dob" id="dob" required><span class="badge" data-badge data-state="empty"></span></div><fieldset class="field req wide" data-field data-required><legend>Gender</legend><div class="opts"><label class="opt"><input type="radio" name="gender" id="gender-0" value="Male" required> Male</label><label class="opt"><input type="radio" name="gender" id="gender-1" value="Female" required> Female</label><label class="opt"><input type="radio" name="gender" id="gender-2" value="Other" required> Other</label><label class="opt"><input type="radio" name="gender" id="gender-3" value="Prefer not to say" required> Prefer not to say</label></div><span class="badge" data-badge data-state="empty"></span></fieldset><div class="field req" data-field data-required><label class="lbl" for="nationality">Nationality</label><select name="nationality" id="nationality" required><option value="">Select…</option><option value="Indian">Indian</option><option value="Other">Other</option></select><span class="badge" data-badge data-state="empty"></span></div><div class="field" data-field><label class="lbl" for="occupation">Current occupation</label><input type="text" name="occupation" id="occupation" aria-describedby="occupation-hint"><span class="hint" id="occupation-hint">Not stated in any document.</span><span class="badge" data-badge data-state="empty"></span></div></div></section><section class="card"><h2>Contact</h2><div class="grid"><div class="field req" data-field data-required><label class="lbl" for="email">Email address</label><input type="email" name="email" id="email" required><span class="badge" data-badge data-state="empty"></span></div><div class="field req" data-field data-required><label class="lbl" for="mobile">Mobile number</label><input type="tel" name="mobile" id="mobile" required pattern="[0-9]{10}" aria-describedby="mobile-hint"><span class="hint" id="mobile-hint">10 digits</span><span class="badge" data-badge data-state="empty"></span></div><div class="field" data-field><label class="lbl" for="alt_mobile">Alternate mobile number</label><input type="tel" name="alt_mobile" id="alt_mobile" pattern="[0-9]{10}"><span class="badge" data-badge data-state="empty"></span></div><div class="field req wide" data-field data-required><label class="lbl" for="permanent_address">Permanent address</label><textarea name="permanent_address" id="permanent_address" rows="3" required></textarea><span class="badge" data-badge data-state="empty"></span></div></div></section>
+<div class="actions"><button type="submit" class="primary">Review application (demo)</button><button type="reset" class="secondary">Clear form</button></div>
+<p id="submit-result" role="status" hidden></p>
+</form>
+</main>
+<script src="demo-forms.js" defer></script>
+</body>
+</html>

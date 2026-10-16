@@ -1,0 +1,50 @@
+{
+ "generated_at": "2026-10-16T22:15:51",
+ "metrics": [
+  {
+   "label": "Documents processed",
+   "value": "15/15"
+  },
+  {
+   "label": "Document-type accuracy",
+   "value": "100.0%"
+  },
+  {
+   "label": "Exact-field accuracy",
+   "value": "97.0% (128/132)"
+  },
+  {
+   "label": "Subject-table accuracy",
+   "value": "100.0%"
+  },
+  {
+   "label": "Retrieval top-1 / top-4",
+   "value": "93.3% / 100.0%"
+  },
+  {
+   "label": "Ask Documents: answers passing every check",
+   "value": "28/28"
+  },
+  {
+   "label": "Ask Documents: source attribution",
+   "value": "100.0%"
+  },
+  {
+   "label": "Infrastructure failures (not model quality)",
+   "value": "0"
+  },
+  {
+   "label": "Autofill (default): correctly / incorrectly filled",
+   "value": "112 / 9"
+  },
+  {
+   "label": "Autofill: missing values left empty",
+   "value": "12/15"
+  },
+  {
+   "label": "Autofill: forms submitted / files attached",
+   "value": "0 / 0"
+  }
+ ],
+ "note": "Aggregates from the last local run of `python -m demo.cli evaluate`; see demo/results/REPORT.md."
+}

@@ -64,6 +64,22 @@ On Linux/macOS or CI, run `make test-e2e`. Both commands need Docker and network
 
 The opt-in `real_llm` tests can incur provider charges. Use only synthetic test data and enable them explicitly with `RUN_REAL_LLM_TESTS=1`.
 
+## Judge demo (synthetic dataset, 15 forms, evaluation)
+
+`demo/` holds a self-contained demonstration: one fictional applicant, 15 generated documents
+(`frontend/public/demo/documents`), 15 working web forms (`frontend/public/demo/forms`), a **Demo data** page
+in the web app (`/demo-data`) and an automated evaluation against an independent answer key.
+
+```bash
+python -m demo.cli generate            # regenerate documents, forms, answer key
+python -m demo.cli load                # upload to the dedicated demo account (idempotent)
+python -m demo.cli evaluate --browser  # API suite + the real Chrome extension on all 15 forms
+python -m demo.cli cleanup             # remove only DEMO_* documents
+```
+
+Everything is synthetic and marked "SYNTHETIC DEMO DATA — NOT A VALID GOVERNMENT DOCUMENT". See [demo/README.md](demo/README.md)
+and the latest numbers in [demo/results/REPORT.md](demo/results/REPORT.md).
+
 ## Project references
 
 - [Implementation plan and phase status](docs/IMPLEMENTATION_PLAN.md)

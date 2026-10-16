@@ -33,6 +33,8 @@ from app.extraction.tables import parse_marks, parse_members, parse_transactions
 from app.ontology.loader import FieldOntology
 from app.processing.schemas import NormalizedDocument
 
+_SENTENCE_WORDS = {"from", "for", "is", "are", "of", "as", "in", "on", "at", "to", "by", "and", "the",
+                   "that", "which", "was", "were", "has", "have", "with", "shall", "will"}
 _MAX_LABEL_CHARS = 80
 _MAX_LABEL_WORDS = 12
 _PAIR_SPLIT = re.compile(r"\s{3,}|\t+")
@@ -253,14 +255,26 @@ class DocumentAwareExtractor:
         for index, line in enumerate(lines):
             if index in consumed or _MRZ.match(line.text):
                 continue
-            for segment in _PAIR_SPLIT.split(line.text):
-                segment = segment.strip()
-                if not segment:
+            segments = [s.strip() for s in _PAIR_SPLIT.split(line.text) if s.strip()]
+            paired = False
+            for position, segment in enumerate(segments):
+                if paired:  # this segment was consumed as the previous label's value
+                    paired = False
                     continue
                 label, value = self._split_segment(segment)
                 if label is None:
                     continue
                 is_label, concept = self._resolve_label(label)
+                if not value and is_label and position + 1 < len(segments):
+                    # "Label    Value": OCR flattens a colon-less two-column table row into
+                    # one line with a wide gap; a known label takes the next segment as its
+                    # value unless that segment is itself a label.
+                    following = segments[position + 1]
+                    if not self._resolve_label(following.partition(":")[0])[0] and not (
+                        ":" in following and self._split_segment(following)[0]
+                    ):
+                        value, paired = following, True
+                        segment = f"{segment} {following}"
                 if not value:
                     if not is_label or len(_PAIR_SPLIT.split(line.text)) > 1:
                         continue
@@ -305,6 +319,8 @@ class DocumentAwareExtractor:
             candidate = " ".join(words[:size])
             is_label, concept = self._resolve_label(candidate)
             value = " ".join(words[size:])
+            if value.split()[0].casefold() in _SENTENCE_WORDS:
+                continue  # running prose ("annual income from all sources for ..."), not a value
             if is_label and concept is not None and _value_like(concept, value):
                 return candidate, value
         return None, ""

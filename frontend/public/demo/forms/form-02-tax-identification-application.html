@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tax Identification Application — DemoGov Portal (synthetic demo form)</title>
+<link rel="stylesheet" href="demo-forms.css">
+</head>
+<body data-demo-form="02" style="--accent:#1f4e79">
+<header class="site"><div class="brand">DemoGov Portal <span>fictional</span></div><nav><a href="index.html">All 15 demo forms</a></nav></header>
+<div class="ribbon">SYNTHETIC DEMO FORM — fictional portal, not an official application. Nothing on this page is submitted anywhere.</div>
+<main>
+<h1>Tax Identification Application</h1>
+<p class="intro">Request or update a tax identification record. The identifier is optional (&quot;if you already have one&quot;).</p>
+<div id="status-panel" role="status" aria-live="polite"><strong>Field status</strong><span class="chip"><span class="dot verified"></span>Verified: <b data-count="verified">0</b></span><span class="chip"><span class="dot filled"></span>Filled: <b data-count="filled">0</b></span><span class="chip"><span class="dot review"></span>Review: <b data-count="review">0</b></span><span class="chip"><span class="dot missing"></span>Missing: <b data-count="missing">0</b></span><span class="chip"><span class="dot choice"></span>Your choice: <b data-count="choice">0</b></span><span class="chip"><span class="dot empty"></span>Optional: <b data-count="empty">0</b></span></div>
+<form id="demo-form" novalidate autocomplete="off">
+<section class="card"><h2>Applicant</h2><div class="grid"><div class="field req" data-field data-required><label class="lbl" for="applicant_name">Applicant name</label><input type="text" name="applicant_name" id="applicant_name" required><span class="badge" data-badge data-state="empty"></span></div><div class="field req" data-field data-required><label class="lbl" for="dob">Date of birth</label><input type="date" name="dob" id="dob" required><span class="badge" data-badge data-state="empty"></span></div><div class="field req" data-field data-required><label class="lbl" for="father_name">Father / parent name</label><input type="text" name="father_name" id="father_name" required><span class="badge" data-badge data-state="empty"></span></div><div class="field" data-field><label class="lbl" for="mother_name">Mother&#x27;s name</label><input type="text" name="mother_name" id="mother_name"><span class="badge" data-badge data-state="empty"></span></div><div class="field" data-field data-sensitive><label class="lbl" for="existing_tax_id">Existing tax identifier (if available)</label><input type="text" name="existing_tax_id" id="existing_tax_id" pattern="[A-Z]{5}[0-9]{4}[A-Z]" aria-describedby="existing_tax_id-hint"><span class="hint" id="existing_tax_id-hint">Ten characters: 5 letters, 4 digits, 1 letter</span><span class="badge" data-badge data-state="empty"></span></div><div class="field" data-field data-sensitive><label class="lbl" for="aadhaar_link">Aadhaar number (if available)</label><input type="text" name="aadhaar_link" id="aadhaar_link" aria-describedby="aadhaar_link-hint"><span class="hint" id="aadhaar_link-hint">No document in the demo set contains one.</span><span class="badge" data-badge data-state="empty"></span></div></div></section><section class="card"><h2>Correspondence</h2><div class="grid"><div class="field req wide" data-field data-required><label class="lbl" for="corr_address">Correspondence address</label><textarea name="corr_address" id="corr_address" rows="3" required></textarea><span class="badge" data-badge data-state="empty"></span></div><div class="field" data-field><label class="lbl" for="corr_pin">Correspondence PIN code</label><input type="text" name="corr_pin" id="corr_pin" pattern="[0-9]{6}"><span class="badge" data-badge data-state="empty"></span></div><div class="field" data-field><label class="lbl" for="mobile">Mobile number</label><input type="tel" name="mobile" id="mobile" pattern="[0-9]{10}"><span class="badge" data-badge data-state="empty"></span></div><div class="field" data-field data-user><label class="lbl" for="income_source">Principal source of income</label><select name="income_source" id="income_source"><option value="">Select…</option><option value="Salary">Salary</option><option value="Business">Business</option><option value="Scholarship / stipend">Scholarship / stipend</option><option value="Other">Other</option></select><span class="badge" data-badge data-state="empty"></span></div></div></section>
+<div class="actions"><button type="submit" class="primary">Review application (demo)</button><button type="reset" class="secondary">Clear form</button></div>
+<p id="submit-result" role="status" hidden></p>
+</form>
+</main>
+<script src="demo-forms.js" defer></script>
+</body>
+</html>

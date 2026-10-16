@@ -1,0 +1,70 @@
+# FICTIONAL requirement profile for the judge demo (see /demo in the repo).
+#
+# DemoScholar 2026 does not exist. Its eligibility criteria were invented to show the
+# Ask Documents eligibility reasoning (met / not met / cannot be determined) with
+# deterministic calculations. They are NOT real government or institutional rules.
+# The profile is loaded only when APP_ENV is not "production" (see load_exam_profiles).
+version: 1
+exams:
+  DEMOSCHOLAR_2026:
+    name: DemoScholar 2026 (fictional)
+    conducting_body: Fictional Demo Trust (not a real organisation)
+    official_site: https://example.invalid/demoscholar
+    last_reviewed: "2026-10-16"
+    verified_against_official_bulletin: false
+    note: FICTIONAL demo requirements for software demonstration only. Not real rules.
+    eligibility:
+      source: FICTIONAL DemoScholar 2026 criteria (demo data, not a real rule)
+      verified_against_official_bulletin: false
+      rules:
+        - {id: class12_passed, type: result_passed, concept: academic.class12.result_status, label: Passed Class 12}
+        - {id: subjects, type: subjects_present, scope: class_12, subjects: [physics, chemistry, mathematics, english], label: "Physics, Chemistry, Mathematics and English in Class 12"}
+        - {id: class12_min, type: percentage_minimum, concept: academic.class12.percentage, default_minimum: 85, label: At least 85% in Class 12}
+        - {id: class10_min, type: percentage_minimum, concept: academic.class10.percentage, default_minimum: 90, label: At least 90% in Class 10}
+        - id: pcm_aggregate
+          type: subject_aggregate
+          scope: class_12
+          subjects: [physics, chemistry, mathematics]
+          label: At least 90% aggregate in Physics, Chemistry and Mathematics in Class 12
+          default_minimum: 90
+        - {id: min_age, type: min_age, years: 17, as_of_month_day: "12-31", label: At least 17 years old on 31 December of the award year}
+        - {id: entrance_score, type: percentage_minimum, concept: exam.demo_entrance_score, default_minimum: 60, label: At least 60% in the DemoScholar screening test (score report required)}
+    sections:
+      - title: Personal details
+        requirements:
+          - {concept: personal.full_name, required: true}
+          - {concept: personal.father_name, required: true}
+          - {concept: personal.mother_name, required: true}
+          - {concept: personal.date_of_birth, required: true}
+          - {concept: identity.gender, required: true}
+          - {concept: identity.nationality, required: true}
+      - title: Contact and address
+        requirements:
+          - {concept: personal.email, required: true, source: user}
+          - {concept: personal.phone, required: true, source: user}
+          - {concept: address.permanent_address, required: true}
+          - {concept: address.correspondence_address, required: true}
+      - title: Class 10
+        requirements:
+          - {concept: academic.class10.board, required: true}
+          - {concept: academic.class10.passing_year, required: true}
+          - {concept: academic.class10.roll_number, required: true}
+          - {concept: academic.class10.percentage, required: true}
+      - title: Class 12
+        requirements:
+          - {concept: academic.class12.board, required: true}
+          - {concept: academic.class12.passing_year, required: true}
+          - {concept: academic.class12.roll_number, required: true}
+          - {concept: academic.class12.percentage, required: true}
+          - {concept: academic.class12.subjects, required: true, subjects: [physics, chemistry, mathematics, english]}
+      - title: Category
+        requirements:
+          - {concept: category.social_category, required: true, confirm: true, evidence: [CASTE_CERTIFICATE]}
+          - {concept: category.pwbd_status, required: true, source: user}
+      - title: Preferences
+        requirements:
+          - {concept: exam.city_preference, required: true, source: user}
+          - {concept: exam.question_paper_language, required: true, source: user}
+    uploads:
+      - {id: photograph, label: Passport-size photograph, required: true, formats: [jpg, jpeg, png], min_kb: 10, max_kb: 300, verified: false}
+      - {id: signature, label: Signature, required: true, formats: [jpg, jpeg, png], min_kb: 4, max_kb: 100, verified: false}

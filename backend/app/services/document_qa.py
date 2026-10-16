@@ -27,7 +27,7 @@ from __future__ import annotations
 import logging
 import re
 from dataclasses import dataclass, field
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -38,6 +38,7 @@ from app.agents.json_output import LLMOutputError, parse_model
 from app.agents.llm_provider import TASK_RAG_ANSWER, LLMProvider, LLMProviderError
 from app.core.api_errors import APIError
 from app.exams.service import load_exam_profiles
+from app.extraction.normalize import normalize_date, same_address
 from app.extraction.registry import get_registry
 from app.extraction.validators import mask
 from app.ontology.loader import FieldOntology, detect_scopes
@@ -101,7 +102,7 @@ _KIND_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
     (
         "provenance",
         re.compile(
-            r"\bwhich document\b|\bwhere (?:did|does|is|was)\b.*\b(?:come|from|found|stated)\b|"
+            r"\bwhich documents?\b|\bwhere (?:did|does|is|was)\b.*\b(?:come|from|found|stated)\b|"
             r"\bexplain which\b|\bwhy (?:was|is) .* (?:selected|chosen)\b",
             re.I,
         ),
@@ -114,6 +115,41 @@ _KIND_PATTERNS: tuple[tuple[str, re.Pattern[str]], ...] = (
         ),
     ),
 )
+_SAME_AS = re.compile(r"\b(?:same as|identical|different (?:from|to)|differ|match(?:es)?)\b", re.I)
+
+_THIRD_PARTY = re.compile(
+    r"\b(mother|father|parent|guardian|brother|sister|uncle|aunt|spouse|husband|wife|friend|relative)(?:'s|s'|’s)?"
+    r"\s+(?:(?:mobile|phone|contact|cell)(?:\s+(?:number|no\.?))?|e-?mail(?:\s+address)?|aadhaar|pan|income|occupation)\b",
+    re.I,
+)
+_TRANSACTIONS = re.compile(r"\btransactions?\b", re.I)
+_DATE_TOKEN = (
+    r"(?:<d>{1,2}[/-]<d>{1,2}[/-]<d>{4}|<d>{4}-<d>{2}-<d>{2}|<d>{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]{3,9},?\s+<d>{4}"
+    r"|[A-Za-z]{3,9}\s+<d>{1,2}(?:st|nd|rd|th)?,?\s+<d>{4})"
+).replace("<d>", chr(92) + "d")
+_PERIOD = re.compile(rf"(?:between|from)\s+({_DATE_TOKEN})\s+(?:and|to|till|until)\s+({_DATE_TOKEN})", re.I)
+_MONTH_PERIOD = re.compile(r"\b(?:in|during|for|of)\s+([A-Za-z]{3,9})\s+(<d>{4})\b".replace("<d>", chr(92) + "d"), re.I)
+
+
+def transaction_period(question: str) -> tuple[str, str] | None:
+    """The date range a transactions question asks about, as ISO dates (inclusive)."""
+    match = _PERIOD.search(question)
+    if match:
+        start, end = normalize_date(match.group(1)), normalize_date(match.group(2))
+        return (start, end) if start and end and start <= end else None
+    month = _MONTH_PERIOD.search(question)
+    if month:
+        first = normalize_date(f"1 {month.group(1)} {month.group(2)}")
+        if first:
+            year, mon = int(first[:4]), int(first[5:7])
+            nxt = date(year + (mon == 12), mon % 12 + 1, 1)
+            return first, (nxt - timedelta(days=1)).isoformat()
+    return None
+
+_APPLICANT_ONLY = {
+    "personal.phone", "personal.email", "financial.annual_income", "identity.aadhaar_number",
+    "identity.pan_number", "personal.date_of_birth",
+}
 _EXAM_KINDS = {"eligibility", "requirements", "missing_info", "fillability"}
 _MARKSHEET_WORDS = re.compile(
     r"\bmark\s*sheets?\b|\bmarksheets?\b|\bmarks\b|\bacademic\b|\beducation\b", re.I
@@ -171,6 +207,7 @@ class QuestionPlan:
     subject: dict[str, str] | None = None
     exam_id: str | None = None
     follow_up: bool = False
+    third_party: str | None = None  # a value the applicant's own facts must not answer
 
     @property
     def primary(self) -> str:
@@ -243,6 +280,11 @@ class QuestionPlanner:
             plan.subject = plan.subject or before.subject
             plan.kinds = plan.kinds or before.kinds
             plan.exam_id = plan.exam_id or self.detect_exam(previous[-1])
+        if previous and plan.concepts and _SAME_AS.search(question):
+            # "Is it the same as the permanent address?": compare with what the last question asked about.
+            before = self._plan_text(previous[-1])
+            plan.concepts = list(dict.fromkeys([*before.concepts, *plan.concepts]))
+            plan.follow_up = True
         if (
             not plan.exam_id
             and previous
@@ -289,6 +331,11 @@ class QuestionPlanner:
         plan.concepts = list(
             dict.fromkeys([*plan.concepts, *self._apply_scopes(plan.generic, plan.scopes)])
         )
+        other = _THIRD_PARTY.search(text)
+        if other:
+            # The applicant's phone / e-mail / income must never answer for another person.
+            plan.third_party = other.group(0)
+            plan.concepts = [c for c in plan.concepts if c not in _APPLICANT_ONLY]
         return plan
 
     def _scope_of(self, scoped: str) -> str:
@@ -385,7 +432,9 @@ class DocumentQAService:
         ontology: FieldOntology,
         documents: DocumentsRepository,
         exam_service: Any,
+        discovered_facts: Any = None,
     ) -> None:
+        self.discovered_facts = discovered_facts
         self.facts = facts
         self.retrieval = retrieval
         self.llm = llm
@@ -430,7 +479,24 @@ class DocumentQAService:
         if plan.subject:
             self._subject_facts(plan, views, evidence)
         for concept in plan.concepts:
-            self._concept_evidence(concept, views, evidence, uploaded_types)
+            self._concept_evidence(
+                concept, views, evidence, uploaded_types, all_sources="provenance" in plan.kinds
+            )
+        if plan.third_party:
+            evidence.missing.append(
+                AnswerMissing(
+                    concept="third_party",
+                    label=plan.third_party[:80],
+                    reason=(
+                        "Your documents state the applicant's own details (and a named emergency contact), "
+                        "not this person's. The applicant's own value was not used as a substitute."
+                    ),
+                )
+            )
+        if _TRANSACTIONS.search(request.question):
+            await self._transactions(
+                user_id, request.question, evidence, processed_ids if selected else None
+            )
         self._derive(plan, views, evidence)
         if plan.exam_id or set(plan.kinds) & {
             "eligibility",
@@ -543,6 +609,7 @@ class DocumentQAService:
         views: dict[str, ConceptView],
         evidence: _Evidence,
         uploaded_types: set[str],
+        all_sources: bool = False,
     ) -> None:
         view = views.get(concept)
         if self.ontology.data_type(concept) == "record":
@@ -593,6 +660,27 @@ class DocumentQAService:
                 evidence.facts.append(self._fact(concept, view, candidate))
             return
         fact = self._fact(concept, view)
+        if all_sources:
+            # "Which documents contain ...?": one entry per document that states the value
+            seen: set[str] = set()
+            for source in view.sources:
+                if source.document_id in seen:
+                    continue
+                seen.add(source.document_id)
+                evidence.facts.append(
+                    fact.model_copy(
+                        update={
+                            "fact_id": source.fact_id,
+                            "document_id": source.document_id,
+                            "document_name": source.document_name,
+                            "document_type": source.document_type,
+                            "page": source.page,
+                            "evidence": sanitize_untrusted(source.evidence or "", 300) or None,
+                        }
+                    )
+                )
+            if seen:
+                return
         if view.note:
             evidence.warnings.append(f"{fact.label}: {view.note}")
         if view.origin == "derived":
@@ -605,6 +693,66 @@ class DocumentQAService:
                 )
             )
         evidence.facts.append(fact)
+
+    async def _transactions(
+        self, user_id: str, question: str, evidence: _Evidence, document_ids: list[str] | None
+    ) -> None:
+        """Stored transaction rows (record tables), limited to the period the question asks about."""
+        if self.discovered_facts is None:
+            return
+        rows = await self.discovered_facts.list_filtered(user_id, None, None, "financial.transactions")
+        if document_ids is not None:
+            rows = [r for r in rows if str(r.get("source_document_id")) in document_ids]
+        period = transaction_period(question)
+        names: dict[str, str] = {}
+        for doc_id in {str(r.get("source_document_id")) for r in rows}:
+            record = await self.documents.get(user_id, doc_id)
+            if record:
+                names[doc_id] = record.get("file_name", "")
+        selected = []
+        for row in rows:
+            value = row.get("value")
+            if not isinstance(value, dict) or not value.get("date"):
+                continue
+            if period and not (period[0] <= str(value["date"]) <= period[1]):
+                continue
+            selected.append((row, value))
+        selected.sort(key=lambda item: (str(item[1]["date"]), item[0].get("source_page") or 0))
+        for row, value in selected:
+            parts = [str(value["date"]), str(value.get("description", "")).strip(), str(value.get("reference", ""))]
+            for key in ("debit", "credit", "balance"):
+                if value.get(key):
+                    parts.append(f"{key} {value[key]}")
+            doc_id = str(row.get("source_document_id"))
+            evidence.facts.append(
+                AnswerFact(
+                    fact_id=str(row.get("_id", "")),
+                    concept="financial.transactions",
+                    label="Transaction",
+                    value=" · ".join(p for p in parts if p),
+                    status="extracted",
+                    document_id=doc_id,
+                    document_name=names.get(doc_id),
+                    document_type=row.get("document_type"),
+                    page=row.get("source_page"),
+                    evidence=sanitize_untrusted(str(row.get("evidence_text") or ""), 300) or None,
+                    confidence=float(row.get("confidence") or 0.0),
+                )
+            )
+        if selected:
+            debit = sum(float(v.get("debit") or 0) for _, v in selected)
+            credit = sum(float(v.get("credit") or 0) for _, v in selected)
+            label = f"{period[0]} to {period[1]}" if period else "all stored statements"
+            evidence.derived.append(
+                AnswerDerived(
+                    label=f"Transactions {label} (calculated)",
+                    value=f"{len(selected)} transactions; total debits {debit:,.2f}; total credits {credit:,.2f}",
+                    method="filtered the stored transaction rows by date and summed their debit and credit cells",
+                    inputs=["financial.transactions"],
+                )
+            )
+        elif rows:
+            evidence.warnings.append("No stored transaction falls in the period you asked about.")
 
     def _subject_facts(
         self, plan: QuestionPlan, views: dict[str, ConceptView], evidence: _Evidence
@@ -655,6 +803,25 @@ class DocumentQAService:
     def _derive(
         self, plan: QuestionPlan, views: dict[str, ConceptView], evidence: _Evidence
     ) -> None:
+        perm, corr = views.get("address.permanent_address"), views.get("address.correspondence_address")
+        if (
+            {"address.permanent_address", "address.correspondence_address"} <= set(plan.concepts)
+            and perm is not None
+            and corr is not None
+            and perm.status == "resolved"
+            and corr.status == "resolved"
+        ):
+            same = same_address(perm.value, corr.value)
+            evidence.derived.append(
+                AnswerDerived(
+                    label="Are the permanent and correspondence addresses the same?",
+                    value="Yes, they are the same address."
+                    if same
+                    else "No, they are different addresses.",
+                    method="compared the stored addresses (same words and PIN code)",
+                    inputs=["address.permanent_address", "address.correspondence_address"],
+                )
+            )
         for scope in ("class_10", "class_12"):
             prefix = QuestionPlanner._prefix(scope)
             asked = f"{prefix}percentage" in plan.concepts

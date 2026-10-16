@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Birth Information Application — DemoGov Portal (synthetic demo form)</title>
+<link rel="stylesheet" href="demo-forms.css">
+</head>
+<body data-demo-form="08" style="--accent:#a1442b">
+<header class="site"><div class="brand">DemoGov Portal <span>fictional</span></div><nav><a href="index.html">All 15 demo forms</a></nav></header>
+<div class="ribbon">SYNTHETIC DEMO FORM — fictional portal, not an official application. Nothing on this page is submitted anywhere.</div>
+<main>
+<h1>Birth Information Application</h1>
+<p class="intro">Request an extract of a birth record (fictional demo registry).</p>
+<div id="status-panel" role="status" aria-live="polite"><strong>Field status</strong><span class="chip"><span class="dot verified"></span>Verified: <b data-count="verified">0</b></span><span class="chip"><span class="dot filled"></span>Filled: <b data-count="filled">0</b></span><span class="chip"><span class="dot review"></span>Review: <b data-count="review">0</b></span><span class="chip"><span class="dot missing"></span>Missing: <b data-count="missing">0</b></span><span class="chip"><span class="dot choice"></span>Your choice: <b data-count="choice">0</b></span><span class="chip"><span class="dot empty"></span>Optional: <b data-count="empty">0</b></span></div>
+<form id="demo-form" novalidate autocomplete="off">
+<section class="card"><h2>Person born</h2><div class="grid"><div class="field req" data-field data-required><label class="lbl" for="qbdbed">Full name of the person</label><input type="text" name="qbdbed" id="qbdbed" required><span class="badge" data-badge data-state="empty"></span></div><div class="field req" data-field data-required><label class="lbl" for="qb957e">Date of birth</label><input type="date" name="qb957e" id="qb957e" required><span class="badge" data-badge data-state="empty"></span></div><fieldset class="field req wide" data-field data-required><legend>Gender</legend><div class="opts"><label class="opt"><input type="radio" name="q921f0" id="q921f0-0" value="Male" required> Male</label><label class="opt"><input type="radio" name="q921f0" id="q921f0-1" value="Female" required> Female</label><label class="opt"><input type="radio" name="q921f0" id="q921f0-2" value="Other" required> Other</label><label class="opt"><input type="radio" name="q921f0" id="q921f0-3" value="Prefer not to say" required> Prefer not to say</label></div><span class="badge" data-badge data-state="empty"></span></fieldset><div class="field req" data-field data-required><label class="lbl" for="qfd4f2">Place of birth</label><input type="text" name="qfd4f2" id="qfd4f2" required><span class="badge" data-badge data-state="empty"></span></div><div class="field" data-field><label class="lbl" for="q2203c">Time of birth</label><input type="text" name="q2203c" id="q2203c" placeholder="HH:MM"><span class="badge" data-badge data-state="empty"></span></div></div></section><section class="card"><h2>Parents and registration</h2><div class="grid"><div class="field req" data-field data-required><label class="lbl" for="qda40e">Father&#x27;s full name</label><input type="text" name="qda40e" id="qda40e" required><span class="badge" data-badge data-state="empty"></span></div><div class="field req" data-field data-required><label class="lbl" for="q6cf05">Mother&#x27;s full name</label><input type="text" name="q6cf05" id="q6cf05" required><span class="badge" data-badge data-state="empty"></span></div><div class="field req" data-field data-required><label class="lbl" for="q688fd">Birth registration reference</label><input type="text" name="q688fd" id="q688fd" required><span class="badge" data-badge data-state="empty"></span></div><div class="field" data-field><label class="lbl" for="q72910">Date of registration</label><input type="date" name="q72910" id="q72910"><span class="badge" data-badge data-state="empty"></span></div><div class="field" data-field><label class="lbl" for="qe00e1">Date of issue of the extract</label><input type="date" name="qe00e1" id="qe00e1"><span class="badge" data-badge data-state="empty"></span></div></div></section>
+<div class="actions"><button type="submit" class="primary">Review application (demo)</button><button type="reset" class="secondary">Clear form</button></div>
+<p id="submit-result" role="status" hidden></p>
+</form>
+</main>
+<script src="demo-forms.js" defer></script>
+</body>
+</html>

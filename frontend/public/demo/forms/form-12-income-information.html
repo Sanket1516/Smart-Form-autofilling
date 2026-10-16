@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Income Information Form — DemoGov Portal (synthetic demo form)</title>
+<link rel="stylesheet" href="demo-forms.css">
+</head>
+<body data-demo-form="12" style="--accent:#7a6a1a">
+<header class="site"><div class="brand">DemoGov Portal <span>fictional</span></div><nav><a href="index.html">All 15 demo forms</a></nav></header>
+<div class="ribbon">SYNTHETIC DEMO FORM — fictional portal, not an official application. Nothing on this page is submitted anywhere.</div>
+<main>
+<h1>Income Information Form</h1>
+<p class="intro">Declare the income stated on an income certificate. The certificate date and the validity date differ.</p>
+<div id="status-panel" role="status" aria-live="polite"><strong>Field status</strong><span class="chip"><span class="dot verified"></span>Verified: <b data-count="verified">0</b></span><span class="chip"><span class="dot filled"></span>Filled: <b data-count="filled">0</b></span><span class="chip"><span class="dot review"></span>Review: <b data-count="review">0</b></span><span class="chip"><span class="dot missing"></span>Missing: <b data-count="missing">0</b></span><span class="chip"><span class="dot choice"></span>Your choice: <b data-count="choice">0</b></span><span class="chip"><span class="dot empty"></span>Optional: <b data-count="empty">0</b></span></div>
+<form id="demo-form" novalidate autocomplete="off">
+<section class="card"><h2>Declaration</h2><div class="grid"><div class="field req" data-field data-required><label class="lbl" for="applicant_name">Applicant name</label><input type="text" name="applicant_name" id="applicant_name" required><span class="badge" data-badge data-state="empty"></span></div><div class="field req" data-field data-required data-sensitive><label class="lbl" for="annual_income">Annual family income (INR)</label><input type="number" name="annual_income" id="annual_income" required min="0" step="any"><span class="badge" data-badge data-state="empty"></span></div><div class="field" data-field><label class="lbl" for="currency">Currency</label><select name="currency" id="currency"><option value="">Select…</option><option value="INR">INR</option><option value="USD">USD</option><option value="EUR">EUR</option></select><span class="badge" data-badge data-state="empty"></span></div><div class="field" data-field><label class="lbl" for="fin_year">Financial year</label><input type="text" name="fin_year" id="fin_year"><span class="badge" data-badge data-state="empty"></span></div></div></section><section class="card"><h2>Certificate</h2><div class="grid"><div class="field req" data-field data-required><label class="lbl" for="cert_ref">Income certificate number</label><input type="text" name="cert_ref" id="cert_ref" required><span class="badge" data-badge data-state="empty"></span></div><div class="field" data-field><label class="lbl" for="app_ref">Application reference number (if any)</label><input type="text" name="app_ref" id="app_ref"><span class="badge" data-badge data-state="empty"></span></div><div class="field req" data-field data-required><label class="lbl" for="issue_date">Certificate issue date</label><input type="date" name="issue_date" id="issue_date" required><span class="badge" data-badge data-state="empty"></span></div><div class="field" data-field><label class="lbl" for="valid_until">Valid until</label><input type="date" name="valid_until" id="valid_until"><span class="badge" data-badge data-state="empty"></span></div><div class="field" data-field><label class="lbl" for="authority">Issuing authority</label><input type="text" name="authority" id="authority"><span class="badge" data-badge data-state="empty"></span></div></div></section>
+<div class="actions"><button type="submit" class="primary">Review application (demo)</button><button type="reset" class="secondary">Clear form</button></div>
+<p id="submit-result" role="status" hidden></p>
+</form>
+</main>
+<script src="demo-forms.js" defer></script>
+</body>
+</html>

@@ -316,7 +316,7 @@ concepts:
 
   # ------------------------------------------------------------------ passport / licence / voter
   passport.issue_date: {description: Passport date of issue, aliases: [passport issue date, passport date of issue], data_type: date}
-  passport.expiry_date: {description: Passport date of expiry, aliases: [passport expiry date, date of expiry, passport valid till], data_type: date}
+  passport.expiry_date: {description: Passport date of expiry, aliases: [passport expiry date, date of expiry, passport valid till, passport expiry, passport expire, passport expires, passport expiration], data_type: date}
   passport.place_of_issue: {description: Passport place of issue, aliases: [place of issue, passport place of issue], data_type: string}
   driving_licence.issue_date: {description: Driving licence issue date, aliases: [], data_type: date}
   driving_licence.valid_until: {description: Driving licence valid until, aliases: [], data_type: date}
@@ -333,7 +333,7 @@ concepts:
   utility.bill_date: {description: Bill date, aliases: [bill date, date of bill], data_type: date}
   utility.due_date: {description: Bill due date, aliases: [due date, last date of payment, pay by], data_type: date}
   utility.units_consumed: {description: Units consumed, aliases: [units consumed, consumption units, total units], data_type: number}
-  utility.bill_amount: {description: Bill amount, aliases: [bill amount, electricity bill amount, net amount payable], data_type: amount}
+  utility.bill_amount: {description: Bill amount, aliases: [bill amount, electricity bill amount, net amount payable, amount due, amount payable, total payable], data_type: amount}
   utility.meter_number: {description: Meter number, aliases: [meter no, meter number], data_type: identifier}
 
   # ------------------------------------------------------------------ ration card

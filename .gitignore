@@ -23,3 +23,8 @@ playwright-report/
 report-requirements/
 graphify-out/
 .codegraph/
+
+# demo evaluation scratch output (latest.json and REPORT.md are kept)
+demo/results/_*
+demo/results/evaluation_*.json
+demo/results/autofill_results.json

@@ -348,3 +348,41 @@ def test_model_answers_lose_internal_labels_and_echoed_rules() -> None:
         "Passed Class 12: met [R1]. Aggregate 90.67% [D1, F2]. Percentage missing [MISSING]."
     )
     assert _clean_answer(text) == "Passed Class 12: met. Aggregate 90.67%. Percentage missing."
+
+
+# ------------------------------------------------------------------ demo-driven regressions
+def _planner():
+    from app.exams.service import load_exam_profiles
+    from app.ontology.loader import FieldOntology
+    from app.services.document_qa import QuestionPlanner
+
+    return QuestionPlanner(FieldOntology(), load_exam_profiles())
+
+
+def test_another_persons_phone_is_never_answered_with_the_applicants_own_number() -> None:
+    plan = _planner().plan("What is the applicant's mother's mobile number?", [])
+    assert plan.third_party and "personal.phone" not in plan.concepts
+    assert "personal.phone" in _planner().plan("What is the applicant's mobile number?", []).concepts
+
+
+def test_same_as_follow_up_compares_with_the_previous_questions_subject() -> None:
+    from app.schemas.retrieval import ChatTurn
+
+    history = [ChatTurn(role="user", content="What is the correspondence address?"),
+               ChatTurn(role="assistant", content="Room 214 ...")]
+    plan = _planner().plan("Is it the same as the permanent address?", history)
+    assert {"address.correspondence_address", "address.permanent_address"} <= set(plan.concepts)
+
+
+def test_which_documents_questions_are_provenance_questions() -> None:
+    assert "provenance" in _planner().plan("Which documents mention the applicant's father's name?", []).kinds
+
+
+def test_transaction_period_is_read_from_the_question() -> None:
+    from app.services.document_qa import transaction_period
+
+    assert transaction_period("transactions between 1 September 2026 and 15 September 2026?") == (
+        "2026-09-01", "2026-09-15")
+    assert transaction_period("transactions between 01/09/2026 and 15/09/2026") == ("2026-09-01", "2026-09-15")
+    assert transaction_period("what transactions occurred in February 2028?") == ("2028-02-01", "2028-02-29")
+    assert transaction_period("list my transactions") is None

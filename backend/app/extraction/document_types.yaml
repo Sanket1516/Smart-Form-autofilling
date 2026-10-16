@@ -215,8 +215,10 @@ document_types:
 
   RATION_CARD:
     label: Ration card
-    keywords: {ration card: 5, civil supplies: 3, fair price shop: 2, head of family: 2, public distribution: 2}
+    keywords: {ration card: 5, civil supplies: 3, fair price shop: 2, head of family: 2, public distribution: 2, household information record: 5, household members: 2, household reference: 3, family card: 3}
     labels:
+      household reference: ration_card.number
+      head of household: ration_card.head_of_family
       card no: ration_card.number
       address: ration_card.address
       fps no: null

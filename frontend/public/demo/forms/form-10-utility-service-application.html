@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Utility Service Application — DemoGov Portal (synthetic demo form)</title>
+<link rel="stylesheet" href="demo-forms.css">
+</head>
+<body data-demo-form="10" style="--accent:#b34700">
+<header class="site"><div class="brand">DemoGov Portal <span>fictional</span></div><nav><a href="index.html">All 15 demo forms</a></nav></header>
+<div class="ribbon">SYNTHETIC DEMO FORM — fictional portal, not an official application. Nothing on this page is submitted anywhere.</div>
+<main>
+<h1>Utility Service Application</h1>
+<p class="intro">Apply for a change on an electricity connection (fictional distribution company).</p>
+<div id="status-panel" role="status" aria-live="polite"><strong>Field status</strong><span class="chip"><span class="dot verified"></span>Verified: <b data-count="verified">0</b></span><span class="chip"><span class="dot filled"></span>Filled: <b data-count="filled">0</b></span><span class="chip"><span class="dot review"></span>Review: <b data-count="review">0</b></span><span class="chip"><span class="dot missing"></span>Missing: <b data-count="missing">0</b></span><span class="chip"><span class="dot choice"></span>Your choice: <b data-count="choice">0</b></span><span class="chip"><span class="dot empty"></span>Optional: <b data-count="empty">0</b></span></div>
+<form id="demo-form" novalidate autocomplete="off">
+<section class="card"><h2>Customer</h2><div class="grid"><div class="field req" data-field data-required><label class="lbl" for="customer">Customer name</label><input type="text" name="customer" id="customer" required><span class="badge" data-badge data-state="empty"></span></div><div class="field req" data-field data-required><label class="lbl" for="consumer_no">Consumer number</label><input type="text" name="consumer_no" id="consumer_no" required><span class="badge" data-badge data-state="empty"></span></div><div class="field" data-field><label class="lbl" for="meter_no">Meter number</label><input type="text" name="meter_no" id="meter_no"><span class="badge" data-badge data-state="empty"></span></div><div class="field req wide" data-field data-required><label class="lbl" for="service_address">Service address</label><textarea name="service_address" id="service_address" rows="3" required></textarea><span class="badge" data-badge data-state="empty"></span></div><div class="field wide" data-field><label class="lbl" for="billing_address">Billing address</label><textarea name="billing_address" id="billing_address" rows="3"></textarea><span class="badge" data-badge data-state="empty"></span></div></div></section><section class="card"><h2>Contact</h2><div class="grid"><div class="field req" data-field data-required><label class="lbl" for="contact_mobile">Contact mobile number</label><input type="tel" name="contact_mobile" id="contact_mobile" required pattern="[0-9]{10}"><span class="badge" data-badge data-state="empty"></span></div><div class="field" data-field><label class="lbl" for="contact_email">Contact email</label><input type="email" name="contact_email" id="contact_email"><span class="badge" data-badge data-state="empty"></span></div><div class="field" data-field><label class="lbl" for="bill_month">Latest bill month</label><input type="text" name="bill_month" id="bill_month"><span class="badge" data-badge data-state="empty"></span></div><div class="field" data-field><label class="lbl" for="bill_date">Bill date</label><input type="date" name="bill_date" id="bill_date"><span class="badge" data-badge data-state="empty"></span></div><div class="field" data-field><label class="lbl" for="due_date">Due date</label><input type="date" name="due_date" id="due_date"><span class="badge" data-badge data-state="empty"></span></div><div class="field" data-field data-user><label class="lbl" for="load_kw">Requested sanctioned load (kW)</label><input type="number" name="load_kw" id="load_kw" min="0" step="any"><span class="badge" data-badge data-state="empty"></span></div></div></section>
+<div class="actions"><button type="submit" class="primary">Review application (demo)</button><button type="reset" class="secondary">Clear form</button></div>
+<p id="submit-result" role="status" hidden></p>
+</form>
+</main>
+<script src="demo-forms.js" defer></script>
+</body>
+</html>

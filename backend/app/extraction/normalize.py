@@ -256,6 +256,9 @@ def address_tokens(value: Any) -> set[str]:
 def same_address(a: Any, b: Any) -> bool:
     """Two addresses describe the same place when one's words are all in the other
     and they share the same 6-digit PIN code ("Pune 411001" vs "Pune, Maharashtra 411001")."""
+    squashed_a, squashed_b = (re.sub(r"[^a-z0-9]", "", str(x or "").casefold()) for x in (a, b))
+    if squashed_a and squashed_a == squashed_b:
+        return True  # OCR drops or merges spaces after commas ("HeightsDemo Nagar")
     pins_a = set(re.findall(r"(?<!\d)[1-9]\d{5}(?!\d)", str(a or "")))
     pins_b = set(re.findall(r"(?<!\d)[1-9]\d{5}(?!\d)", str(b or "")))
     if not pins_a or pins_a != pins_b:
