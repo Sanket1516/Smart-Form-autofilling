@@ -1,0 +1,147 @@
+[
+ {
+  "id": "Q01",
+  "category": "exact value",
+  "question": "What is the applicant's date of birth?"
+ },
+ {
+  "id": "Q02",
+  "category": "class 10 vs 12",
+  "question": "What is the applicant's Class 10 passing year?"
+ },
+ {
+  "id": "Q03",
+  "category": "class 10 vs 12",
+  "question": "What is the applicant's Class 12 passing year?"
+ },
+ {
+  "id": "Q04",
+  "category": "class 10 vs 12",
+  "question": "What percentage did the applicant obtain in Class 10?"
+ },
+ {
+  "id": "Q05",
+  "category": "class 10 vs 12",
+  "question": "What percentage did the applicant obtain in Class 12?"
+ },
+ {
+  "id": "Q06",
+  "category": "table",
+  "question": "List the Class 12 subjects and marks."
+ },
+ {
+  "id": "Q07",
+  "category": "provenance",
+  "question": "Which document contains the applicant's date of birth?"
+ },
+ {
+  "id": "Q08",
+  "category": "exact value",
+  "question": "What is the fictional caste certificate number?"
+ },
+ {
+  "id": "Q09",
+  "category": "disambiguation",
+  "question": "How is the caste certificate number different from the caste validity certificate number?"
+ },
+ {
+  "id": "Q10",
+  "category": "address",
+  "question": "What is the correspondence address?"
+ },
+ {
+  "id": "Q11",
+  "category": "address",
+  "question": "Is it the same as the permanent address?",
+  "follow_up_of": "Q10"
+ },
+ {
+  "id": "Q12",
+  "category": "exact value",
+  "question": "What is the annual income recorded in the synthetic income certificate?"
+ },
+ {
+  "id": "Q13",
+  "category": "multi-document",
+  "question": "Which documents contain address information?"
+ },
+ {
+  "id": "Q14",
+  "category": "form readiness",
+  "question": "Which fields can be filled from the available documents for DemoScholar 2026?",
+  "exam_id": "DEMOSCHOLAR_2026"
+ },
+ {
+  "id": "Q15",
+  "category": "form readiness",
+  "question": "Which fields are missing from the available documents for DemoScholar 2026?",
+  "exam_id": "DEMOSCHOLAR_2026"
+ },
+ {
+  "id": "Q16",
+  "category": "exact value",
+  "question": "What is the applicant's bank branch?"
+ },
+ {
+  "id": "Q17",
+  "category": "table",
+  "question": "What transactions occurred between 1 September 2026 and 15 September 2026?"
+ },
+ {
+  "id": "Q18",
+  "category": "date disambiguation",
+  "question": "Explain the difference between the driving licence issue date and the date of birth."
+ },
+ {
+  "id": "Q19",
+  "category": "multi-document",
+  "question": "Compare the educational information from both marksheets."
+ },
+ {
+  "id": "Q20",
+  "category": "scenario",
+  "question": "Based on the fictional DemoScholar 2026 eligibility requirements, which criteria do I meet, which do I not meet, and which cannot be determined? (These requirements are invented for this demonstration.)",
+  "exam_id": "DEMOSCHOLAR_2026"
+ },
+ {
+  "id": "Q21",
+  "category": "absent information",
+  "question": "What is the applicant's Aadhaar number?"
+ },
+ {
+  "id": "Q22",
+  "category": "absent information",
+  "question": "What is the applicant's mother's mobile number?"
+ },
+ {
+  "id": "Q23",
+  "category": "follow-up",
+  "question": "What is my Class 12 percentage?"
+ },
+ {
+  "id": "Q24",
+  "category": "follow-up",
+  "question": "And for Class 10?",
+  "follow_up_of": "Q23"
+ },
+ {
+  "id": "Q25",
+  "category": "identifier confusion",
+  "question": "What are the bank account number and the IFSC code?"
+ },
+ {
+  "id": "Q26",
+  "category": "date disambiguation",
+  "question": "When does the passport expire?"
+ },
+ {
+  "id": "Q27",
+  "category": "date disambiguation",
+  "question": "What is the utility bill due date and the amount due?"
+ },
+ {
+  "id": "Q28",
+  "category": "multi-document",
+  "question": "Which documents mention the applicant's father's name?"
+ }
+]

@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Household Information Form — DemoGov Portal (synthetic demo form)</title>
+<link rel="stylesheet" href="demo-forms.css">
+</head>
+<body data-demo-form="11" style="--accent:#3b6b4f">
+<header class="site"><div class="brand">DemoGov Portal <span>fictional</span></div><nav><a href="index.html">All 15 demo forms</a></nav></header>
+<div class="ribbon">SYNTHETIC DEMO FORM — fictional portal, not an official application. Nothing on this page is submitted anywhere.</div>
+<main>
+<h1>Household Information Form</h1>
+<p class="intro">List the people in your household. Use the button to add more rows.</p>
+<div id="status-panel" role="status" aria-live="polite"><strong>Field status</strong><span class="chip"><span class="dot verified"></span>Verified: <b data-count="verified">0</b></span><span class="chip"><span class="dot filled"></span>Filled: <b data-count="filled">0</b></span><span class="chip"><span class="dot review"></span>Review: <b data-count="review">0</b></span><span class="chip"><span class="dot missing"></span>Missing: <b data-count="missing">0</b></span><span class="chip"><span class="dot choice"></span>Your choice: <b data-count="choice">0</b></span><span class="chip"><span class="dot empty"></span>Optional: <b data-count="empty">0</b></span></div>
+<form id="demo-form" novalidate autocomplete="off">
+<section class="card"><h2>Applicant</h2><div class="grid"><div class="field req" data-field data-required><label class="lbl" for="applicant_name">Applicant name</label><input type="text" name="applicant_name" id="applicant_name" required><span class="badge" data-badge data-state="empty"></span></div><div class="field req" data-field data-required><label class="lbl" for="father_name">Father&#x27;s name</label><input type="text" name="father_name" id="father_name" required><span class="badge" data-badge data-state="empty"></span></div><div class="field req" data-field data-required><label class="lbl" for="mother_name">Mother&#x27;s name</label><input type="text" name="mother_name" id="mother_name" required><span class="badge" data-badge data-state="empty"></span></div><div class="field req" data-field data-required><label class="lbl" for="household_ref">Household reference</label><input type="text" name="household_ref" id="household_ref" required><span class="badge" data-badge data-state="empty"></span></div><div class="field" data-field><label class="lbl" for="head">Head of household</label><input type="text" name="head" id="head"><span class="badge" data-badge data-state="empty"></span></div></div></section><section class="card"><h2>Household members</h2><p class="note">Rows are rendered by the page; add another with the button below the table.</p><div class="grid"><div class="field wide"><div data-dyn="members"></div></div><div class="field wide"><div data-dyn="members"></div></div><div class="field wide"><div data-dyn="members"></div></div></div></section>
+<div class="actions"><button type="submit" class="primary">Review application (demo)</button><button type="reset" class="secondary">Clear form</button></div>
+<p id="submit-result" role="status" hidden></p>
+</form>
+</main>
+<script src="demo-forms.js" defer></script>
+</body>
+</html>

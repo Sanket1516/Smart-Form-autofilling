@@ -15,6 +15,7 @@ and (stateless) whether a given file meets the configured format and size.
 
 from __future__ import annotations
 
+import os
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -34,10 +35,18 @@ _CONFIRMED_THRESHOLD = 0.85
 _IMAGE_FORMATS = {"jpg", "jpeg", "png"}
 
 
+DEMO_REQUIREMENTS_PATH = Path(__file__).parent / "demo_requirements.yaml"
+
+
 @lru_cache
 def load_exam_profiles(path: Path = REQUIREMENTS_PATH) -> dict[str, Any]:
     with open(path, encoding="utf-8") as handle:
-        return yaml.safe_load(handle)["exams"]
+        profiles = yaml.safe_load(handle)["exams"]
+    # The fictional demo profile (clearly labelled, invented rules) never ships to production.
+    if path == REQUIREMENTS_PATH and os.environ.get("APP_ENV", "development").lower() != "production":
+        with open(DEMO_REQUIREMENTS_PATH, encoding="utf-8") as handle:
+            profiles = {**profiles, **yaml.safe_load(handle)["exams"]}
+    return profiles
 
 
 class ExamService:

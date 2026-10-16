@@ -111,6 +111,7 @@ async def lifespan(app: FastAPI):
         ontology=ontology,
         documents=DocumentsRepository(database),
         exam_service=state.exam_service,
+        discovered_facts=state.discovered_facts_repo,
     )
 
     processing_context = ProcessingContext(

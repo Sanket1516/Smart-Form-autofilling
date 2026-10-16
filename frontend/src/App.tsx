@@ -15,6 +15,9 @@ import { Activity } from './pages/Activity';
 import { Settings } from './pages/Settings';
 import { Reviews } from './pages/Reviews';
 import { Ask } from './pages/Ask';
+import { DemoData } from './pages/DemoData';
+
+const DEMO_ENABLED = import.meta.env.VITE_ENABLE_DEMO !== 'false';
 
 function App() {
   return (
@@ -36,6 +39,7 @@ function App() {
               <Route path="/conflicts" element={<Conflicts />} />
               <Route path="/reviews" element={<Reviews />} />
               <Route path="/ask" element={<Ask />} />
+              {DEMO_ENABLED && <Route path="/demo-data" element={<DemoData />} />}
               <Route path="/activity" element={<Activity />} />
               <Route path="/settings" element={<Settings />} />
               <Route path="/" element={<Navigate to="/dashboard" replace />} />

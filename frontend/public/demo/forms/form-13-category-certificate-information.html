@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Category Certificate Information Form — DemoGov Portal (synthetic demo form)</title>
+<link rel="stylesheet" href="demo-forms.css">
+</head>
+<body data-demo-form="13" style="--accent:#5a4a8a">
+<header class="site"><div class="brand">DemoGov Portal <span>fictional</span></div><nav><a href="index.html">All 15 demo forms</a></nav></header>
+<div class="ribbon">SYNTHETIC DEMO FORM — fictional portal, not an official application. Nothing on this page is submitted anywhere.</div>
+<main>
+<h1>Category Certificate Information Form</h1>
+<p class="intro">Record the category certificate and its separate caste validity certificate.</p>
+<div id="status-panel" role="status" aria-live="polite"><strong>Field status</strong><span class="chip"><span class="dot verified"></span>Verified: <b data-count="verified">0</b></span><span class="chip"><span class="dot filled"></span>Filled: <b data-count="filled">0</b></span><span class="chip"><span class="dot review"></span>Review: <b data-count="review">0</b></span><span class="chip"><span class="dot missing"></span>Missing: <b data-count="missing">0</b></span><span class="chip"><span class="dot choice"></span>Your choice: <b data-count="choice">0</b></span><span class="chip"><span class="dot empty"></span>Optional: <b data-count="empty">0</b></span></div>
+<form id="demo-form" novalidate autocomplete="off">
+<section class="card"><h2>Applicant</h2><div class="grid"><div class="field req" data-field data-required><label class="lbl" for="applicant_name">Applicant name</label><input type="text" name="applicant_name" id="applicant_name" required><span class="badge" data-badge data-state="empty"></span></div><div class="field req" data-field data-required data-sensitive><label class="lbl" for="category">Category</label><select name="category" id="category" required><option value="">Select…</option><option value="General (Unreserved)">General (Unreserved)</option><option value="EWS">EWS</option><option value="OBC">OBC</option><option value="SC">SC</option><option value="ST">ST</option></select><span class="badge" data-badge data-state="empty"></span></div><div class="field" data-field data-sensitive><label class="lbl" for="caste">Caste / community</label><input type="text" name="caste" id="caste"><span class="badge" data-badge data-state="empty"></span></div></div></section><section class="card"><h2>Certificates</h2><div class="grid"><div class="field req" data-field data-required data-sensitive><label class="lbl" for="cert_no">Category certificate number</label><input type="text" name="cert_no" id="cert_no" required><span class="badge" data-badge data-state="empty"></span></div><div class="field" data-field><label class="lbl" for="cert_issue">Category certificate issue date</label><input type="date" name="cert_issue" id="cert_issue"><span class="badge" data-badge data-state="empty"></span></div><div class="field" data-field><label class="lbl" for="cert_authority">Category certificate issuing authority</label><input type="text" name="cert_authority" id="cert_authority"><span class="badge" data-badge data-state="empty"></span></div><div class="field" data-field data-sensitive><label class="lbl" for="validity_no">Caste validity certificate number</label><input type="text" name="validity_no" id="validity_no"><span class="badge" data-badge data-state="empty"></span></div><div class="field" data-field><label class="lbl" for="validity_issue">Caste validity certificate issue date</label><input type="date" name="validity_issue" id="validity_issue"><span class="badge" data-badge data-state="empty"></span></div><fieldset class="field wide" data-field data-user><legend>Supporting document status</legend><div class="opts"><label class="opt"><input type="radio" name="doc_status" id="doc_status-0" value="Original available"> Original available</label><label class="opt"><input type="radio" name="doc_status" id="doc_status-1" value="Applied, awaiting issue"> Applied, awaiting issue</label><label class="opt"><input type="radio" name="doc_status" id="doc_status-2" value="Not available"> Not available</label></div><span class="badge" data-badge data-state="empty"></span></fieldset></div></section>
+<div class="actions"><button type="submit" class="primary">Review application (demo)</button><button type="reset" class="secondary">Clear form</button></div>
+<p id="submit-result" role="status" hidden></p>
+</form>
+</main>
+<script src="demo-forms.js" defer></script>
+</body>
+</html>

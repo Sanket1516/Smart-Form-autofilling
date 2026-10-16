@@ -1,0 +1,4899 @@
+{
+ "dataset": {
+  "banner": "SYNTHETIC DEMO DATA — NOT A VALID GOVERNMENT DOCUMENT",
+  "applicant": "Kavya Suresh Deshpande",
+  "generated_at": "2026-10-16T16:04:49Z",
+  "note": "Answer key for the test suite. Not served by the app and never read by the backend."
+ },
+ "documents": [
+  {
+   "number": 1,
+   "file": "DEMO_01_identity_information_sheet.pdf",
+   "document_type": "Synthetic identity profile",
+   "scanned": false,
+   "expected_type": "OTHER",
+   "fields": {
+    "personal.full_name": "Kavya Suresh Deshpande",
+    "personal.first_name": "Kavya",
+    "personal.middle_name": "Suresh",
+    "personal.last_name": "Deshpande",
+    "personal.date_of_birth": "2007-08-23",
+    "identity.gender": "Female",
+    "identity.nationality": "Indian",
+    "personal.father_name": "Suresh Ramesh Deshpande",
+    "personal.mother_name": "Sunita Suresh Deshpande",
+    "personal.phone": "9000054321",
+    "personal.email": "kavya.deshpande.demo@example.com",
+    "address.permanent_address": "Flat 402, Sunrise Heights, Demo Nagar, Nashik, Maharashtra 422099",
+    "address.correspondence_address": "Room 214, Block C, Demo Institute Hostel, University Road, Pune, Maharashtra 411099",
+    "emergency_contact.name": "Rahul Ramesh Deshpande",
+    "emergency_contact.relationship": "Uncle",
+    "emergency_contact.phone": "9000067890"
+   },
+   "pages": 1
+  },
+  {
+   "number": 2,
+   "file": "DEMO_02_tax_identification_record.pdf",
+   "document_type": "Synthetic tax identification record",
+   "scanned": false,
+   "expected_type": "PAN_CARD",
+   "fields": {
+    "identity.pan_number": "DEMPD4821Z",
+    "personal.full_name": "Kavya Suresh Deshpande",
+    "personal.father_name": "Suresh Ramesh Deshpande",
+    "personal.date_of_birth": "2007-08-23"
+   },
+   "pages": 1
+  },
+  {
+   "number": 3,
+   "file": "DEMO_03_voter_information_record.pdf",
+   "document_type": "Synthetic voter information record",
+   "scanned": true,
+   "rotation_deg": 1.2,
+   "expected_type": "VOTER_ID",
+   "fields": {
+    "identity.voter_id_number": "DMO4821937",
+    "personal.full_name": "Kavya Suresh Deshpande",
+    "personal.father_name": "Suresh Ramesh Deshpande",
+    "identity.gender": "Female",
+    "personal.date_of_birth": "2007-08-23",
+    "address.full_address": "Flat 402, Sunrise Heights, Demo Nagar, Nashik, Maharashtra 422099",
+    "address.zipcode": "422099"
+   },
+   "pages": 1
+  },
+  {
+   "number": 4,
+   "file": "DEMO_04_driving_licence_record.pdf",
+   "document_type": "Synthetic driving licence record",
+   "scanned": false,
+   "expected_type": "DRIVING_LICENCE",
+   "fields": {
+    "identity.driving_licence_number": "MH15 20250054321",
+    "personal.full_name": "Kavya Suresh Deshpande",
+    "personal.date_of_birth": "2007-08-23",
+    "personal.father_name": "Suresh Ramesh Deshpande",
+    "driving_licence.issue_date": "2025-09-05",
+    "driving_licence.valid_until": "2045-09-04",
+    "driving_licence.vehicle_classes": "MCWG, LMV",
+    "medical.blood_group": "O+",
+    "address.full_address": "Flat 402, Sunrise Heights, Demo Nagar, Nashik, Maharashtra 422099",
+    "address.zipcode": "422099"
+   },
+   "absent": [
+    "personal.date_of_birth=issue_date"
+   ],
+   "pages": 1
+  },
+  {
+   "number": 5,
+   "file": "DEMO_05_passport_information_record.pdf",
+   "document_type": "Synthetic passport information record",
+   "scanned": false,
+   "expected_type": "PASSPORT",
+   "fields": {
+    "identity.passport_number": "Z9012345",
+    "personal.last_name": "Deshpande",
+    "personal.given_names": "Kavya Suresh",
+    "personal.date_of_birth": "2007-08-23",
+    "identity.nationality": "Indian",
+    "personal.place_of_birth": "Nashik, Maharashtra",
+    "passport.issue_date": "2024-11-14",
+    "passport.expiry_date": "2034-11-13",
+    "passport.place_of_issue": "Pune",
+    "personal.father_name": "Suresh Ramesh Deshpande",
+    "personal.mother_name": "Sunita Suresh Deshpande",
+    "address.full_address": "Flat 402, Sunrise Heights, Demo Nagar, Nashik, Maharashtra 422099"
+   },
+   "pages": 1
+  },
+  {
+   "number": 6,
+   "file": "DEMO_06_class10_marksheet.pdf",
+   "document_type": "Class 10 marksheet",
+   "scanned": true,
+   "rotation_deg": 0.7,
+   "challenge": "dense table + rotation",
+   "expected_type": "CLASS_10_MARKSHEET",
+   "fields": {
+    "personal.full_name": "Kavya Suresh Deshpande",
+    "personal.date_of_birth": "2007-08-23",
+    "personal.father_name": "Suresh Ramesh Deshpande",
+    "personal.mother_name": "Sunita Suresh Deshpande",
+    "academic.class10.roll_number": "204518",
+    "academic.class10.exam_year": "2023",
+    "academic.class10.passing_year": "2023",
+    "academic.class10.exam_month": "March",
+    "academic.class10.max_marks": "500",
+    "academic.class10.marks_obtained": "457",
+    "academic.class10.percentage": "91.40",
+    "academic.class10.result_status": "PASS",
+    "academic.class10.result_date": "2023-05-14",
+    "academic.class10.school": "Demo Vidya Mandir High School, Nashik"
+   },
+   "records": {
+    "academic.class10.subjects": [
+     {
+      "code": "EN-101",
+      "name": "English",
+      "max_marks": "100",
+      "total": "91",
+      "grade": "A1"
+     },
+     {
+      "code": "MR-102",
+      "name": "Marathi",
+      "max_marks": "100",
+      "total": "88",
+      "grade": "A2"
+     },
+     {
+      "code": "MA-103",
+      "name": "Mathematics",
+      "max_marks": "100",
+      "total": "96",
+      "grade": "A1"
+     },
+     {
+      "code": "SC-104",
+      "name": "Science",
+      "max_marks": "100",
+      "total": "92",
+      "grade": "A1"
+     },
+     {
+      "code": "SS-105",
+      "name": "Social Science",
+      "max_marks": "100",
+      "total": "90",
+      "grade": "A2"
+     }
+    ]
+   },
+   "absent": [
+    "academic.class12.*"
+   ],
+   "pages": 1
+  },
+  {
+   "number": 7,
+   "file": "DEMO_07_class12_marksheet.pdf",
+   "document_type": "Class 12 marksheet",
+   "scanned": false,
+   "expected_type": "CLASS_12_MARKSHEET",
+   "fields": {
+    "personal.full_name": "Kavya Suresh Deshpande",
+    "personal.mother_name": "Sunita Suresh Deshpande",
+    "academic.class12.roll_number": "S317442",
+    "academic.class12.max_marks": "500",
+    "academic.class12.marks_obtained": "436",
+    "academic.class12.percentage": "87.20",
+    "academic.class12.result_date": "2025-05-12",
+    "academic.class12.board": "Example State Board of Higher Secondary Education (Fictional)",
+    "academic.class12.school": "Demo Junior College of Science, Nashik",
+    "academic.class12.passing_year": "2025"
+   },
+   "records": {
+    "academic.class12.subjects": [
+     {
+      "code": "01",
+      "name": "English",
+      "max_marks": "100",
+      "marks_obtained": "84",
+      "grade": "A"
+     },
+     {
+      "code": "54",
+      "name": "Physics",
+      "max_marks": "100",
+      "marks_obtained": "86",
+      "grade": "A"
+     },
+     {
+      "code": "55",
+      "name": "Chemistry",
+      "max_marks": "100",
+      "marks_obtained": "82",
+      "grade": "A"
+     },
+     {
+      "code": "40",
+      "name": "Mathematics",
+      "max_marks": "100",
+      "marks_obtained": "90",
+      "grade": "A+"
+     },
+     {
+      "code": "61",
+      "name": "Computer Science",
+      "max_marks": "100",
+      "marks_obtained": "94",
+      "grade": "A+"
+     }
+    ]
+   },
+   "absent": [
+    "academic.class10.*"
+   ],
+   "pages": 1
+  },
+  {
+   "number": 8,
+   "file": "DEMO_08_birth_certificate_record.pdf",
+   "document_type": "Synthetic birth certificate record",
+   "scanned": true,
+   "rotation_deg": -1.4,
+   "expected_type": "BIRTH_CERTIFICATE",
+   "fields": {
+    "personal.full_name": "Kavya Suresh Deshpande",
+    "personal.date_of_birth": "2007-08-23",
+    "personal.place_of_birth": "Nashik, Maharashtra",
+    "personal.father_name": "Suresh Ramesh Deshpande",
+    "personal.mother_name": "Sunita Suresh Deshpande",
+    "birth_certificate.registration_number": "B-2007-NSK-004519",
+    "birth_certificate.registration_date": "2007-09-04",
+    "birth_certificate.issue_date": "2007-09-12",
+    "address.full_address": "Flat 402, Sunrise Heights, Demo Nagar, Nashik, Maharashtra 422099"
+   },
+   "pages": 1
+  },
+  {
+   "number": 9,
+   "file": "DEMO_09_bank_passbook.pdf",
+   "document_type": "Synthetic bank passbook",
+   "scanned": true,
+   "rotation_deg": 0.3,
+   "challenge": "account number vs IFSC",
+   "expected_type": "BANK_PASSBOOK",
+   "fields": {
+    "financial.bank_name": "Example Sahakari Bank (Fictional)",
+    "financial.branch_name": "Demo Nagar Branch",
+    "financial.account_holder_name": "Kavya Suresh Deshpande",
+    "financial.account_number": "910000456789",
+    "financial.ifsc_code": "DEMO0000417",
+    "financial.micr_code": "422999017",
+    "financial.account_type": "Savings Account",
+    "financial.branch_address": "Shop 6, Demo Plaza, Demo Nagar, Nashik, Maharashtra 422099"
+   },
+   "pages": 1
+  },
+  {
+   "number": 10,
+   "file": "DEMO_10_utility_bill.pdf",
+   "document_type": "Synthetic utility bill",
+   "scanned": false,
+   "challenge": "multiple dates",
+   "expected_type": "ELECTRICITY_BILL",
+   "fields": {
+    "utility.consumer_name": "Kavya Suresh Deshpande",
+    "utility.consumer_number": "EL-4010-0508-1",
+    "utility.meter_number": "MT-77-0I58",
+    "utility.service_address": "Flat 402, Sunrise Heights, Demo Nagar, Nashik, Maharashtra 422099",
+    "utility.bill_date": "2026-09-05",
+    "utility.due_date": "2026-09-20",
+    "utility.bill_amount": "2347.50",
+    "utility.bill_month": "August 2026",
+    "utility.provider_name": "Example Power Distribution Co. Ltd.",
+    "utility.units_consumed": "312"
+   },
+   "pages": 1
+  },
+  {
+   "number": 11,
+   "file": "DEMO_11_household_information_record.pdf",
+   "document_type": "Synthetic household information record",
+   "scanned": false,
+   "expected_type": "RATION_CARD",
+   "fields": {
+    "ration_card.number": "HH-NSK-2024-00417",
+    "ration_card.head_of_family": "Suresh Ramesh Deshpande",
+    "personal.full_name": "Kavya Suresh Deshpande",
+    "personal.father_name": "Suresh Ramesh Deshpande",
+    "personal.mother_name": "Sunita Suresh Deshpande"
+   },
+   "records": {
+    "ration_card.members": [
+     {
+      "name": "Suresh Ramesh Deshpande",
+      "relationship": "Father",
+      "age": "49"
+     },
+     {
+      "name": "Sunita Suresh Deshpande",
+      "relationship": "Mother",
+      "age": "46"
+     },
+     {
+      "name": "Kavya Suresh Deshpande",
+      "relationship": "Self (Applicant)",
+      "age": "19"
+     },
+     {
+      "name": "Aditya Suresh Deshpande",
+      "relationship": "Brother",
+      "age": "14"
+     },
+     {
+      "name": "Ramesh Vithal Deshpande",
+      "relationship": "Grandfather",
+      "age": "76"
+     }
+    ]
+   },
+   "note": "No dedicated household type exists: classification as RATION_CARD or OTHER is acceptable.",
+   "pages": 1
+  },
+  {
+   "number": 12,
+   "file": "DEMO_12_income_certificate.pdf",
+   "document_type": "Synthetic income certificate",
+   "scanned": false,
+   "expected_type": "INCOME_CERTIFICATE",
+   "fields": {
+    "income_certificate.number": "INC/2026/NSK/008812",
+    "income_certificate.holder_name": "Kavya Suresh Deshpande",
+    "income_certificate.issue_date": "2026-04-18",
+    "income_certificate.valid_until": "2027-03-31",
+    "financial.annual_income": "480000",
+    "income_certificate.financial_year": "2025-26",
+    "income_certificate.issuing_authority": "Demo Tehsil Revenue Office, Nashik (Fictional)",
+    "personal.father_name": "Suresh Ramesh Deshpande"
+   },
+   "pages": 1
+  },
+  {
+   "number": 13,
+   "file": "DEMO_13_category_certificate.pdf",
+   "document_type": "Synthetic caste/category certificate (+ validity annexure)",
+   "scanned": true,
+   "rotation_deg": 0.5,
+   "expected_type": "CASTE_CERTIFICATE",
+   "accept_types": [
+    "CASTE_CERTIFICATE",
+    "CASTE_VALIDITY_CERTIFICATE"
+   ],
+   "fields": {
+    "caste_certificate.number": "CC/2025/NSK/004512",
+    "caste_certificate.issue_date": "2025-07-09",
+    "category.social_category": "OBC",
+    "category.caste": "Demo Community A (Fictional)",
+    "caste_validity.number": "CVC/2025/NSK/007731",
+    "caste_validity.issue_date": "2025-11-20",
+    "personal.full_name": "Kavya Suresh Deshpande"
+   },
+   "concept_pages": {
+    "caste_certificate.number": 1,
+    "caste_validity.number": 2
+   },
+   "pages": 2
+  },
+  {
+   "number": 14,
+   "file": "DEMO_14_domicile_certificate.pdf",
+   "document_type": "Synthetic domicile certificate",
+   "scanned": false,
+   "expected_type": "DOMICILE_CERTIFICATE",
+   "fields": {
+    "domicile_certificate.number": "DOM/2026/NSK/003377",
+    "domicile_certificate.issue_date": "2026-02-11",
+    "domicile_certificate.state": "Maharashtra",
+    "personal.full_name": "Kavya Suresh Deshpande",
+    "address.permanent_address": "Flat 402, Sunrise Heights, Demo Nagar, Nashik, Maharashtra 422099",
+    "address.zipcode": "422099"
+   },
+   "pages": 1
+  },
+  {
+   "number": 15,
+   "file": "DEMO_15_bank_statement.pdf",
+   "document_type": "Synthetic bank statement",
+   "scanned": false,
+   "challenge": "dense 25-row transaction table",
+   "expected_type": "BANK_STATEMENT",
+   "fields": {
+    "financial.account_number": "910000456789",
+    "financial.ifsc_code": "DEMO0000417",
+    "financial.account_holder_name": "Kavya Suresh Deshpande",
+    "financial.account_type": "Savings Account",
+    "financial.branch_name": "Demo Nagar Branch",
+    "financial.branch_address": "Shop 6, Demo Plaza, Demo Nagar, Nashik, Maharashtra 422099"
+   },
+   "records": {
+    "financial.transactions": [
+     {
+      "date": "2026-07-02",
+      "reference": "UPI6112340011",
+      "debit": 185.0,
+      "credit": null,
+      "balance": 24165.0
+     },
+     {
+      "date": "2026-07-04",
+      "reference": "NEFT26070401277",
+      "debit": null,
+      "credit": 8000.0,
+      "balance": 32165.0
+     },
+     {
+      "date": "2026-07-06",
+      "reference": "UPI6112340187",
+      "debit": 1240.0,
+      "credit": null,
+      "balance": 30925.0
+     },
+     {
+      "date": "2026-07-09",
+      "reference": "ATM260709004",
+      "debit": 2000.0,
+      "credit": null,
+      "balance": 28925.0
+     },
+     {
+      "date": "2026-07-12",
+      "reference": "UPI6112340455",
+      "debit": 450.0,
+      "credit": null,
+      "balance": 28475.0
+     },
+     {
+      "date": "2026-07-15",
+      "reference": "UPI6112340602",
+      "debit": 3200.0,
+      "credit": null,
+      "balance": 25275.0
+     },
+     {
+      "date": "2026-07-21",
+      "reference": "INT260721",
+      "debit": null,
+      "credit": 212.4,
+      "balance": 25487.4
+     },
+     {
+      "date": "2026-07-27",
+      "reference": "UPI6112340933",
+      "debit": 365.0,
+      "credit": null,
+      "balance": 25122.4
+     },
+     {
+      "date": "2026-08-03",
+      "reference": "NEFT26080301544",
+      "debit": null,
+      "credit": 8000.0,
+      "balance": 33122.4
+     },
+     {
+      "date": "2026-08-05",
+      "reference": "UPI6112341020",
+      "debit": 299.0,
+      "credit": null,
+      "balance": 32823.4
+     },
+     {
+      "date": "2026-08-08",
+      "reference": "UPI6112341118",
+      "debit": 3200.0,
+      "credit": null,
+      "balance": 29623.4
+     },
+     {
+      "date": "2026-08-11",
+      "reference": "UPI6112341205",
+      "debit": 1500.0,
+      "credit": null,
+      "balance": 28123.4
+     },
+     {
+      "date": "2026-08-14",
+      "reference": "IMPS26081408812",
+      "debit": null,
+      "credit": 12000.0,
+      "balance": 40123.4
+     },
+     {
+      "date": "2026-08-17",
+      "reference": "UPI6112341399",
+      "debit": 899.0,
+      "credit": null,
+      "balance": 39224.4
+     },
+     {
+      "date": "2026-08-23",
+      "reference": "UPI6112341476",
+      "debit": 780.0,
+      "credit": null,
+      "balance": 38444.4
+     },
+     {
+      "date": "2026-08-29",
+      "reference": "ATM260829011",
+      "debit": 1500.0,
+      "credit": null,
+      "balance": 36944.4
+     },
+     {
+      "date": "2026-09-01",
+      "reference": "UPI6112341590",
+      "debit": 3200.0,
+      "credit": null,
+      "balance": 33744.4
+     },
+     {
+      "date": "2026-09-03",
+      "reference": "NEFT26090301791",
+      "debit": null,
+      "credit": 8000.0,
+      "balance": 41744.4
+     },
+     {
+      "date": "2026-09-05",
+      "reference": "UPI6112341702",
+      "debit": 2150.0,
+      "credit": null,
+      "balance": 39594.4
+     },
+     {
+      "date": "2026-09-09",
+      "reference": "UPI6112341811",
+      "debit": 220.0,
+      "credit": null,
+      "balance": 39374.4
+     },
+     {
+      "date": "2026-09-12",
+      "reference": "UPI6112341934",
+      "debit": 340.0,
+      "credit": null,
+      "balance": 39034.4
+     },
+     {
+      "date": "2026-09-15",
+      "reference": "UPI6112342077",
+      "debit": 1800.0,
+      "credit": null,
+      "balance": 37234.4
+     },
+     {
+      "date": "2026-09-18",
+      "reference": "UPI6112342155",
+      "debit": 410.0,
+      "credit": null,
+      "balance": 36824.4
+     },
+     {
+      "date": "2026-09-24",
+      "reference": "ATM260924017",
+      "debit": 2000.0,
+      "credit": null,
+      "balance": 34824.4
+     },
+     {
+      "date": "2026-09-28",
+      "reference": "UPI6112342290",
+      "debit": 175.0,
+      "credit": null,
+      "balance": 34649.4
+     }
+    ]
+   },
+   "balance_check": {
+    "opening": 24350.0,
+    "closing": 34649.4,
+    "rows": 25
+   },
+   "pages": 1
+  }
+ ],
+ "forms": [
+  {
+   "number": 1,
+   "file": "form-01-general-applicant-registration.html",
+   "title": "General Applicant Registration",
+   "source_documents": [
+    1
+   ],
+   "fields": [
+    {
+     "key": "full_name",
+     "dom_id": "full_name",
+     "label": "Full name",
+     "kind": "text",
+     "required": true,
+     "expect": "Kavya Suresh Deshpande",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.full_name",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "dob",
+     "dom_id": "dob",
+     "label": "Date of birth",
+     "kind": "date",
+     "required": true,
+     "expect": "2007-08-23",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.date_of_birth",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "gender",
+     "dom_id": "gender",
+     "label": "Gender",
+     "kind": "radio",
+     "required": true,
+     "expect": "Female",
+     "expect_many": [],
+     "accept": [],
+     "concept": "identity.gender",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "nationality",
+     "dom_id": "nationality",
+     "label": "Nationality",
+     "kind": "select",
+     "required": true,
+     "expect": "Indian",
+     "expect_many": [],
+     "accept": [],
+     "concept": "identity.nationality",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "occupation",
+     "dom_id": "occupation",
+     "label": "Current occupation",
+     "kind": "text",
+     "required": false,
+     "expect": null,
+     "expect_many": [],
+     "accept": [],
+     "concept": "",
+     "outcome": "missing",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "email",
+     "dom_id": "email",
+     "label": "Email address",
+     "kind": "email",
+     "required": true,
+     "expect": "kavya.deshpande.demo@example.com",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.email",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "mobile",
+     "dom_id": "mobile",
+     "label": "Mobile number",
+     "kind": "tel",
+     "required": true,
+     "expect": "9000054321",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.phone",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "alt_mobile",
+     "dom_id": "alt_mobile",
+     "label": "Alternate mobile number",
+     "kind": "tel",
+     "required": false,
+     "expect": null,
+     "expect_many": [],
+     "accept": [],
+     "concept": "",
+     "outcome": "missing",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "alternate vs primary mobile (emergency contact phone is a different number)"
+    },
+    {
+     "key": "permanent_address",
+     "dom_id": "permanent_address",
+     "label": "Permanent address",
+     "kind": "textarea",
+     "required": true,
+     "expect": "Flat 402, Sunrise Heights, Demo Nagar, Nashik, Maharashtra 422099",
+     "expect_many": [],
+     "accept": [],
+     "concept": "address.permanent_address",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    }
+   ],
+   "cryptic_names": false
+  },
+  {
+   "number": 2,
+   "file": "form-02-tax-identification-application.html",
+   "title": "Tax Identification Application",
+   "source_documents": [
+    1,
+    2
+   ],
+   "fields": [
+    {
+     "key": "applicant_name",
+     "dom_id": "applicant_name",
+     "label": "Applicant name",
+     "kind": "text",
+     "required": true,
+     "expect": "Kavya Suresh Deshpande",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.full_name",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "dob",
+     "dom_id": "dob",
+     "label": "Date of birth",
+     "kind": "date",
+     "required": true,
+     "expect": "2007-08-23",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.date_of_birth",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "father_name",
+     "dom_id": "father_name",
+     "label": "Father / parent name",
+     "kind": "text",
+     "required": true,
+     "expect": "Suresh Ramesh Deshpande",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.father_name",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "applicant name vs parent name"
+    },
+    {
+     "key": "mother_name",
+     "dom_id": "mother_name",
+     "label": "Mother's name",
+     "kind": "text",
+     "required": false,
+     "expect": "Sunita Suresh Deshpande",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.mother_name",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "existing_tax_id",
+     "dom_id": "existing_tax_id",
+     "label": "Existing tax identifier (if available)",
+     "kind": "text",
+     "required": false,
+     "expect": "DEMPD4821Z",
+     "expect_many": [],
+     "accept": [],
+     "concept": "identity.pan_number",
+     "outcome": "fill_with_review",
+     "sensitive": true,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "aadhaar_link",
+     "dom_id": "aadhaar_link",
+     "label": "Aadhaar number (if available)",
+     "kind": "text",
+     "required": false,
+     "expect": null,
+     "expect_many": [],
+     "accept": [],
+     "concept": "",
+     "outcome": "missing",
+     "sensitive": true,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "corr_address",
+     "dom_id": "corr_address",
+     "label": "Correspondence address",
+     "kind": "textarea",
+     "required": true,
+     "expect": "Room 214, Block C, Demo Institute Hostel, University Road, Pune, Maharashtra 411099",
+     "expect_many": [],
+     "accept": [],
+     "concept": "address.correspondence_address",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "permanent vs correspondence address"
+    },
+    {
+     "key": "corr_pin",
+     "dom_id": "corr_pin",
+     "label": "Correspondence PIN code",
+     "kind": "text",
+     "required": false,
+     "expect": "411099",
+     "expect_many": [],
+     "accept": [],
+     "concept": "address.correspondence_zipcode",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "permanent vs correspondence PIN"
+    },
+    {
+     "key": "mobile",
+     "dom_id": "mobile",
+     "label": "Mobile number",
+     "kind": "tel",
+     "required": false,
+     "expect": "9000054321",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.phone",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "income_source",
+     "dom_id": "income_source",
+     "label": "Principal source of income",
+     "kind": "select",
+     "required": false,
+     "expect": null,
+     "expect_many": [],
+     "accept": [],
+     "concept": "",
+     "outcome": "user_choice",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    }
+   ],
+   "cryptic_names": false
+  },
+  {
+   "number": 3,
+   "file": "form-03-voter-information-application.html",
+   "title": "Voter Information Application",
+   "source_documents": [
+    3
+   ],
+   "fields": [
+    {
+     "key": "applicant_name",
+     "dom_id": "q2379f",
+     "label": "Applicant name",
+     "kind": "text",
+     "required": true,
+     "expect": "Kavya Suresh Deshpande",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.full_name",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "dob",
+     "dom_id": "q48767",
+     "label": "Date of birth",
+     "kind": "date",
+     "required": true,
+     "expect": "2007-08-23",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.date_of_birth",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "relative_name",
+     "dom_id": "q2b838",
+     "label": "Name of father / mother / husband",
+     "kind": "text",
+     "required": true,
+     "expect": "Suresh Ramesh Deshpande",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.father_name",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "applicant name vs relative name"
+    },
+    {
+     "key": "relation_type",
+     "dom_id": "q5d4eb",
+     "label": "Relationship to the person named above",
+     "kind": "select",
+     "required": false,
+     "expect": null,
+     "expect_many": [],
+     "accept": [],
+     "concept": "",
+     "outcome": "user_choice",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "address",
+     "dom_id": "qfb6d5",
+     "label": "Address of ordinary residence",
+     "kind": "textarea",
+     "required": true,
+     "expect": "Flat 402, Sunrise Heights, Demo Nagar, Nashik, Maharashtra 422099",
+     "expect_many": [],
+     "accept": [],
+     "concept": "address.permanent_address",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "pin",
+     "dom_id": "q91bb5",
+     "label": "PIN code",
+     "kind": "text",
+     "required": true,
+     "expect": "422099",
+     "expect_many": [],
+     "accept": [],
+     "concept": "address.zipcode",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "reference_no",
+     "dom_id": "qe133d",
+     "label": "Existing electoral reference number (if any)",
+     "kind": "text",
+     "required": false,
+     "expect": "DMO4821937",
+     "expect_many": [],
+     "accept": [],
+     "concept": "identity.voter_id_number",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "reference number vs other identifiers"
+    },
+    {
+     "key": "previous_ref",
+     "dom_id": "q073db",
+     "label": "Application reference of an earlier request",
+     "kind": "text",
+     "required": false,
+     "expect": null,
+     "expect_many": [],
+     "accept": [],
+     "concept": "",
+     "outcome": "missing",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "reference number vs application number"
+    }
+   ],
+   "cryptic_names": true
+  },
+  {
+   "number": 4,
+   "file": "form-04-driving-licence-application.html",
+   "title": "Driving Licence Application",
+   "source_documents": [
+    4
+   ],
+   "fields": [
+    {
+     "key": "applicant_name",
+     "dom_id": "applicant_name",
+     "label": "Applicant name",
+     "kind": "text",
+     "required": true,
+     "expect": "Kavya Suresh Deshpande",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.full_name",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "dob",
+     "dom_id": "dob",
+     "label": "Date of birth",
+     "kind": "date",
+     "required": true,
+     "expect": "2007-08-23",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.date_of_birth",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "guardian",
+     "dom_id": "guardian",
+     "label": "Son / wife / daughter of",
+     "kind": "text",
+     "required": true,
+     "expect": "Suresh Ramesh Deshpande",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.father_name",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "blood_group",
+     "dom_id": "blood_group",
+     "label": "Blood group",
+     "kind": "select",
+     "required": false,
+     "expect": "O+",
+     "expect_many": [],
+     "accept": [],
+     "concept": "medical.blood_group",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "address",
+     "dom_id": "address",
+     "label": "Address",
+     "kind": "textarea",
+     "required": true,
+     "expect": "Flat 402, Sunrise Heights, Demo Nagar, Nashik, Maharashtra 422099",
+     "expect_many": [],
+     "accept": [],
+     "concept": "address.permanent_address",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "pin",
+     "dom_id": "pin",
+     "label": "PIN code",
+     "kind": "text",
+     "required": false,
+     "expect": "422099",
+     "expect_many": [],
+     "accept": [],
+     "concept": "address.zipcode",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "licence_no",
+     "dom_id": "licence_no",
+     "label": "Existing licence number (if available)",
+     "kind": "text",
+     "required": false,
+     "expect": "MH15 20250054321",
+     "expect_many": [],
+     "accept": [],
+     "concept": "identity.driving_licence_number",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "issue_date",
+     "dom_id": "issue_date",
+     "label": "Date of issue of existing licence",
+     "kind": "text",
+     "required": false,
+     "expect": "05/09/2025",
+     "expect_many": [],
+     "accept": [],
+     "concept": "driving_licence.issue_date",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "date of birth vs issue date vs validity date"
+    },
+    {
+     "key": "valid_till",
+     "dom_id": "valid_till",
+     "label": "Valid until",
+     "kind": "text",
+     "required": false,
+     "expect": "04/09/2045",
+     "expect_many": [],
+     "accept": [],
+     "concept": "driving_licence.valid_until",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "issue date vs validity date"
+    },
+    {
+     "key": "vehicle_classes",
+     "dom_id": "vehicle_classes",
+     "label": "Classes of vehicle held",
+     "kind": "checks",
+     "required": false,
+     "expect": null,
+     "expect_many": [
+      "MCWG",
+      "LMV"
+     ],
+     "accept": [],
+     "concept": "driving_licence.vehicle_classes",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "learner_no",
+     "dom_id": "learner_no",
+     "label": "Learner licence number",
+     "kind": "text",
+     "required": false,
+     "expect": null,
+     "expect_many": [],
+     "accept": [],
+     "concept": "",
+     "outcome": "missing",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "learner vs permanent licence number"
+    }
+   ],
+   "cryptic_names": false
+  },
+  {
+   "number": 5,
+   "file": "form-05-passport-information-application.html",
+   "title": "Passport Information Application",
+   "source_documents": [
+    1,
+    5
+   ],
+   "fields": [
+    {
+     "key": "given_names",
+     "dom_id": "given_names",
+     "label": "Given name(s)",
+     "kind": "text",
+     "required": true,
+     "expect": "Kavya Suresh",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.given_names",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "surname",
+     "dom_id": "surname",
+     "label": "Surname",
+     "kind": "text",
+     "required": true,
+     "expect": "Deshpande",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.last_name",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "dob",
+     "dom_id": "dob",
+     "label": "Date of birth",
+     "kind": "date",
+     "required": true,
+     "expect": "2007-08-23",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.date_of_birth",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "gender",
+     "dom_id": "gender",
+     "label": "Gender",
+     "kind": "radio",
+     "required": true,
+     "expect": "Female",
+     "expect_many": [],
+     "accept": [],
+     "concept": "identity.gender",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "place_of_birth",
+     "dom_id": "place_of_birth",
+     "label": "Place of birth",
+     "kind": "text",
+     "required": true,
+     "expect": "Nashik, Maharashtra",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.place_of_birth",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "nationality",
+     "dom_id": "nationality",
+     "label": "Nationality",
+     "kind": "select",
+     "required": true,
+     "expect": "Indian",
+     "expect_many": [],
+     "accept": [],
+     "concept": "identity.nationality",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "marital_status",
+     "dom_id": "marital_status",
+     "label": "Marital status",
+     "kind": "select",
+     "required": false,
+     "expect": null,
+     "expect_many": [],
+     "accept": [],
+     "concept": "",
+     "outcome": "user_choice",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "father_name",
+     "dom_id": "father_name",
+     "label": "Father's name",
+     "kind": "text",
+     "required": true,
+     "expect": "Suresh Ramesh Deshpande",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.father_name",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "applicant name vs parent name"
+    },
+    {
+     "key": "mother_name",
+     "dom_id": "mother_name",
+     "label": "Mother's name",
+     "kind": "text",
+     "required": true,
+     "expect": "Sunita Suresh Deshpande",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.mother_name",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "address",
+     "dom_id": "address",
+     "label": "Present address",
+     "kind": "textarea",
+     "required": true,
+     "expect": "Flat 402, Sunrise Heights, Demo Nagar, Nashik, Maharashtra 422099",
+     "expect_many": [],
+     "accept": [],
+     "concept": "address.permanent_address",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "pin",
+     "dom_id": "pin",
+     "label": "PIN code",
+     "kind": "text",
+     "required": false,
+     "expect": "422099",
+     "expect_many": [],
+     "accept": [],
+     "concept": "address.zipcode",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "passport_no",
+     "dom_id": "passport_no",
+     "label": "Passport number",
+     "kind": "text",
+     "required": false,
+     "expect": "Z9012345",
+     "expect_many": [],
+     "accept": [],
+     "concept": "identity.passport_number",
+     "outcome": "fill_with_review",
+     "sensitive": true,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "passport_issue",
+     "dom_id": "passport_issue",
+     "label": "Date of issue",
+     "kind": "date",
+     "required": false,
+     "expect": "2024-11-14",
+     "expect_many": [],
+     "accept": [],
+     "concept": "passport.issue_date",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "date of birth vs issue date"
+    },
+    {
+     "key": "passport_expiry",
+     "dom_id": "passport_expiry",
+     "label": "Date of expiry",
+     "kind": "date",
+     "required": false,
+     "expect": "2034-11-13",
+     "expect_many": [],
+     "accept": [],
+     "concept": "passport.expiry_date",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "issue date vs expiry date"
+    },
+    {
+     "key": "place_of_issue",
+     "dom_id": "place_of_issue",
+     "label": "Place of issue",
+     "kind": "text",
+     "required": false,
+     "expect": "Pune",
+     "expect_many": [],
+     "accept": [],
+     "concept": "passport.place_of_issue",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "emergency_name",
+     "dom_id": "emergency_name",
+     "label": "Emergency contact name",
+     "kind": "text",
+     "required": false,
+     "expect": "Rahul Ramesh Deshpande",
+     "expect_many": [],
+     "accept": [],
+     "concept": "emergency_contact.name",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "applicant name vs emergency contact"
+    },
+    {
+     "key": "emergency_phone",
+     "dom_id": "emergency_phone",
+     "label": "Emergency contact phone",
+     "kind": "tel",
+     "required": false,
+     "expect": "9000067890",
+     "expect_many": [],
+     "accept": [],
+     "concept": "emergency_contact.phone",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "applicant mobile vs emergency phone"
+    }
+   ],
+   "cryptic_names": false
+  },
+  {
+   "number": 6,
+   "file": "form-06-class-10-educational-record.html",
+   "title": "Class 10 Educational Record",
+   "source_documents": [
+    6
+   ],
+   "fields": [
+    {
+     "key": "board",
+     "dom_id": "board",
+     "label": "Board / council",
+     "kind": "text",
+     "required": true,
+     "expect": "Example Board of Secondary Education (Fictional)",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class10.board",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "school",
+     "dom_id": "school",
+     "label": "School name",
+     "kind": "text",
+     "required": false,
+     "expect": "Demo Vidya Mandir High School, Nashik",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class10.school",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "roll",
+     "dom_id": "roll",
+     "label": "Roll number",
+     "kind": "text",
+     "required": true,
+     "expect": "204518",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class10.roll_number",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "pass_month",
+     "dom_id": "pass_month",
+     "label": "Passing month",
+     "kind": "select",
+     "required": true,
+     "expect": "March",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class10.exam_month",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "pass_year",
+     "dom_id": "pass_year",
+     "label": "Passing year",
+     "kind": "select",
+     "required": true,
+     "expect": "2023",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class10.passing_year",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "result",
+     "dom_id": "result",
+     "label": "Result",
+     "kind": "select",
+     "required": false,
+     "expect": "Pass",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class10.result_status",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "c10_english_max",
+     "dom_id": "c10_english_max",
+     "label": "English — maximum marks",
+     "kind": "number",
+     "required": false,
+     "expect": "100",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class10.subjects[English].max_marks",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 10 subject marks"
+    },
+    {
+     "key": "c10_english_obt",
+     "dom_id": "c10_english_obt",
+     "label": "English — marks obtained",
+     "kind": "number",
+     "required": false,
+     "expect": "91",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class10.subjects[English].marks_obtained",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 10 subject marks"
+    },
+    {
+     "key": "c10_marathi_max",
+     "dom_id": "c10_marathi_max",
+     "label": "Marathi — maximum marks",
+     "kind": "number",
+     "required": false,
+     "expect": "100",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class10.subjects[Marathi].max_marks",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 10 subject marks"
+    },
+    {
+     "key": "c10_marathi_obt",
+     "dom_id": "c10_marathi_obt",
+     "label": "Marathi — marks obtained",
+     "kind": "number",
+     "required": false,
+     "expect": "88",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class10.subjects[Marathi].marks_obtained",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 10 subject marks"
+    },
+    {
+     "key": "c10_mathematics_max",
+     "dom_id": "c10_mathematics_max",
+     "label": "Mathematics — maximum marks",
+     "kind": "number",
+     "required": false,
+     "expect": "100",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class10.subjects[Mathematics].max_marks",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 10 subject marks"
+    },
+    {
+     "key": "c10_mathematics_obt",
+     "dom_id": "c10_mathematics_obt",
+     "label": "Mathematics — marks obtained",
+     "kind": "number",
+     "required": false,
+     "expect": "96",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class10.subjects[Mathematics].marks_obtained",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 10 subject marks"
+    },
+    {
+     "key": "c10_science_max",
+     "dom_id": "c10_science_max",
+     "label": "Science — maximum marks",
+     "kind": "number",
+     "required": false,
+     "expect": "100",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class10.subjects[Science].max_marks",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 10 subject marks"
+    },
+    {
+     "key": "c10_science_obt",
+     "dom_id": "c10_science_obt",
+     "label": "Science — marks obtained",
+     "kind": "number",
+     "required": false,
+     "expect": "92",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class10.subjects[Science].marks_obtained",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 10 subject marks"
+    },
+    {
+     "key": "c10_social_science_max",
+     "dom_id": "c10_social_science_max",
+     "label": "Social Science — maximum marks",
+     "kind": "number",
+     "required": false,
+     "expect": "100",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class10.subjects[Social Science].max_marks",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 10 subject marks"
+    },
+    {
+     "key": "c10_social_science_obt",
+     "dom_id": "c10_social_science_obt",
+     "label": "Social Science — marks obtained",
+     "kind": "number",
+     "required": false,
+     "expect": "90",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class10.subjects[Social Science].marks_obtained",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 10 subject marks"
+    },
+    {
+     "key": "total_max",
+     "dom_id": "total_max",
+     "label": "Total maximum marks",
+     "kind": "number",
+     "required": true,
+     "expect": "500",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class10.max_marks",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "total_obt",
+     "dom_id": "total_obt",
+     "label": "Total marks obtained",
+     "kind": "number",
+     "required": true,
+     "expect": "457",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class10.marks_obtained",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "percentage",
+     "dom_id": "percentage",
+     "label": "Percentage",
+     "kind": "number",
+     "required": true,
+     "expect": "91.40",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class10.percentage",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "grade_point",
+     "dom_id": "grade_point",
+     "label": "CGPA (if the board awards one)",
+     "kind": "number",
+     "required": false,
+     "expect": null,
+     "expect_many": [],
+     "accept": [],
+     "concept": "",
+     "outcome": "missing",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    }
+   ],
+   "cryptic_names": false
+  },
+  {
+   "number": 7,
+   "file": "form-07-class-12-educational-record.html",
+   "title": "Class 12 Educational Record",
+   "source_documents": [
+    6,
+    7
+   ],
+   "fields": [
+    {
+     "key": "board",
+     "dom_id": "board",
+     "label": "Class 12 board / council",
+     "kind": "text",
+     "required": true,
+     "expect": "Example State Board of Higher Secondary Education (Fictional)",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class12.board",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "college",
+     "dom_id": "college",
+     "label": "Junior college name",
+     "kind": "text",
+     "required": false,
+     "expect": "Demo Junior College of Science, Nashik",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class12.school",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "roll",
+     "dom_id": "roll",
+     "label": "Class 12 seat / roll number",
+     "kind": "text",
+     "required": true,
+     "expect": "S317442",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class12.roll_number",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "class 12 vs class 10 roll number"
+    },
+    {
+     "key": "stream",
+     "dom_id": "stream",
+     "label": "Stream",
+     "kind": "select",
+     "required": false,
+     "expect": "Science",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class12.stream",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "pass_month",
+     "dom_id": "pass_month",
+     "label": "Class 12 passing month",
+     "kind": "select",
+     "required": true,
+     "expect": "March",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class12.exam_month",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "pass_year",
+     "dom_id": "pass_year",
+     "label": "Class 12 passing year",
+     "kind": "select",
+     "required": true,
+     "expect": "2025",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class12.passing_year",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "class 12 vs class 10 passing year"
+    },
+    {
+     "key": "result",
+     "dom_id": "result",
+     "label": "Class 12 result",
+     "kind": "select",
+     "required": false,
+     "expect": "Pass",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class12.result_status",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "c12_english_max",
+     "dom_id": "c12_english_max",
+     "label": "English — maximum marks",
+     "kind": "number",
+     "required": false,
+     "expect": "100",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class12.subjects[English].max_marks",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 12 subject marks"
+    },
+    {
+     "key": "c12_english_obt",
+     "dom_id": "c12_english_obt",
+     "label": "English — marks obtained",
+     "kind": "number",
+     "required": false,
+     "expect": "84",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class12.subjects[English].marks_obtained",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 12 subject marks"
+    },
+    {
+     "key": "c12_physics_max",
+     "dom_id": "c12_physics_max",
+     "label": "Physics — maximum marks",
+     "kind": "number",
+     "required": false,
+     "expect": "100",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class12.subjects[Physics].max_marks",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 12 subject marks"
+    },
+    {
+     "key": "c12_physics_obt",
+     "dom_id": "c12_physics_obt",
+     "label": "Physics — marks obtained",
+     "kind": "number",
+     "required": false,
+     "expect": "86",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class12.subjects[Physics].marks_obtained",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 12 subject marks"
+    },
+    {
+     "key": "c12_chemistry_max",
+     "dom_id": "c12_chemistry_max",
+     "label": "Chemistry — maximum marks",
+     "kind": "number",
+     "required": false,
+     "expect": "100",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class12.subjects[Chemistry].max_marks",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 12 subject marks"
+    },
+    {
+     "key": "c12_chemistry_obt",
+     "dom_id": "c12_chemistry_obt",
+     "label": "Chemistry — marks obtained",
+     "kind": "number",
+     "required": false,
+     "expect": "82",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class12.subjects[Chemistry].marks_obtained",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 12 subject marks"
+    },
+    {
+     "key": "c12_mathematics_max",
+     "dom_id": "c12_mathematics_max",
+     "label": "Mathematics — maximum marks",
+     "kind": "number",
+     "required": false,
+     "expect": "100",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class12.subjects[Mathematics].max_marks",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 12 subject marks"
+    },
+    {
+     "key": "c12_mathematics_obt",
+     "dom_id": "c12_mathematics_obt",
+     "label": "Mathematics — marks obtained",
+     "kind": "number",
+     "required": false,
+     "expect": "90",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class12.subjects[Mathematics].marks_obtained",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 12 subject marks"
+    },
+    {
+     "key": "c12_computer_science_max",
+     "dom_id": "c12_computer_science_max",
+     "label": "Computer Science — maximum marks",
+     "kind": "number",
+     "required": false,
+     "expect": "100",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class12.subjects[Computer Science].max_marks",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 12 subject marks"
+    },
+    {
+     "key": "c12_computer_science_obt",
+     "dom_id": "c12_computer_science_obt",
+     "label": "Computer Science — marks obtained",
+     "kind": "number",
+     "required": false,
+     "expect": "94",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class12.subjects[Computer Science].marks_obtained",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 12 subject marks"
+    },
+    {
+     "key": "c12_elective_language_max",
+     "dom_id": "c12_elective_language_max",
+     "label": "Elective language — maximum marks",
+     "kind": "number",
+     "required": false,
+     "expect": null,
+     "expect_many": [],
+     "accept": [],
+     "concept": "",
+     "outcome": "missing",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": ""
+    },
+    {
+     "key": "c12_elective_language_obt",
+     "dom_id": "c12_elective_language_obt",
+     "label": "Elective language — marks obtained",
+     "kind": "number",
+     "required": false,
+     "expect": null,
+     "expect_many": [],
+     "accept": [],
+     "concept": "",
+     "outcome": "missing",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": ""
+    },
+    {
+     "key": "total_max",
+     "dom_id": "total_max",
+     "label": "Class 12 total maximum marks",
+     "kind": "number",
+     "required": true,
+     "expect": "500",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class12.max_marks",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "total_obt",
+     "dom_id": "total_obt",
+     "label": "Class 12 total marks obtained",
+     "kind": "number",
+     "required": true,
+     "expect": "436",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class12.marks_obtained",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "percentage",
+     "dom_id": "percentage",
+     "label": "Class 12 percentage",
+     "kind": "number",
+     "required": true,
+     "expect": "87.20",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class12.percentage",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "class 12 vs class 10 percentage"
+    },
+    {
+     "key": "c10_year",
+     "dom_id": "c10_year",
+     "label": "Class 10 passing year",
+     "kind": "select",
+     "required": false,
+     "expect": "2023",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class10.passing_year",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "class 10 value must not be replaced by class 12"
+    },
+    {
+     "key": "c10_percentage",
+     "dom_id": "c10_percentage",
+     "label": "Class 10 percentage",
+     "kind": "number",
+     "required": false,
+     "expect": "91.40",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class10.percentage",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "class 10 value must not be replaced by class 12"
+    },
+    {
+     "key": "c10_roll",
+     "dom_id": "c10_roll",
+     "label": "Class 10 roll number",
+     "kind": "text",
+     "required": false,
+     "expect": "204518",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class10.roll_number",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    }
+   ],
+   "cryptic_names": false
+  },
+  {
+   "number": 8,
+   "file": "form-08-birth-information-application.html",
+   "title": "Birth Information Application",
+   "source_documents": [
+    8
+   ],
+   "fields": [
+    {
+     "key": "full_name",
+     "dom_id": "qbdbed",
+     "label": "Full name of the person",
+     "kind": "text",
+     "required": true,
+     "expect": "Kavya Suresh Deshpande",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.full_name",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "dob",
+     "dom_id": "qb957e",
+     "label": "Date of birth",
+     "kind": "date",
+     "required": true,
+     "expect": "2007-08-23",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.date_of_birth",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "gender",
+     "dom_id": "q921f0",
+     "label": "Gender",
+     "kind": "radio",
+     "required": true,
+     "expect": "Female",
+     "expect_many": [],
+     "accept": [],
+     "concept": "identity.gender",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "place_of_birth",
+     "dom_id": "qfd4f2",
+     "label": "Place of birth",
+     "kind": "text",
+     "required": true,
+     "expect": "Nashik, Maharashtra",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.place_of_birth",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "time_of_birth",
+     "dom_id": "q2203c",
+     "label": "Time of birth",
+     "kind": "text",
+     "required": false,
+     "expect": null,
+     "expect_many": [],
+     "accept": [],
+     "concept": "",
+     "outcome": "missing",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "father",
+     "dom_id": "qda40e",
+     "label": "Father's full name",
+     "kind": "text",
+     "required": true,
+     "expect": "Suresh Ramesh Deshpande",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.father_name",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "mother",
+     "dom_id": "q6cf05",
+     "label": "Mother's full name",
+     "kind": "text",
+     "required": true,
+     "expect": "Sunita Suresh Deshpande",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.mother_name",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "reg_ref",
+     "dom_id": "q688fd",
+     "label": "Birth registration reference",
+     "kind": "text",
+     "required": true,
+     "expect": "B-2007-NSK-004519",
+     "expect_many": [],
+     "accept": [],
+     "concept": "birth_certificate.registration_number",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "registration reference vs other reference numbers"
+    },
+    {
+     "key": "reg_date",
+     "dom_id": "q72910",
+     "label": "Date of registration",
+     "kind": "date",
+     "required": false,
+     "expect": "2007-09-04",
+     "expect_many": [],
+     "accept": [],
+     "concept": "birth_certificate.registration_date",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "date of birth vs registration date"
+    },
+    {
+     "key": "issue_date",
+     "dom_id": "qe00e1",
+     "label": "Date of issue of the extract",
+     "kind": "date",
+     "required": false,
+     "expect": "2007-09-12",
+     "expect_many": [],
+     "accept": [],
+     "concept": "birth_certificate.issue_date",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    }
+   ],
+   "cryptic_names": true
+  },
+  {
+   "number": 9,
+   "file": "form-09-bank-account-information.html",
+   "title": "Bank Account Information Form",
+   "source_documents": [
+    9,
+    15
+   ],
+   "fields": [
+    {
+     "key": "holder",
+     "dom_id": "holder",
+     "label": "Account holder name",
+     "kind": "text",
+     "required": true,
+     "expect": "Kavya Suresh Deshpande",
+     "expect_many": [],
+     "accept": [],
+     "concept": "financial.account_holder_name",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "bank",
+     "dom_id": "bank",
+     "label": "Bank name",
+     "kind": "text",
+     "required": true,
+     "expect": "Example Sahakari Bank (Fictional)",
+     "expect_many": [],
+     "accept": [
+      "Example Sahakari Bank"
+     ],
+     "concept": "financial.bank_name",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "branch",
+     "dom_id": "branch",
+     "label": "Branch",
+     "kind": "text",
+     "required": true,
+     "expect": "Demo Nagar Branch",
+     "expect_many": [],
+     "accept": [],
+     "concept": "financial.branch_name",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "branch_address",
+     "dom_id": "branch_address",
+     "label": "Branch address",
+     "kind": "textarea",
+     "required": false,
+     "expect": "Shop 6, Demo Plaza, Demo Nagar, Nashik, Maharashtra 422099",
+     "expect_many": [],
+     "accept": [],
+     "concept": "financial.branch_address",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "account_no",
+     "dom_id": "account_no",
+     "label": "Account number",
+     "kind": "text",
+     "required": true,
+     "expect": "910000456789",
+     "expect_many": [],
+     "accept": [],
+     "concept": "financial.account_number",
+     "outcome": "fill_with_review",
+     "sensitive": true,
+     "dynamic": false,
+     "trap": "account number vs IFSC"
+    },
+    {
+     "key": "account_no2",
+     "dom_id": "account_no2",
+     "label": "Re-enter account number",
+     "kind": "text",
+     "required": false,
+     "expect": "910000456789",
+     "expect_many": [],
+     "accept": [],
+     "concept": "financial.account_number",
+     "outcome": "fill_with_review",
+     "sensitive": true,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "ifsc",
+     "dom_id": "ifsc",
+     "label": "IFSC code",
+     "kind": "text",
+     "required": true,
+     "expect": "DEMO0000417",
+     "expect_many": [],
+     "accept": [],
+     "concept": "financial.ifsc_code",
+     "outcome": "fill_with_review",
+     "sensitive": true,
+     "dynamic": false,
+     "trap": "account number vs IFSC"
+    },
+    {
+     "key": "micr",
+     "dom_id": "micr",
+     "label": "MICR code (optional)",
+     "kind": "text",
+     "required": false,
+     "expect": "422999017",
+     "expect_many": [],
+     "accept": [],
+     "concept": "financial.micr_code",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "IFSC vs MICR"
+    },
+    {
+     "key": "account_type",
+     "dom_id": "account_type",
+     "label": "Account type",
+     "kind": "select",
+     "required": true,
+     "expect": "Savings",
+     "expect_many": [],
+     "accept": [],
+     "concept": "financial.account_type",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "upi",
+     "dom_id": "upi",
+     "label": "UPI ID",
+     "kind": "text",
+     "required": false,
+     "expect": null,
+     "expect_many": [],
+     "accept": [],
+     "concept": "",
+     "outcome": "missing",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    }
+   ],
+   "cryptic_names": false
+  },
+  {
+   "number": 10,
+   "file": "form-10-utility-service-application.html",
+   "title": "Utility Service Application",
+   "source_documents": [
+    10
+   ],
+   "fields": [
+    {
+     "key": "customer",
+     "dom_id": "customer",
+     "label": "Customer name",
+     "kind": "text",
+     "required": true,
+     "expect": "Kavya Suresh Deshpande",
+     "expect_many": [],
+     "accept": [],
+     "concept": "utility.consumer_name",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "consumer_no",
+     "dom_id": "consumer_no",
+     "label": "Consumer number",
+     "kind": "text",
+     "required": true,
+     "expect": "EL-4010-0508-1",
+     "expect_many": [],
+     "accept": [],
+     "concept": "utility.consumer_number",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "consumer number vs meter number"
+    },
+    {
+     "key": "meter_no",
+     "dom_id": "meter_no",
+     "label": "Meter number",
+     "kind": "text",
+     "required": false,
+     "expect": "MT-77-0I58",
+     "expect_many": [],
+     "accept": [],
+     "concept": "utility.meter_number",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "service_address",
+     "dom_id": "service_address",
+     "label": "Service address",
+     "kind": "textarea",
+     "required": true,
+     "expect": "Flat 402, Sunrise Heights, Demo Nagar, Nashik, Maharashtra 422099",
+     "expect_many": [],
+     "accept": [],
+     "concept": "utility.service_address",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "billing_address",
+     "dom_id": "billing_address",
+     "label": "Billing address",
+     "kind": "textarea",
+     "required": false,
+     "expect": "Flat 402, Sunrise Heights, Demo Nagar, Nashik, Maharashtra 422099",
+     "expect_many": [],
+     "accept": [
+      "Room 214, Block C, Demo Institute Hostel, University Road, Pune, Maharashtra 411099"
+     ],
+     "concept": "address.billing_address",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "the profile holds two addresses; either is defensible, a wrong value is not"
+    },
+    {
+     "key": "contact_mobile",
+     "dom_id": "contact_mobile",
+     "label": "Contact mobile number",
+     "kind": "tel",
+     "required": true,
+     "expect": "9000054321",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.phone",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "contact_email",
+     "dom_id": "contact_email",
+     "label": "Contact email",
+     "kind": "email",
+     "required": false,
+     "expect": "kavya.deshpande.demo@example.com",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.email",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "bill_month",
+     "dom_id": "bill_month",
+     "label": "Latest bill month",
+     "kind": "text",
+     "required": false,
+     "expect": "August 2026",
+     "expect_many": [],
+     "accept": [],
+     "concept": "utility.bill_month",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "bill_date",
+     "dom_id": "bill_date",
+     "label": "Bill date",
+     "kind": "date",
+     "required": false,
+     "expect": "2026-09-05",
+     "expect_many": [],
+     "accept": [],
+     "concept": "utility.bill_date",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "bill date vs due date"
+    },
+    {
+     "key": "due_date",
+     "dom_id": "due_date",
+     "label": "Due date",
+     "kind": "date",
+     "required": false,
+     "expect": "2026-09-20",
+     "expect_many": [],
+     "accept": [],
+     "concept": "utility.due_date",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "bill date vs due date"
+    },
+    {
+     "key": "load_kw",
+     "dom_id": "load_kw",
+     "label": "Requested sanctioned load (kW)",
+     "kind": "number",
+     "required": false,
+     "expect": null,
+     "expect_many": [],
+     "accept": [],
+     "concept": "",
+     "outcome": "user_choice",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    }
+   ],
+   "cryptic_names": false
+  },
+  {
+   "number": 11,
+   "file": "form-11-household-information.html",
+   "title": "Household Information Form",
+   "source_documents": [
+    11
+   ],
+   "fields": [
+    {
+     "key": "applicant_name",
+     "dom_id": "applicant_name",
+     "label": "Applicant name",
+     "kind": "text",
+     "required": true,
+     "expect": "Kavya Suresh Deshpande",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.full_name",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "father_name",
+     "dom_id": "father_name",
+     "label": "Father's name",
+     "kind": "text",
+     "required": true,
+     "expect": "Suresh Ramesh Deshpande",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.father_name",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "mother_name",
+     "dom_id": "mother_name",
+     "label": "Mother's name",
+     "kind": "text",
+     "required": true,
+     "expect": "Sunita Suresh Deshpande",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.mother_name",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "household_ref",
+     "dom_id": "household_ref",
+     "label": "Household reference",
+     "kind": "text",
+     "required": true,
+     "expect": "HH-NSK-2024-00417",
+     "expect_many": [],
+     "accept": [],
+     "concept": "ration_card.number",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "head",
+     "dom_id": "head",
+     "label": "Head of household",
+     "kind": "text",
+     "required": false,
+     "expect": "Suresh Ramesh Deshpande",
+     "expect_many": [],
+     "accept": [],
+     "concept": "ration_card.head_of_family",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "applicant name vs head of household"
+    },
+    {
+     "key": "m1_name",
+     "dom_id": "m1_name",
+     "label": "Member 1 — name",
+     "kind": "text",
+     "required": false,
+     "expect": "Suresh Ramesh Deshpande",
+     "expect_many": [],
+     "accept": [],
+     "concept": "ration_card.members",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": ""
+    },
+    {
+     "key": "m1_rel",
+     "dom_id": "m1_rel",
+     "label": "Member 1 — relationship to applicant",
+     "kind": "text",
+     "required": false,
+     "expect": "Father",
+     "expect_many": [],
+     "accept": [],
+     "concept": "ration_card.members",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": ""
+    },
+    {
+     "key": "m1_age",
+     "dom_id": "m1_age",
+     "label": "Member 1 — age",
+     "kind": "number",
+     "required": false,
+     "expect": "49",
+     "expect_many": [],
+     "accept": [],
+     "concept": "ration_card.members",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": ""
+    },
+    {
+     "key": "m2_name",
+     "dom_id": "m2_name",
+     "label": "Member 2 — name",
+     "kind": "text",
+     "required": false,
+     "expect": "Sunita Suresh Deshpande",
+     "expect_many": [],
+     "accept": [],
+     "concept": "ration_card.members",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": ""
+    },
+    {
+     "key": "m2_rel",
+     "dom_id": "m2_rel",
+     "label": "Member 2 — relationship to applicant",
+     "kind": "text",
+     "required": false,
+     "expect": "Mother",
+     "expect_many": [],
+     "accept": [],
+     "concept": "ration_card.members",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": ""
+    },
+    {
+     "key": "m2_age",
+     "dom_id": "m2_age",
+     "label": "Member 2 — age",
+     "kind": "number",
+     "required": false,
+     "expect": "46",
+     "expect_many": [],
+     "accept": [],
+     "concept": "ration_card.members",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": ""
+    },
+    {
+     "key": "m3_name",
+     "dom_id": "m3_name",
+     "label": "Member 3 — name",
+     "kind": "text",
+     "required": false,
+     "expect": "Kavya Suresh Deshpande",
+     "expect_many": [],
+     "accept": [],
+     "concept": "ration_card.members",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": ""
+    },
+    {
+     "key": "m3_rel",
+     "dom_id": "m3_rel",
+     "label": "Member 3 — relationship to applicant",
+     "kind": "text",
+     "required": false,
+     "expect": "Self",
+     "expect_many": [],
+     "accept": [],
+     "concept": "ration_card.members",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": ""
+    },
+    {
+     "key": "m3_age",
+     "dom_id": "m3_age",
+     "label": "Member 3 — age",
+     "kind": "number",
+     "required": false,
+     "expect": "19",
+     "expect_many": [],
+     "accept": [],
+     "concept": "ration_card.members",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": ""
+    }
+   ],
+   "cryptic_names": false
+  },
+  {
+   "number": 12,
+   "file": "form-12-income-information.html",
+   "title": "Income Information Form",
+   "source_documents": [
+    12
+   ],
+   "fields": [
+    {
+     "key": "applicant_name",
+     "dom_id": "applicant_name",
+     "label": "Applicant name",
+     "kind": "text",
+     "required": true,
+     "expect": "Kavya Suresh Deshpande",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.full_name",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "annual_income",
+     "dom_id": "annual_income",
+     "label": "Annual family income (INR)",
+     "kind": "number",
+     "required": true,
+     "expect": "480000",
+     "expect_many": [],
+     "accept": [],
+     "concept": "financial.annual_income",
+     "outcome": "fill_with_review",
+     "sensitive": true,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "currency",
+     "dom_id": "currency",
+     "label": "Currency",
+     "kind": "select",
+     "required": false,
+     "expect": "INR",
+     "expect_many": [],
+     "accept": [],
+     "concept": "",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "fin_year",
+     "dom_id": "fin_year",
+     "label": "Financial year",
+     "kind": "text",
+     "required": false,
+     "expect": "2025-26",
+     "expect_many": [],
+     "accept": [],
+     "concept": "income_certificate.financial_year",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "cert_ref",
+     "dom_id": "cert_ref",
+     "label": "Income certificate number",
+     "kind": "text",
+     "required": true,
+     "expect": "INC/2026/NSK/008812",
+     "expect_many": [],
+     "accept": [],
+     "concept": "income_certificate.number",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "certificate number vs application reference"
+    },
+    {
+     "key": "app_ref",
+     "dom_id": "app_ref",
+     "label": "Application reference number (if any)",
+     "kind": "text",
+     "required": false,
+     "expect": null,
+     "expect_many": [],
+     "accept": [],
+     "concept": "",
+     "outcome": "missing",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "certificate number vs application reference"
+    },
+    {
+     "key": "issue_date",
+     "dom_id": "issue_date",
+     "label": "Certificate issue date",
+     "kind": "date",
+     "required": true,
+     "expect": "2026-04-18",
+     "expect_many": [],
+     "accept": [],
+     "concept": "income_certificate.issue_date",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "issue date vs validity date"
+    },
+    {
+     "key": "valid_until",
+     "dom_id": "valid_until",
+     "label": "Valid until",
+     "kind": "date",
+     "required": false,
+     "expect": "2027-03-31",
+     "expect_many": [],
+     "accept": [],
+     "concept": "income_certificate.valid_until",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "issue date vs validity date"
+    },
+    {
+     "key": "authority",
+     "dom_id": "authority",
+     "label": "Issuing authority",
+     "kind": "text",
+     "required": false,
+     "expect": "Demo Tehsil Revenue Office, Nashik (Fictional)",
+     "expect_many": [],
+     "accept": [],
+     "concept": "income_certificate.issuing_authority",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    }
+   ],
+   "cryptic_names": false
+  },
+  {
+   "number": 13,
+   "file": "form-13-category-certificate-information.html",
+   "title": "Category Certificate Information Form",
+   "source_documents": [
+    13
+   ],
+   "fields": [
+    {
+     "key": "applicant_name",
+     "dom_id": "applicant_name",
+     "label": "Applicant name",
+     "kind": "text",
+     "required": true,
+     "expect": "Kavya Suresh Deshpande",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.full_name",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "category",
+     "dom_id": "category",
+     "label": "Category",
+     "kind": "select",
+     "required": true,
+     "expect": "OBC",
+     "expect_many": [],
+     "accept": [],
+     "concept": "category.social_category",
+     "outcome": "fill_with_review",
+     "sensitive": true,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "caste",
+     "dom_id": "caste",
+     "label": "Caste / community",
+     "kind": "text",
+     "required": false,
+     "expect": "Demo Community A (Fictional)",
+     "expect_many": [],
+     "accept": [],
+     "concept": "category.caste",
+     "outcome": "fill_with_review",
+     "sensitive": true,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "cert_no",
+     "dom_id": "cert_no",
+     "label": "Category certificate number",
+     "kind": "text",
+     "required": true,
+     "expect": "CC/2025/NSK/004512",
+     "expect_many": [],
+     "accept": [],
+     "concept": "caste_certificate.number",
+     "outcome": "fill_with_review",
+     "sensitive": true,
+     "dynamic": false,
+     "trap": "certificate number vs validity certificate number"
+    },
+    {
+     "key": "cert_issue",
+     "dom_id": "cert_issue",
+     "label": "Category certificate issue date",
+     "kind": "date",
+     "required": false,
+     "expect": "2025-07-09",
+     "expect_many": [],
+     "accept": [],
+     "concept": "caste_certificate.issue_date",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "cert_authority",
+     "dom_id": "cert_authority",
+     "label": "Category certificate issuing authority",
+     "kind": "text",
+     "required": false,
+     "expect": "Sub-Divisional Office, Nashik (Fictional)",
+     "expect_many": [],
+     "accept": [],
+     "concept": "caste_certificate.issuing_authority",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "validity_no",
+     "dom_id": "validity_no",
+     "label": "Caste validity certificate number",
+     "kind": "text",
+     "required": false,
+     "expect": "CVC/2025/NSK/007731",
+     "expect_many": [],
+     "accept": [],
+     "concept": "caste_validity.number",
+     "outcome": "fill_with_review",
+     "sensitive": true,
+     "dynamic": false,
+     "trap": "certificate number vs validity certificate number"
+    },
+    {
+     "key": "validity_issue",
+     "dom_id": "validity_issue",
+     "label": "Caste validity certificate issue date",
+     "kind": "date",
+     "required": false,
+     "expect": "2025-11-20",
+     "expect_many": [],
+     "accept": [],
+     "concept": "caste_validity.issue_date",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "doc_status",
+     "dom_id": "doc_status",
+     "label": "Supporting document status",
+     "kind": "radio",
+     "required": false,
+     "expect": null,
+     "expect_many": [],
+     "accept": [],
+     "concept": "",
+     "outcome": "user_choice",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    }
+   ],
+   "cryptic_names": false
+  },
+  {
+   "number": 14,
+   "file": "form-14-domicile-information.html",
+   "title": "Domicile Information Form",
+   "source_documents": [
+    14
+   ],
+   "fields": [
+    {
+     "key": "applicant_name",
+     "dom_id": "applicant_name",
+     "label": "Applicant name",
+     "kind": "text",
+     "required": true,
+     "expect": "Kavya Suresh Deshpande",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.full_name",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "domicile_state",
+     "dom_id": "domicile_state",
+     "label": "State of domicile",
+     "kind": "select",
+     "required": true,
+     "expect": "Maharashtra",
+     "expect_many": [],
+     "accept": [],
+     "concept": "domicile_certificate.state",
+     "outcome": "fill_with_review",
+     "sensitive": true,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "domicile_details",
+     "dom_id": "domicile_details",
+     "label": "Domicile details (period of residence)",
+     "kind": "text",
+     "required": false,
+     "expect": "19 years",
+     "expect_many": [],
+     "accept": [],
+     "concept": "",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "permanent_address",
+     "dom_id": "permanent_address",
+     "label": "Permanent address",
+     "kind": "textarea",
+     "required": true,
+     "expect": "Flat 402, Sunrise Heights, Demo Nagar, Nashik, Maharashtra 422099",
+     "expect_many": [],
+     "accept": [],
+     "concept": "address.permanent_address",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "pin",
+     "dom_id": "pin",
+     "label": "PIN code",
+     "kind": "text",
+     "required": false,
+     "expect": "422099",
+     "expect_many": [],
+     "accept": [],
+     "concept": "address.zipcode",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "cert_ref",
+     "dom_id": "cert_ref",
+     "label": "Domicile certificate reference",
+     "kind": "text",
+     "required": true,
+     "expect": "DOM/2026/NSK/003377",
+     "expect_many": [],
+     "accept": [],
+     "concept": "domicile_certificate.number",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "issue_date",
+     "dom_id": "issue_date",
+     "label": "Issue date",
+     "kind": "date",
+     "required": true,
+     "expect": "2026-02-11",
+     "expect_many": [],
+     "accept": [],
+     "concept": "domicile_certificate.issue_date",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "authority",
+     "dom_id": "authority",
+     "label": "Issuing authority",
+     "kind": "text",
+     "required": false,
+     "expect": "Demo Tehsil Revenue Office, Nashik (Fictional)",
+     "expect_many": [],
+     "accept": [],
+     "concept": "domicile_certificate.issuing_authority",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "ration_no",
+     "dom_id": "ration_no",
+     "label": "Ration card number",
+     "kind": "text",
+     "required": false,
+     "expect": null,
+     "expect_many": [],
+     "accept": [],
+     "concept": "",
+     "outcome": "missing",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    }
+   ],
+   "cryptic_names": false
+  },
+  {
+   "number": 15,
+   "file": "form-15-combined-entrance-application.html",
+   "title": "Demo Entrance Examination Application",
+   "source_documents": [
+    1,
+    6,
+    7,
+    12,
+    13
+   ],
+   "fields": [
+    {
+     "key": "cand_name",
+     "dom_id": "cand_name",
+     "label": "Candidate's name",
+     "kind": "text",
+     "required": true,
+     "expect": "Kavya Suresh Deshpande",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.full_name",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "cand_dob",
+     "dom_id": "cand_dob",
+     "label": "Date of birth",
+     "kind": "date",
+     "required": true,
+     "expect": "2007-08-23",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.date_of_birth",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "cand_gender",
+     "dom_id": "cand_gender",
+     "label": "Gender",
+     "kind": "radio",
+     "required": true,
+     "expect": "Female",
+     "expect_many": [],
+     "accept": [],
+     "concept": "identity.gender",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "cand_nationality",
+     "dom_id": "cand_nationality",
+     "label": "Nationality",
+     "kind": "select",
+     "required": true,
+     "expect": "Indian",
+     "expect_many": [],
+     "accept": [],
+     "concept": "identity.nationality",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "cand_birthplace",
+     "dom_id": "cand_birthplace",
+     "label": "Place of birth",
+     "kind": "text",
+     "required": false,
+     "expect": "Nashik, Maharashtra",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.place_of_birth",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "father",
+     "dom_id": "father",
+     "label": "Father's name",
+     "kind": "text",
+     "required": true,
+     "expect": "Suresh Ramesh Deshpande",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.father_name",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "candidate vs father vs guardian"
+    },
+    {
+     "key": "mother",
+     "dom_id": "mother",
+     "label": "Mother's name",
+     "kind": "text",
+     "required": true,
+     "expect": "Sunita Suresh Deshpande",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.mother_name",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "guardian",
+     "dom_id": "guardian",
+     "label": "Guardian's name (if different)",
+     "kind": "text",
+     "required": false,
+     "expect": null,
+     "expect_many": [],
+     "accept": [],
+     "concept": "",
+     "outcome": "missing",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "father_occupation",
+     "dom_id": "father_occupation",
+     "label": "Father's occupation",
+     "kind": "text",
+     "required": false,
+     "expect": null,
+     "expect_many": [],
+     "accept": [],
+     "concept": "",
+     "outcome": "missing",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "email",
+     "dom_id": "email",
+     "label": "Email address",
+     "kind": "email",
+     "required": true,
+     "expect": "kavya.deshpande.demo@example.com",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.email",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "mobile",
+     "dom_id": "mobile",
+     "label": "Candidate mobile number",
+     "kind": "tel",
+     "required": true,
+     "expect": "9000054321",
+     "expect_many": [],
+     "accept": [],
+     "concept": "personal.phone",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "parent_mobile",
+     "dom_id": "parent_mobile",
+     "label": "Parent / guardian mobile number",
+     "kind": "tel",
+     "required": false,
+     "expect": null,
+     "expect_many": [],
+     "accept": [],
+     "concept": "",
+     "outcome": "missing",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "candidate mobile vs parent mobile vs emergency contact"
+    },
+    {
+     "key": "emergency_name",
+     "dom_id": "emergency_name",
+     "label": "Emergency contact name",
+     "kind": "text",
+     "required": false,
+     "expect": "Rahul Ramesh Deshpande",
+     "expect_many": [],
+     "accept": [],
+     "concept": "emergency_contact.name",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "emergency_phone",
+     "dom_id": "emergency_phone",
+     "label": "Emergency contact phone",
+     "kind": "tel",
+     "required": false,
+     "expect": "9000067890",
+     "expect_many": [],
+     "accept": [],
+     "concept": "emergency_contact.phone",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "perm_address",
+     "dom_id": "perm_address",
+     "label": "Permanent address",
+     "kind": "textarea",
+     "required": true,
+     "expect": "Flat 402, Sunrise Heights, Demo Nagar, Nashik, Maharashtra 422099",
+     "expect_many": [],
+     "accept": [],
+     "concept": "address.permanent_address",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "permanent vs correspondence address"
+    },
+    {
+     "key": "perm_pin",
+     "dom_id": "perm_pin",
+     "label": "Permanent address PIN code",
+     "kind": "text",
+     "required": true,
+     "expect": "422099",
+     "expect_many": [],
+     "accept": [],
+     "concept": "address.zipcode",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "corr_address",
+     "dom_id": "corr_address",
+     "label": "Address for correspondence",
+     "kind": "textarea",
+     "required": true,
+     "expect": "Room 214, Block C, Demo Institute Hostel, University Road, Pune, Maharashtra 411099",
+     "expect_many": [],
+     "accept": [],
+     "concept": "address.correspondence_address",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "permanent vs correspondence address"
+    },
+    {
+     "key": "corr_pin",
+     "dom_id": "corr_pin",
+     "label": "Correspondence PIN code",
+     "kind": "text",
+     "required": false,
+     "expect": "411099",
+     "expect_many": [],
+     "accept": [],
+     "concept": "address.correspondence_zipcode",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "same_address",
+     "dom_id": "same_address",
+     "label": "My correspondence address is the same as my permanent address",
+     "kind": "checkbox",
+     "required": false,
+     "expect": null,
+     "expect_many": [],
+     "accept": [],
+     "concept": "",
+     "outcome": "user_choice",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "c10_board",
+     "dom_id": "c10_board",
+     "label": "Class 10 board",
+     "kind": "text",
+     "required": true,
+     "expect": "Example Board of Secondary Education (Fictional)",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class10.board",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "c10_roll",
+     "dom_id": "c10_roll",
+     "label": "Class 10 roll number",
+     "kind": "text",
+     "required": true,
+     "expect": "204518",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class10.roll_number",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "class 10 vs class 12 roll number"
+    },
+    {
+     "key": "c10_month",
+     "dom_id": "c10_month",
+     "label": "Class 10 passing month",
+     "kind": "select",
+     "required": false,
+     "expect": "March",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class10.exam_month",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "c10_year",
+     "dom_id": "c10_year",
+     "label": "Class 10 passing year",
+     "kind": "select",
+     "required": true,
+     "expect": "2023",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class10.passing_year",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "class 10 vs class 12 passing year"
+    },
+    {
+     "key": "c10_percentage",
+     "dom_id": "c10_percentage",
+     "label": "Class 10 percentage",
+     "kind": "number",
+     "required": true,
+     "expect": "91.40",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class10.percentage",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "class 10 vs class 12 percentage"
+    },
+    {
+     "key": "c10_english_max",
+     "dom_id": "c10_english_max",
+     "label": "English — maximum marks",
+     "kind": "number",
+     "required": false,
+     "expect": "100",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class10.subjects[English].max_marks",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 10 subject marks"
+    },
+    {
+     "key": "c10_english_obt",
+     "dom_id": "c10_english_obt",
+     "label": "English — marks obtained",
+     "kind": "number",
+     "required": false,
+     "expect": "91",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class10.subjects[English].marks_obtained",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 10 subject marks"
+    },
+    {
+     "key": "c10_marathi_max",
+     "dom_id": "c10_marathi_max",
+     "label": "Marathi — maximum marks",
+     "kind": "number",
+     "required": false,
+     "expect": "100",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class10.subjects[Marathi].max_marks",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 10 subject marks"
+    },
+    {
+     "key": "c10_marathi_obt",
+     "dom_id": "c10_marathi_obt",
+     "label": "Marathi — marks obtained",
+     "kind": "number",
+     "required": false,
+     "expect": "88",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class10.subjects[Marathi].marks_obtained",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 10 subject marks"
+    },
+    {
+     "key": "c10_mathematics_max",
+     "dom_id": "c10_mathematics_max",
+     "label": "Mathematics — maximum marks",
+     "kind": "number",
+     "required": false,
+     "expect": "100",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class10.subjects[Mathematics].max_marks",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 10 subject marks"
+    },
+    {
+     "key": "c10_mathematics_obt",
+     "dom_id": "c10_mathematics_obt",
+     "label": "Mathematics — marks obtained",
+     "kind": "number",
+     "required": false,
+     "expect": "96",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class10.subjects[Mathematics].marks_obtained",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 10 subject marks"
+    },
+    {
+     "key": "c10_science_max",
+     "dom_id": "c10_science_max",
+     "label": "Science — maximum marks",
+     "kind": "number",
+     "required": false,
+     "expect": "100",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class10.subjects[Science].max_marks",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 10 subject marks"
+    },
+    {
+     "key": "c10_science_obt",
+     "dom_id": "c10_science_obt",
+     "label": "Science — marks obtained",
+     "kind": "number",
+     "required": false,
+     "expect": "92",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class10.subjects[Science].marks_obtained",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 10 subject marks"
+    },
+    {
+     "key": "c10_social_science_max",
+     "dom_id": "c10_social_science_max",
+     "label": "Social Science — maximum marks",
+     "kind": "number",
+     "required": false,
+     "expect": "100",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class10.subjects[Social Science].max_marks",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 10 subject marks"
+    },
+    {
+     "key": "c10_social_science_obt",
+     "dom_id": "c10_social_science_obt",
+     "label": "Social Science — marks obtained",
+     "kind": "number",
+     "required": false,
+     "expect": "90",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class10.subjects[Social Science].marks_obtained",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 10 subject marks"
+    },
+    {
+     "key": "c12_board",
+     "dom_id": "c12_board",
+     "label": "Class 12 board",
+     "kind": "text",
+     "required": true,
+     "expect": "Example State Board of Higher Secondary Education (Fictional)",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class12.board",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "c12_roll",
+     "dom_id": "c12_roll",
+     "label": "Class 12 roll number",
+     "kind": "text",
+     "required": true,
+     "expect": "S317442",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class12.roll_number",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "class 10 vs class 12 roll number"
+    },
+    {
+     "key": "c12_month",
+     "dom_id": "c12_month",
+     "label": "Class 12 passing month",
+     "kind": "select",
+     "required": false,
+     "expect": "March",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class12.exam_month",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "c12_year",
+     "dom_id": "c12_year",
+     "label": "Class 12 passing year",
+     "kind": "select",
+     "required": true,
+     "expect": "2025",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class12.passing_year",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "class 10 vs class 12 passing year"
+    },
+    {
+     "key": "c12_percentage",
+     "dom_id": "c12_percentage",
+     "label": "Class 12 percentage",
+     "kind": "number",
+     "required": true,
+     "expect": "87.20",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class12.percentage",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": "class 10 vs class 12 percentage"
+    },
+    {
+     "key": "c12_english_max",
+     "dom_id": "c12_english_max",
+     "label": "English — maximum marks",
+     "kind": "number",
+     "required": false,
+     "expect": "100",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class12.subjects[English].max_marks",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 12 subject marks"
+    },
+    {
+     "key": "c12_english_obt",
+     "dom_id": "c12_english_obt",
+     "label": "English — marks obtained",
+     "kind": "number",
+     "required": false,
+     "expect": "84",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class12.subjects[English].marks_obtained",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 12 subject marks"
+    },
+    {
+     "key": "c12_physics_max",
+     "dom_id": "c12_physics_max",
+     "label": "Physics — maximum marks",
+     "kind": "number",
+     "required": false,
+     "expect": "100",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class12.subjects[Physics].max_marks",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 12 subject marks"
+    },
+    {
+     "key": "c12_physics_obt",
+     "dom_id": "c12_physics_obt",
+     "label": "Physics — marks obtained",
+     "kind": "number",
+     "required": false,
+     "expect": "86",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class12.subjects[Physics].marks_obtained",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 12 subject marks"
+    },
+    {
+     "key": "c12_chemistry_max",
+     "dom_id": "c12_chemistry_max",
+     "label": "Chemistry — maximum marks",
+     "kind": "number",
+     "required": false,
+     "expect": "100",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class12.subjects[Chemistry].max_marks",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 12 subject marks"
+    },
+    {
+     "key": "c12_chemistry_obt",
+     "dom_id": "c12_chemistry_obt",
+     "label": "Chemistry — marks obtained",
+     "kind": "number",
+     "required": false,
+     "expect": "82",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class12.subjects[Chemistry].marks_obtained",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 12 subject marks"
+    },
+    {
+     "key": "c12_mathematics_max",
+     "dom_id": "c12_mathematics_max",
+     "label": "Mathematics — maximum marks",
+     "kind": "number",
+     "required": false,
+     "expect": "100",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class12.subjects[Mathematics].max_marks",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 12 subject marks"
+    },
+    {
+     "key": "c12_mathematics_obt",
+     "dom_id": "c12_mathematics_obt",
+     "label": "Mathematics — marks obtained",
+     "kind": "number",
+     "required": false,
+     "expect": "90",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class12.subjects[Mathematics].marks_obtained",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 12 subject marks"
+    },
+    {
+     "key": "c12_computer_science_max",
+     "dom_id": "c12_computer_science_max",
+     "label": "Computer Science — maximum marks",
+     "kind": "number",
+     "required": false,
+     "expect": "100",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class12.subjects[Computer Science].max_marks",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 12 subject marks"
+    },
+    {
+     "key": "c12_computer_science_obt",
+     "dom_id": "c12_computer_science_obt",
+     "label": "Computer Science — marks obtained",
+     "kind": "number",
+     "required": false,
+     "expect": "94",
+     "expect_many": [],
+     "accept": [],
+     "concept": "academic.class12.subjects[Computer Science].marks_obtained",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": true,
+     "trap": "Class 12 subject marks"
+    },
+    {
+     "key": "category",
+     "dom_id": "category",
+     "label": "Category",
+     "kind": "select",
+     "required": true,
+     "expect": "OBC",
+     "expect_many": [],
+     "accept": [],
+     "concept": "category.social_category",
+     "outcome": "fill_with_review",
+     "sensitive": true,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "pwbd",
+     "dom_id": "pwbd",
+     "label": "Person with benchmark disability",
+     "kind": "radio",
+     "required": false,
+     "expect": null,
+     "expect_many": [],
+     "accept": [],
+     "concept": "",
+     "outcome": "user_choice",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "cat_cert_no",
+     "dom_id": "cat_cert_no",
+     "label": "Category certificate number",
+     "kind": "text",
+     "required": false,
+     "expect": "CC/2025/NSK/004512",
+     "expect_many": [],
+     "accept": [],
+     "concept": "caste_certificate.number",
+     "outcome": "fill_with_review",
+     "sensitive": true,
+     "dynamic": false,
+     "trap": "certificate number vs validity certificate number"
+    },
+    {
+     "key": "cat_validity_no",
+     "dom_id": "cat_validity_no",
+     "label": "Caste validity certificate number",
+     "kind": "text",
+     "required": false,
+     "expect": "CVC/2025/NSK/007731",
+     "expect_many": [],
+     "accept": [],
+     "concept": "caste_validity.number",
+     "outcome": "fill_with_review",
+     "sensitive": true,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "cat_issue",
+     "dom_id": "cat_issue",
+     "label": "Category certificate issue date",
+     "kind": "date",
+     "required": false,
+     "expect": "2025-07-09",
+     "expect_many": [],
+     "accept": [],
+     "concept": "caste_certificate.issue_date",
+     "outcome": "fill",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "docs_available",
+     "dom_id": "docs_available",
+     "label": "Documents I can upload",
+     "kind": "checks",
+     "required": false,
+     "expect": null,
+     "expect_many": [],
+     "accept": [],
+     "concept": "",
+     "outcome": "user_choice",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "city1",
+     "dom_id": "city1",
+     "label": "Examination city — first preference",
+     "kind": "select",
+     "required": true,
+     "expect": null,
+     "expect_many": [],
+     "accept": [],
+     "concept": "",
+     "outcome": "user_choice",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "city2",
+     "dom_id": "city2",
+     "label": "Examination city — second preference",
+     "kind": "select",
+     "required": false,
+     "expect": null,
+     "expect_many": [],
+     "accept": [],
+     "concept": "",
+     "outcome": "user_choice",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "medium",
+     "dom_id": "medium",
+     "label": "Medium of question paper",
+     "kind": "radio",
+     "required": true,
+     "expect": null,
+     "expect_many": [],
+     "accept": [],
+     "concept": "",
+     "outcome": "user_choice",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "slot",
+     "dom_id": "slot",
+     "label": "Preferred examination slot",
+     "kind": "radio",
+     "required": false,
+     "expect": null,
+     "expect_many": [],
+     "accept": [],
+     "concept": "",
+     "outcome": "user_choice",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "photo",
+     "dom_id": "photo",
+     "label": "Passport-size photograph",
+     "kind": "file",
+     "required": true,
+     "expect": null,
+     "expect_many": [],
+     "accept": [],
+     "concept": "",
+     "outcome": "user_choice",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "signature",
+     "dom_id": "signature",
+     "label": "Signature",
+     "kind": "file",
+     "required": true,
+     "expect": null,
+     "expect_many": [],
+     "accept": [],
+     "concept": "",
+     "outcome": "user_choice",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    },
+    {
+     "key": "declaration",
+     "dom_id": "declaration",
+     "label": "I declare that the information given is true and correct",
+     "kind": "checkbox",
+     "required": true,
+     "expect": null,
+     "expect_many": [],
+     "accept": [],
+     "concept": "",
+     "outcome": "user_choice",
+     "sensitive": false,
+     "dynamic": false,
+     "trap": ""
+    }
+   ],
+   "cryptic_names": false
+  }
+ ],
+ "questions": [
+  {
+   "id": "Q01",
+   "category": "exact value",
+   "question": "What is the applicant's date of birth?",
+   "expect": [
+    [
+     "2007-08-23",
+     "23/08/2007",
+     "23-08-2007",
+     "23 august 2007",
+     "august 23, 2007",
+     "23rd august 2007"
+    ]
+   ],
+   "cite_docs": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    8
+   ]
+  },
+  {
+   "id": "Q02",
+   "category": "class 10 vs 12",
+   "question": "What is the applicant's Class 10 passing year?",
+   "expect": [
+    [
+     "2023"
+    ]
+   ],
+   "forbid": [
+    "2025"
+   ],
+   "cite_docs": [
+    6
+   ]
+  },
+  {
+   "id": "Q03",
+   "category": "class 10 vs 12",
+   "question": "What is the applicant's Class 12 passing year?",
+   "expect": [
+    [
+     "2025"
+    ]
+   ],
+   "forbid": [
+    "2023"
+   ],
+   "cite_docs": [
+    7
+   ]
+  },
+  {
+   "id": "Q04",
+   "category": "class 10 vs 12",
+   "question": "What percentage did the applicant obtain in Class 10?",
+   "expect": [
+    [
+     "91.4"
+    ]
+   ],
+   "forbid": [
+    "87.2"
+   ],
+   "cite_docs": [
+    6
+   ]
+  },
+  {
+   "id": "Q05",
+   "category": "class 10 vs 12",
+   "question": "What percentage did the applicant obtain in Class 12?",
+   "expect": [
+    [
+     "87.2"
+    ]
+   ],
+   "forbid": [
+    "91.4"
+   ],
+   "cite_docs": [
+    7
+   ]
+  },
+  {
+   "id": "Q06",
+   "category": "table",
+   "question": "List the Class 12 subjects and marks.",
+   "expect": [
+    [
+     "english"
+    ],
+    [
+     "physics"
+    ],
+    [
+     "chemistry"
+    ],
+    [
+     "mathematics"
+    ],
+    [
+     "computer science"
+    ],
+    [
+     "84"
+    ],
+    [
+     "86"
+    ],
+    [
+     "82"
+    ],
+    [
+     "90"
+    ],
+    [
+     "94"
+    ]
+   ],
+   "cite_docs": [
+    7
+   ]
+  },
+  {
+   "id": "Q07",
+   "category": "provenance",
+   "question": "Which document contains the applicant's date of birth?",
+   "expect": [],
+   "cite_docs": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    8
+   ],
+   "cite_min": 2
+  },
+  {
+   "id": "Q08",
+   "category": "exact value",
+   "question": "What is the fictional caste certificate number?",
+   "expect": [
+    [
+     "cc/2025/nsk/004512"
+    ]
+   ],
+   "cite_docs": [
+    13
+   ]
+  },
+  {
+   "id": "Q09",
+   "category": "disambiguation",
+   "question": "How is the caste certificate number different from the caste validity certificate number?",
+   "expect": [
+    [
+     "cc/2025/nsk/004512"
+    ],
+    [
+     "cvc/2025/nsk/007731"
+    ]
+   ],
+   "cite_docs": [
+    13
+   ]
+  },
+  {
+   "id": "Q10",
+   "category": "address",
+   "question": "What is the correspondence address?",
+   "expect": [
+    [
+     "room 214"
+    ],
+    [
+     "411099"
+    ]
+   ],
+   "cite_docs": [
+    1
+   ]
+  },
+  {
+   "id": "Q11",
+   "category": "address",
+   "question": "Is it the same as the permanent address?",
+   "follow_up_of": "Q10",
+   "expect": [
+    [
+     "flat 402"
+    ],
+    [
+     "room 214"
+    ]
+   ],
+   "expect_any_text": [
+    "not the same",
+    "different",
+    "differ",
+    "not same",
+    "no,",
+    "not identical"
+   ],
+   "cite_docs": [
+    1
+   ]
+  },
+  {
+   "id": "Q12",
+   "category": "exact value",
+   "question": "What is the annual income recorded in the synthetic income certificate?",
+   "expect": [
+    [
+     "480000",
+     "4,80,000"
+    ]
+   ],
+   "cite_docs": [
+    12
+   ]
+  },
+  {
+   "id": "Q13",
+   "category": "multi-document",
+   "question": "Which documents contain address information?",
+   "expect": [],
+   "cite_docs": [
+    1,
+    3,
+    4,
+    5,
+    8,
+    10,
+    12,
+    13,
+    14
+   ],
+   "cite_min": 3
+  },
+  {
+   "id": "Q14",
+   "category": "form readiness",
+   "question": "Which fields can be filled from the available documents for DemoScholar 2026?",
+   "exam_id": "DEMOSCHOLAR_2026",
+   "expect": [],
+   "min_requirements": {
+    "met": 8
+   }
+  },
+  {
+   "id": "Q15",
+   "category": "form readiness",
+   "question": "Which fields are missing from the available documents for DemoScholar 2026?",
+   "exam_id": "DEMOSCHOLAR_2026",
+   "expect": [],
+   "requirements_mention_any": [
+    "city",
+    "language",
+    "disability"
+   ]
+  },
+  {
+   "id": "Q16",
+   "category": "exact value",
+   "question": "What is the applicant's bank branch?",
+   "expect": [
+    [
+     "demo nagar branch"
+    ]
+   ],
+   "cite_docs": [
+    9,
+    15
+   ]
+  },
+  {
+   "id": "Q17",
+   "category": "table",
+   "question": "What transactions occurred between 1 September 2026 and 15 September 2026?",
+   "expect": [
+    [
+     "upi6112341590"
+    ],
+    [
+     "neft26090301791"
+    ],
+    [
+     "upi6112341702"
+    ],
+    [
+     "upi6112341811"
+    ],
+    [
+     "upi6112341934"
+    ],
+    [
+     "upi6112342077"
+    ]
+   ],
+   "cite_docs": [
+    15
+   ],
+   "note": "6 transactions are in the period"
+  },
+  {
+   "id": "Q18",
+   "category": "date disambiguation",
+   "question": "Explain the difference between the driving licence issue date and the date of birth.",
+   "expect": [
+    [
+     "2025-09-05",
+     "05/09/2025",
+     "5 september 2025"
+    ],
+    [
+     "2007-08-23",
+     "23/08/2007",
+     "23-08-2007",
+     "23 august 2007",
+     "august 23, 2007",
+     "23rd august 2007"
+    ]
+   ],
+   "cite_docs": [
+    4
+   ]
+  },
+  {
+   "id": "Q19",
+   "category": "multi-document",
+   "question": "Compare the educational information from both marksheets.",
+   "expect": [
+    [
+     "2023"
+    ],
+    [
+     "2025"
+    ],
+    [
+     "91.4"
+    ],
+    [
+     "87.2"
+    ]
+   ],
+   "cite_docs": [
+    6,
+    7
+   ],
+   "cite_min": 2
+  },
+  {
+   "id": "Q20",
+   "category": "scenario",
+   "question": "Based on the fictional DemoScholar 2026 eligibility requirements, which criteria do I meet, which do I not meet, and which cannot be determined? (These requirements are invented for this demonstration.)",
+   "exam_id": "DEMOSCHOLAR_2026",
+   "expect": [],
+   "eligibility": {
+    "Passed Class 12": [
+     "met",
+     "needs_confirmation"
+    ],
+    "Physics, Chemistry, Mathematics and English in Class 12": [
+     "met"
+    ],
+    "At least 85% in Class 12": [
+     "met",
+     "needs_confirmation"
+    ],
+    "At least 90% in Class 10": [
+     "met",
+     "needs_confirmation"
+    ],
+    "At least 90% aggregate in Physics, Chemistry and Mathematics in Class 12": [
+     "not_met"
+    ],
+    "At least 17 years old on 31 December of the award year": [
+     "met"
+    ],
+    "At least 60% in the DemoScholar screening test (score report required)": [
+     "unknown"
+    ]
+   }
+  },
+  {
+   "id": "Q21",
+   "category": "absent information",
+   "question": "What is the applicant's Aadhaar number?",
+   "expect": [],
+   "expect_status": [
+    "insufficient_evidence",
+    "partial"
+   ],
+   "forbid_regex": [
+    "\\b\\d{4}\\s?\\d{4}\\s?\\d{4}\\b"
+   ]
+  },
+  {
+   "id": "Q22",
+   "category": "absent information",
+   "question": "What is the applicant's mother's mobile number?",
+   "expect": [],
+   "expect_status": [
+    "insufficient_evidence",
+    "partial"
+   ]
+  },
+  {
+   "id": "Q23",
+   "category": "follow-up",
+   "question": "What is my Class 12 percentage?",
+   "expect": [
+    [
+     "87.2"
+    ]
+   ],
+   "forbid": [
+    "91.4"
+   ],
+   "cite_docs": [
+    7
+   ],
+   "thread": "T1"
+  },
+  {
+   "id": "Q24",
+   "category": "follow-up",
+   "question": "And for Class 10?",
+   "follow_up_of": "Q23",
+   "expect": [
+    [
+     "91.4"
+    ]
+   ],
+   "forbid": [
+    "87.2"
+   ],
+   "cite_docs": [
+    6
+   ],
+   "thread": "T1"
+  },
+  {
+   "id": "Q25",
+   "category": "identifier confusion",
+   "question": "What are the bank account number and the IFSC code?",
+   "expect": [
+    [
+     "6789"
+    ],
+    [
+     "demo0000417"
+    ]
+   ],
+   "cite_docs": [
+    9,
+    15
+   ],
+   "note": "account numbers are masked in answers by design, so the last four digits are the expected evidence"
+  },
+  {
+   "id": "Q26",
+   "category": "date disambiguation",
+   "question": "When does the passport expire?",
+   "expect": [
+    [
+     "2034-11-13",
+     "13/11/2034",
+     "13 november 2034"
+    ]
+   ],
+   "cite_docs": [
+    5
+   ]
+  },
+  {
+   "id": "Q27",
+   "category": "date disambiguation",
+   "question": "What is the utility bill due date and the amount due?",
+   "expect": [
+    [
+     "2026-09-20",
+     "20/09/2026",
+     "20-sep-2026",
+     "20 september 2026"
+    ],
+    [
+     "2347.5"
+    ]
+   ],
+   "cite_docs": [
+    10
+   ]
+  },
+  {
+   "id": "Q28",
+   "category": "multi-document",
+   "question": "Which documents mention the applicant's father's name?",
+   "expect": [],
+   "cite_docs": [
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    8,
+    12,
+    13,
+    14
+   ],
+   "cite_min": 3
+  }
+ ],
+ "retrieval": [
+  {
+   "query": "identity information sheet with emergency contact details",
+   "document": 1
+  },
+  {
+   "query": "tax identification record permanent account number format",
+   "document": 2
+  },
+  {
+   "query": "elector information record EPIC assembly constituency",
+   "document": 3
+  },
+  {
+   "query": "driving licence date of issue valid till class of vehicle",
+   "document": 4
+  },
+  {
+   "query": "passport information record date of expiry place of issue",
+   "document": 5
+  },
+  {
+   "query": "secondary school examination class X marks statement subject code theory internal",
+   "document": 6
+  },
+  {
+   "query": "higher secondary certificate examination class XII statement of marks computer science",
+   "document": 7
+  },
+  {
+   "query": "extract of birth register registration number hospital",
+   "document": 8
+  },
+  {
+   "query": "savings passbook branch withdrawals deposits recent entries",
+   "document": 9
+  },
+  {
+   "query": "electricity bill units consumed meter number due date",
+   "document": 10
+  },
+  {
+   "query": "household information record members relationship to applicant",
+   "document": 11
+  },
+  {
+   "query": "income certificate annual income financial year issued by revenue office",
+   "document": 12
+  },
+  {
+   "query": "category certificate social category caste validity certificate annexure",
+   "document": 13
+  },
+  {
+   "query": "domicile certificate period of residence state of domicile",
+   "document": 14
+  },
+  {
+   "query": "account statement opening balance closing balance debit credit reference",
+   "document": 15
+  }
+ ],
+ "eligibility_rules_fictional": "DEMOSCHOLAR_2026",
+ "validation_outcomes": {
+  "fill": "value must equal the expected value (or an accepted alternative) after fill",
+  "fill_with_review": "sensitive field: proposed for review; counts as correct when filled with the expected value after explicit approval, safe when left empty",
+  "missing": "no document contains the value: the field must remain empty",
+  "user_choice": "preference/declaration/upload: must remain empty / unselected / unattached"
+ },
+ "totals": {
+  "documents": 15,
+  "forms": 15,
+  "form_fields": 234,
+  "questions": 28
+ }
+}

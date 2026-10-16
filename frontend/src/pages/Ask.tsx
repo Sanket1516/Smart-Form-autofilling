@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { useLoader } from '../hooks/useLoader';
 import {
   documentApi,
@@ -56,10 +56,12 @@ const factValue = (value: unknown) =>
 export const Ask = () => {
   const documents = useLoader(() => documentApi.list().then((d) => d.documents));
   const exams = useLoader(() => examsApi.list());
-  const [question, setQuestion] = useState('');
+  const [params] = useSearchParams();
+  // /ask?q=…&exam=… prefills the form (used by the Demo data page); it never submits by itself
+  const [question, setQuestion] = useState(() => params.get('q') ?? '');
   const [turns, setTurns] = useState<Turn[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
-  const [examId, setExamId] = useState('');
+  const [examId, setExamId] = useState(() => params.get('exam') ?? '');
   const [busy, setBusy] = useState(false);
 
   const processed = (documents.data ?? []).filter((d) => d.status === 'processed');

@@ -29,6 +29,9 @@ PHONE_RE = re.compile(r"(?<![\w])\+?\d[\d ()-]{6,}\d(?![\w])")
 _PAIR_SPLIT = re.compile(r"\s{3,}|\t+|\s\|\s")
 _LABELLED = re.compile(r"^\s*([A-Za-z][A-Za-z .'/()&-]{1,60}?)\s*[:=]\s*(.{1,200}?)\s*$")
 _NAME_LINE = re.compile(r"^[A-Z][a-zA-Z.'-]+(?:\s+[A-Z][a-zA-Z.'-]+){1,3}$")
+_OTHER_PERSON_PHONE = re.compile(
+    r"\b(emergency|guardian|parent'?s?|father'?s?|mother'?s?|relative|alternate|alternative|office|work)\b", re.I
+)
 _PHONE_LABEL = re.compile(r"\b(phone|mobile|mob|tel|telephone|contact|cell|whatsapp)\b", re.I)
 _TYPED_NORMALIZERS = {
     "date": normalize_date,
@@ -50,6 +53,11 @@ _HEADER_WORDS = {
     "contact",
     "certificate",
     "statement",
+    "extract",
+    "register",
+    "record",
+    "abstract",
+    "sheet",
     "invoice",
     "letter",
     "report",
@@ -105,7 +113,11 @@ class DeterministicExtractor:
             if fact is not None:
                 found.append(fact)
                 labelled_concepts.add(concept)
-        if "personal.phone" not in labelled_concepts and _PHONE_LABEL.search(stripped):
+        if (
+            "personal.phone" not in labelled_concepts
+            and _PHONE_LABEL.search(stripped)
+            and not _OTHER_PERSON_PHONE.search(stripped)
+        ):
             for match in PHONE_RE.finditer(stripped):
                 fact = self._fact("personal.phone", match.group(0), page, stripped, 0.88)
                 if fact is not None:

@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bank Account Information Form — DemoGov Portal (synthetic demo form)</title>
+<link rel="stylesheet" href="demo-forms.css">
+</head>
+<body data-demo-form="09" style="--accent:#0b6b5d">
+<header class="site"><div class="brand">DemoGov Portal <span>fictional</span></div><nav><a href="index.html">All 15 demo forms</a></nav></header>
+<div class="ribbon">SYNTHETIC DEMO FORM — fictional portal, not an official application. Nothing on this page is submitted anywhere.</div>
+<main>
+<h1>Bank Account Information Form</h1>
+<p class="intro">Provide account details for a payout. Account number and IFSC-style code are different fields.</p>
+<div id="status-panel" role="status" aria-live="polite"><strong>Field status</strong><span class="chip"><span class="dot verified"></span>Verified: <b data-count="verified">0</b></span><span class="chip"><span class="dot filled"></span>Filled: <b data-count="filled">0</b></span><span class="chip"><span class="dot review"></span>Review: <b data-count="review">0</b></span><span class="chip"><span class="dot missing"></span>Missing: <b data-count="missing">0</b></span><span class="chip"><span class="dot choice"></span>Your choice: <b data-count="choice">0</b></span><span class="chip"><span class="dot empty"></span>Optional: <b data-count="empty">0</b></span></div>
+<form id="demo-form" novalidate autocomplete="off">
+<section class="card"><h2>Account holder</h2><div class="grid"><div class="field req" data-field data-required><label class="lbl" for="holder">Account holder name</label><input type="text" name="holder" id="holder" required><span class="badge" data-badge data-state="empty"></span></div><div class="field req" data-field data-required><label class="lbl" for="bank">Bank name</label><input type="text" name="bank" id="bank" required><span class="badge" data-badge data-state="empty"></span></div><div class="field req" data-field data-required><label class="lbl" for="branch">Branch</label><input type="text" name="branch" id="branch" required><span class="badge" data-badge data-state="empty"></span></div><div class="field wide" data-field><label class="lbl" for="branch_address">Branch address</label><textarea name="branch_address" id="branch_address" rows="3"></textarea><span class="badge" data-badge data-state="empty"></span></div></div></section><section class="card"><h2>Account</h2><div class="grid"><div class="field req" data-field data-required data-sensitive><label class="lbl" for="account_no">Account number</label><input type="text" name="account_no" id="account_no" required pattern="[0-9]{9,18}"><span class="badge" data-badge data-state="empty"></span></div><div class="field" data-field data-sensitive><label class="lbl" for="account_no2">Re-enter account number</label><input type="text" name="account_no2" id="account_no2" pattern="[0-9]{9,18}"><span class="badge" data-badge data-state="empty"></span></div><div class="field req" data-field data-required data-sensitive><label class="lbl" for="ifsc">IFSC code</label><input type="text" name="ifsc" id="ifsc" required pattern="[A-Z]{4}0[A-Z0-9]{6}"><span class="badge" data-badge data-state="empty"></span></div><div class="field" data-field><label class="lbl" for="micr">MICR code (optional)</label><input type="text" name="micr" id="micr" pattern="[0-9]{9}"><span class="badge" data-badge data-state="empty"></span></div><div class="field req" data-field data-required><label class="lbl" for="account_type">Account type</label><select name="account_type" id="account_type" required><option value="">Select…</option><option value="Savings">Savings</option><option value="Current">Current</option><option value="Salary">Salary</option><option value="Fixed deposit">Fixed deposit</option></select><span class="badge" data-badge data-state="empty"></span></div><div class="field" data-field><label class="lbl" for="upi">UPI ID</label><input type="text" name="upi" id="upi"><span class="badge" data-badge data-state="empty"></span></div></div></section>
+<div class="actions"><button type="submit" class="primary">Review application (demo)</button><button type="reset" class="secondary">Clear form</button></div>
+<p id="submit-result" role="status" hidden></p>
+</form>
+</main>
+<script src="demo-forms.js" defer></script>
+</body>
+</html>

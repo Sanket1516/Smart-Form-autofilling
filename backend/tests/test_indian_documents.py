@@ -334,3 +334,83 @@ def test_same_address_in_different_wording_is_one_value() -> None:
     ]
     assert view.status == "resolved"
     assert len({s.document_id for s in view.sources}) == 3
+
+
+def test_ocr_label_value_rows_separated_only_by_a_wide_gap_are_extracted() -> None:
+    """OCR flattens a colon-less two-column table row into 'Label    Value'."""
+    document = lines(
+        "ELECTOR INFORMATION RECORD",
+        "EPIC No    DMO4821937",
+        "Elector's Name    Kavya Suresh Deshpande",
+        "Father's Name    Suresh Ramesh Deshpande",
+        "Gender    Female",
+        "Date of Birth    23/08/2007",
+        "Assembly Constituency    215-Demo Nagar",
+    )
+    found = by_concept(asyncio.run(service.extract(document)))
+    assert [c.value for c in found["personal.full_name"]] == ["Kavya Suresh Deshpande"]
+    assert [c.value for c in found["personal.father_name"]] == ["Suresh Ramesh Deshpande"]
+    assert [c.value for c in found["personal.date_of_birth"]] == ["2007-08-23"]
+    assert [c.value for c in found["identity.gender"]] == ["Female"]
+
+
+def test_multi_column_label_value_lines_still_split_into_pairs() -> None:
+    document = lines("ELECTOR PHOTO IDENTITY CARD", "Gender: Female    Date of Birth: 23/08/2007")
+    found = by_concept(asyncio.run(service.extract(document)))
+    assert [c.value for c in found["identity.gender"]] == ["Female"]
+    assert [c.value for c in found["personal.date_of_birth"]] == ["2007-08-23"]
+
+
+def test_document_title_is_never_taken_as_the_person_name() -> None:
+    document = lines("EXTRACT OF BIRTH REGISTER", "Place of Birth: Nashik, Maharashtra")
+    found = by_concept(asyncio.run(service.extract(document)))
+    assert "personal.full_name" not in found
+
+
+def test_running_prose_is_not_parsed_as_label_and_value() -> None:
+    document = lines(
+        "INCOME CERTIFICATE",
+        "This is to certify that the total annual income from all sources for the financial year 2025-26 "
+        "is declared as INR 4,80,000.00",
+    )
+    found = by_concept(asyncio.run(service.extract(document)))
+    assert "2025" not in [str(c.value) for c in found.get("financial.annual_income", [])]
+
+
+def test_addresses_differing_only_by_ocr_spacing_are_the_same_address() -> None:
+    assert same_address(
+        "Flat 402, Sunrise Heights, Demo Nagar, Nashik, Maharashtra 422099",
+        "Flat 402 Sunrise HeightsDemo Nagar, Nashik Maharashtra 422099",
+    )
+    assert not same_address(
+        "Flat 402, Sunrise Heights, Demo Nagar, Nashik, Maharashtra 422099",
+        "Room 214, Block C, Demo Institute Hostel, Pune, Maharashtra 411099",
+    )
+
+
+def test_household_information_record_is_recognised_and_members_extracted() -> None:
+    document = lines(
+        "HOUSEHOLD INFORMATION RECORD",
+        "Household Reference | HH-NSK-2024-00417",
+        "Head of Household | Suresh Ramesh Deshpande",
+    )
+    document.pages[0].spans.append(
+        ExtractedSpan(
+            page_number=1,
+            text="# | Name | Relationship to Applicant | Age | Occupation\n"
+            "1 | Suresh Ramesh Deshpande | Father | 49 | Self-employed\n"
+            "2 | Sunita Suresh Deshpande | Mother | 46 | Homemaker",
+            source_method="direct-parse",
+            is_table=True,
+        )
+    )
+    result = asyncio.run(service.extract(document))
+    assert result.document_type == "RATION_CARD"
+    assert len(by_concept(result)["ration_card.members"]) == 2
+    assert by_concept(result)["ration_card.number"][0].value == "HH-NSK-2024-00417"
+
+
+def test_emergency_contact_phone_is_not_the_applicants_phone() -> None:
+    document = lines("Mobile Number 9000054321", "Emergency Contact Phone 9000067890")
+    found = by_concept(asyncio.run(service.extract(document)))
+    assert {str(c.value) for c in found.get("personal.phone", [])} <= {"9000054321"}

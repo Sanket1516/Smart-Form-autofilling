@@ -1,0 +1,202 @@
+{
+ "documents": [
+  {
+   "number": 1,
+   "file": "DEMO_01_identity_information_sheet.pdf",
+   "title": "Synthetic identity profile",
+   "pages": 1,
+   "scanned": false,
+   "challenge": ""
+  },
+  {
+   "number": 2,
+   "file": "DEMO_02_tax_identification_record.pdf",
+   "title": "Synthetic tax identification record",
+   "pages": 1,
+   "scanned": false,
+   "challenge": ""
+  },
+  {
+   "number": 3,
+   "file": "DEMO_03_voter_information_record.pdf",
+   "title": "Synthetic voter information record",
+   "pages": 1,
+   "scanned": true,
+   "challenge": ""
+  },
+  {
+   "number": 4,
+   "file": "DEMO_04_driving_licence_record.pdf",
+   "title": "Synthetic driving licence record",
+   "pages": 1,
+   "scanned": false,
+   "challenge": ""
+  },
+  {
+   "number": 5,
+   "file": "DEMO_05_passport_information_record.pdf",
+   "title": "Synthetic passport information record",
+   "pages": 1,
+   "scanned": false,
+   "challenge": ""
+  },
+  {
+   "number": 6,
+   "file": "DEMO_06_class10_marksheet.pdf",
+   "title": "Class 10 marksheet",
+   "pages": 1,
+   "scanned": true,
+   "challenge": "dense table + rotation"
+  },
+  {
+   "number": 7,
+   "file": "DEMO_07_class12_marksheet.pdf",
+   "title": "Class 12 marksheet",
+   "pages": 1,
+   "scanned": false,
+   "challenge": ""
+  },
+  {
+   "number": 8,
+   "file": "DEMO_08_birth_certificate_record.pdf",
+   "title": "Synthetic birth certificate record",
+   "pages": 1,
+   "scanned": true,
+   "challenge": ""
+  },
+  {
+   "number": 9,
+   "file": "DEMO_09_bank_passbook.pdf",
+   "title": "Synthetic bank passbook",
+   "pages": 1,
+   "scanned": true,
+   "challenge": "account number vs IFSC"
+  },
+  {
+   "number": 10,
+   "file": "DEMO_10_utility_bill.pdf",
+   "title": "Synthetic utility bill",
+   "pages": 1,
+   "scanned": false,
+   "challenge": "multiple dates"
+  },
+  {
+   "number": 11,
+   "file": "DEMO_11_household_information_record.pdf",
+   "title": "Synthetic household information record",
+   "pages": 1,
+   "scanned": false,
+   "challenge": ""
+  },
+  {
+   "number": 12,
+   "file": "DEMO_12_income_certificate.pdf",
+   "title": "Synthetic income certificate",
+   "pages": 1,
+   "scanned": false,
+   "challenge": ""
+  },
+  {
+   "number": 13,
+   "file": "DEMO_13_category_certificate.pdf",
+   "title": "Synthetic caste/category certificate (+ validity annexure)",
+   "pages": 2,
+   "scanned": true,
+   "challenge": ""
+  },
+  {
+   "number": 14,
+   "file": "DEMO_14_domicile_certificate.pdf",
+   "title": "Synthetic domicile certificate",
+   "pages": 1,
+   "scanned": false,
+   "challenge": ""
+  },
+  {
+   "number": 15,
+   "file": "DEMO_15_bank_statement.pdf",
+   "title": "Synthetic bank statement",
+   "pages": 1,
+   "scanned": false,
+   "challenge": "dense 25-row transaction table"
+  }
+ ],
+ "forms": [
+  {
+   "number": 1,
+   "file": "form-01-general-applicant-registration.html",
+   "title": "General Applicant Registration"
+  },
+  {
+   "number": 2,
+   "file": "form-02-tax-identification-application.html",
+   "title": "Tax Identification Application"
+  },
+  {
+   "number": 3,
+   "file": "form-03-voter-information-application.html",
+   "title": "Voter Information Application"
+  },
+  {
+   "number": 4,
+   "file": "form-04-driving-licence-application.html",
+   "title": "Driving Licence Application"
+  },
+  {
+   "number": 5,
+   "file": "form-05-passport-information-application.html",
+   "title": "Passport Information Application"
+  },
+  {
+   "number": 6,
+   "file": "form-06-class-10-educational-record.html",
+   "title": "Class 10 Educational Record"
+  },
+  {
+   "number": 7,
+   "file": "form-07-class-12-educational-record.html",
+   "title": "Class 12 Educational Record"
+  },
+  {
+   "number": 8,
+   "file": "form-08-birth-information-application.html",
+   "title": "Birth Information Application"
+  },
+  {
+   "number": 9,
+   "file": "form-09-bank-account-information.html",
+   "title": "Bank Account Information Form"
+  },
+  {
+   "number": 10,
+   "file": "form-10-utility-service-application.html",
+   "title": "Utility Service Application"
+  },
+  {
+   "number": 11,
+   "file": "form-11-household-information.html",
+   "title": "Household Information Form"
+  },
+  {
+   "number": 12,
+   "file": "form-12-income-information.html",
+   "title": "Income Information Form"
+  },
+  {
+   "number": 13,
+   "file": "form-13-category-certificate-information.html",
+   "title": "Category Certificate Information Form"
+  },
+  {
+   "number": 14,
+   "file": "form-14-domicile-information.html",
+   "title": "Domicile Information Form"
+  },
+  {
+   "number": 15,
+   "file": "form-15-combined-entrance-application.html",
+   "title": "Demo Entrance Examination Application"
+  }
+ ],
+ "banner": "SYNTHETIC DEMO DATA — NOT A VALID GOVERNMENT DOCUMENT"
+}
