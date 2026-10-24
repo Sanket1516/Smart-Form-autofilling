@@ -1,0 +1,24 @@
+digraph G {
+  graph [fontname="Times New Roman,", fontsize=16, pad=0.2, rankdir=LR, nodesep=0.25, ranksep=1.2];
+  node  [fontname="Times New Roman,", fontsize=16, style="filled,rounded", shape=box, penwidth=1.5, margin="0.14,0.08"];
+  edge  [fontname="Times New Roman,", fontsize=14, penwidth=1.4, arrowsize=0.8];
+  user [label="User", fillcolor="#DCE9F8", color="#2F5D9B", shape=box, style="filled,rounded", style="filled"];
+  p1 [label="1.0\nAuthenticate", fillcolor="#DDEFE0", color="#3C7A4B", shape=ellipse, style="filled"];
+  p2 [label="2.0 Manage\ndocuments", fillcolor="#DDEFE0", color="#3C7A4B", shape=ellipse, style="filled"];
+  p3 [label="3.0 Extract and\nstore facts", fillcolor="#DDEFE0", color="#3C7A4B", shape=ellipse, style="filled"];
+  p4 [label="4.0 Resolve\nprofile and\nconflicts", fillcolor="#DDEFE0", color="#3C7A4B", shape=ellipse, style="filled"];
+  p5 [label="5.0 Classify\nfields and\nrecommend", fillcolor="#DDEFE0", color="#3C7A4B", shape=ellipse, style="filled"];
+  p6 [label="6.0 Answer\nquestions (RAG)", fillcolor="#DDEFE0", color="#3C7A4B", shape=ellipse, style="filled"];
+  d1 [label="D1 users, token\nrevocations", fillcolor="#FBEBCB", color="#A8741A", shape=cylinder, style="filled"];
+  d2 [label="D2 documents,\nfiles", fillcolor="#FBEBCB", color="#A8741A", shape=cylinder, style="filled"];
+  d3 [label="D3 structured\nand discovered\nfacts", fillcolor="#FBEBCB", color="#A8741A", shape=cylinder, style="filled"];
+  d4 [label="D4 sessions,\nrecommendations", fillcolor="#FBEBCB", color="#A8741A", shape=cylinder, style="filled"];
+  d5 [label="D5 ChromaDB\nchunks", fillcolor="#FBEBCB", color="#A8741A", shape=cylinder, style="filled"];
+  d6 [label="D6 corrections,\nmemories", fillcolor="#FBEBCB", color="#A8741A", shape=cylinder, style="filled"];
+  llm [label="LLM provider", fillcolor="#E9E1F2", color="#6B4E9B", shape=box, style="filled,rounded", style="filled"];
+  {rank=same; p1; p2; p3; p4; p5; p6}
+  {rank=same; d1; d2; d3; d4; d5; d6}
+  user -> p1; user -> p2; user -> p4; user -> p5; user -> p6;
+  p1 -> d1; p2 -> d2; p2 -> p3; p3 -> d3; p3 -> d5; d3 -> p4 [dir=both]; p4 -> d6; d3 -> p5; d5 -> p5; d6 -> p5 [style=dashed];
+  p5 -> d4; d5 -> p6; p3 -> llm [style=dashed]; p5 -> llm [style=dashed]; p6 -> llm [style=dashed];
+}

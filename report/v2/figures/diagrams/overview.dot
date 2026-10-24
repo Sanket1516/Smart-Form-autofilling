@@ -1,0 +1,24 @@
+digraph G { rankdir=TB; 
+  graph [fontname="Times New Roman,", fontsize=17, pad=0.15, nodesep=0.28, ranksep=0.42, newrank=true];
+  node  [fontname="Times New Roman,", fontsize=17, style="filled,rounded", shape=box, penwidth=1.4, margin="0.12,0.06", fillcolor="#FFFFFF", color="#333333"];
+  edge  [fontname="Times New Roman,", fontsize=15, penwidth=1.3, arrowsize=0.8, color="#333333"];
+
+  graph [ranksep=0.55];
+  subgraph cluster_A { label="Phase A: build the profile"; labeljust=l; fontname="Times New Roman, Bold"; style="rounded,filled"; fillcolor="#EFEFEF"; color="#555555";
+    a1 [label="1. Upload PDF,\nDOCX, TXT or\nimage", fillcolor="#DCE9F8"];
+    a2 [label="2. Read text\n(OCR for\nscans)", fillcolor="#DDEFE0"];
+    a3 [label="3. Identify the\ndocument type", fillcolor="#DDEFE0"];
+    a4 [label="4. Extract facts\n(rules + optional\nLLM)", fillcolor="#DDEFE0"];
+    a5 [label="5. Merge and keep\nthe evidence", fillcolor="#DDEFE0"];
+  }
+  subgraph cluster_B { label="Phase B: fill a form"; labeljust=l; fontname="Times New Roman, Bold"; style="rounded,filled"; fillcolor="#EFEFEF"; color="#555555";
+    b1 [label="6. Scan the\nform's fields", fillcolor="#DCE9F8"];
+    b2 [label="7. Classify each\nfield", fillcolor="#DDEFE0"];
+    b3 [label="8. Find a value:\nprofile, then\ndocument text", fillcolor="#DDEFE0"];
+    b4 [label="9. User reviews\nevery value", fillcolor="#DCE9F8"];
+    b5 [label="10. Fill approved\nfields and verify", fillcolor="#DCE9F8"];
+  }
+  db [label="MongoDB (facts) +\nChromaDB (text chunks)", shape=cylinder, style=filled, fillcolor="#FBEBCB"];
+  a1 -> a2 -> a3 -> a4 -> a5; b1 -> b2 -> b3 -> b4 -> b5;
+  a5 -> db [label=" store"]; db -> b3 [label=" read", constraint=false];
+}
