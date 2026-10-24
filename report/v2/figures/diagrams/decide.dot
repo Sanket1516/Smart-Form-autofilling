@@ -1,0 +1,48 @@
+digraph G { rankdir=TB; 
+  graph [fontname="Times New Roman,", fontsize=17, pad=0.15, nodesep=0.28, ranksep=0.42, newrank=true];
+  node  [fontname="Times New Roman,", fontsize=17, style="filled,rounded", shape=box, penwidth=1.4, margin="0.12,0.06", fillcolor="#FFFFFF", color="#333333"];
+  edge  [fontname="Times New Roman,", fontsize=15, penwidth=1.3, arrowsize=0.8, color="#333333"];
+
+  graph [ranksep=0.22, nodesep=0.5];
+  node [fontsize=19]; edge [fontsize=17];
+  s [label="Start: field with a
+candidate value", shape=oval, style=filled, fillcolor="#DCE9F8"];
+  cap [label="If the LLM chose the field’s
+concept, cap the confidence"];
+  d1 [label="Blocked, skipped,
+error or in review?", shape=diamond, style=filled, fillcolor="#EFEFEF"];
+  keep [label="Keep earlier
+status"];
+  d2 [label="Value
+found?", shape=diamond, style=filled, fillcolor="#EFEFEF"];
+  miss [label="missing_information
+(+ document to upload)", fillcolor="#FBEBCB"];
+  fmt [label="Format for the field
+(date, option, radio)"];
+  d3 [label="Formatted?", shape=diamond, style=filled, fillcolor="#EFEFEF"];
+  rev1 [label="needs_review
+(shown as candidate)", fillcolor="#FBEBCB"];
+  d4 [label="Sensitive or
+inferred?", shape=diamond, style=filled, fillcolor="#EFEFEF"];
+  conf [label="requires_confirmation
+= true", fillcolor="#F8DCDC"];
+  d5 [label="Confidence ≥ 0.85
+and no confirmation
+needed?", shape=diamond, style=filled, fillcolor="#EFEFEF"];
+  ready [label="ready
+(pre-ticked)", fillcolor="#DDEFE0"];
+  rev2 [label="needs_review
+(user confirms)", fillcolor="#FBEBCB"];
+  e [label="End: store the
+recommendation", shape=oval, style=filled, fillcolor="#DCE9F8"];
+  s -> cap -> d1;
+  d1 -> d2 [label=" no"]; d1 -> keep [label=" yes"];
+  d2 -> fmt [label=" yes"]; d2 -> miss [label=" no"];
+  fmt -> d3; d3 -> d4 [label=" yes"]; d3 -> rev1 [label=" no"];
+  d4 -> d5 [label=" no"]; d4 -> conf [label=" yes"]; conf -> d5;
+  d5 -> ready [label=" yes"]; d5 -> rev2 [label=" no"];
+  {rank=same; d1; keep} {rank=same; d2; miss} {rank=same; d3; rev1} {rank=same; d4; conf}
+  {rank=same; ready; rev2}
+  ready -> e; rev2 -> e;
+  keep -> e [constraint=false]; miss -> e [constraint=false]; rev1 -> e [constraint=false];
+}

@@ -1,0 +1,230 @@
+# -*- coding: utf-8 -*-
+"""References and appendices A–E, laid out after the department's reference black book."""
+import os
+import re
+import textwrap
+
+from docx.enum.table import WD_ALIGN_VERTICAL, WD_TABLE_ALIGNMENT
+from docx.enum.text import WD_ALIGN_PARAGRAPH
+from docx.oxml import OxmlElement
+from docx.oxml.ns import qn
+from docx.shared import Inches, Pt
+
+import refs
+from docbuild2 import style_grid
+
+ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", ".."))
+
+
+def snippet(rel, start_pat, end_pat=None, max_lines=60):
+    """Exact source lines from start_pat up to (excluding) end_pat; fails loudly if a marker is missing."""
+    with open(os.path.join(ROOT, rel), encoding="utf-8") as f:
+        lines = f.read().split("\n")
+    s = next(i for i, l in enumerate(lines) if re.search(start_pat, l))
+    e = len(lines)
+    if end_pat:
+        e = next(i for i in range(s + 1, len(lines)) if re.search(end_pat, lines[i]))
+    out = lines[s:e][:max_lines]
+    while out and not out[-1].strip():
+        out.pop()
+    return textwrap.dedent("\n".join(out))
+
+
+REF_HANG = Inches(0.45)
+
+
+def breakable_urls(text):
+    """Let Word wrap long URLs and DOIs after a slash (zero-width space); no hyphen is ever added to a URL."""
+    def fix(m):
+        return m.group(0).replace("/", "/​").replace("/​/​", "//")
+    return re.sub(r"https?://\S+|doi: \S+", fix, text)
+
+
+def keep_break_lines_unjustified(doc):
+    """A justified line that ends in a manual line break is not stretched (Word's doNotExpandShiftReturn)."""
+    compat = doc.settings.element.find(qn("w:compat"))
+    if compat is None:
+        compat = OxmlElement("w:compat")
+        doc.settings.element.append(compat)
+    if compat.find(qn("w:doNotExpandShiftReturn")) is None:
+        compat.insert(0, OxmlElement("w:doNotExpandShiftReturn"))
+
+
+def references(R):
+    """IEEE list: bracketed number at the margin, justified text with a hanging indent. An online address starts on its own line,
+    because a URL has no spaces that justification could stretch."""
+    R.h1_plain("References")
+    keep_break_lines_unjustified(R.doc)
+    for i, key in enumerate(refs.ORDER, 1):
+        text, sep, url = refs.REFS[key].partition("Available: ")
+        p = R.p(f"[{i}]\t{breakable_urls(text + sep.rstrip())}", align=WD_ALIGN_PARAGRAPH.JUSTIFY, indent=False)
+        if url:
+            p.add_run().add_break()
+            p.add_run(breakable_urls(url))
+        pf = p.paragraph_format
+        pf.left_indent = REF_HANG
+        pf.first_line_indent = -REF_HANG
+        pf.tab_stops.add_tab_stop(REF_HANG)
+        pf.space_after = Pt(4)
+        pf.line_spacing = 1.15
+
+
+def placeholder_box(R, text, height_in):
+    """Empty framed area, of fixed height, for material the team attaches before printing."""
+    t = R.doc.add_table(rows=1, cols=1)
+    t.alignment = WD_TABLE_ALIGNMENT.CENTER
+    cell = t.rows[0].cells[0]
+    cell.width = Inches(5.2)
+    trpr = t.rows[0]._tr.get_or_add_trPr()
+    h = OxmlElement("w:trHeight")
+    h.set(qn("w:val"), str(int(height_in * 1440)))
+    h.set(qn("w:hRule"), "exact")
+    trpr.append(h)
+    cell.vertical_alignment = WD_ALIGN_VERTICAL.CENTER
+    p = cell.paragraphs[0]
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    r = p.add_run(text)
+    r.italic = True
+    style_grid(t, header=False, zebra=False)
+
+
+def build(R, code_items=None):
+    R.h1_plain("Appendix A: Source Code Excerpts")
+    R.p("The excerpts below are copied unchanged from the project repository at the paths shown; only the common leading indentation has been "
+        "removed. Each excerpt implements a design decision described in Chapter 4 and is preceded by a short explanation.")
+    items = code_items or [
+        ("A.1 Construction of the form-filling graph", "backend/app/agents/graph.py", r"graph = StateGraph\(FillState\)",
+         r"self\._graph = graph\.compile\(\)", 30,
+         "The seven steps of Section 4.4 are added as nodes. Two conditional edges skip LLM classification when every field is already resolved, "
+         "and skip document retrieval when no field needs it."),
+        ("A.2 Prompt-injection patterns", "backend/app/security/prompt_safety.py", r"^_INJECTION_PATTERNS", r"^\)", 30,
+         "Six regular expressions detect text that tries to give instructions to the model. A matching form field is set aside and a matching "
+         "document chunk is dropped before any LLM call."),
+        ("A.3 Writing a value into a web page", "extension/src/content/autofill.ts", r"function setNativeValue", r"function normalize\(", 30,
+         "The extension sets the value through the browser’s native setter and then fires input and change events, so that pages built with "
+         "frameworks such as React register the new value."),
+    ]
+    for title, rel, sp, ep, ml, expl in items:
+        R.h3(title)
+        R.p(expl + f" Source: `{rel}`.", keep_next=True)
+        R.code(snippet(rel, sp, ep, ml))
+
+    R.h1_plain("Appendix B: Dataset and System Data Sheets")
+    R.h3("B.1 Demonstration dataset")
+    R.table("dataset", [
+        ["Field", "Description"],
+        ["Dataset type", "Synthetic documents and working HTML forms for one fictional applicant, generated by the project’s `demo` package. Every "
+                         "page is marked “SYNTHETIC DEMO DATA — NOT A VALID GOVERNMENT DOCUMENT”."],
+        ["Size", "15 documents (16 pages): 10 digital PDFs and 5 scanned images rotated by 0.3° to 1.4°; 15 forms with 234 fields; "
+                 "28 test questions and 15 retrieval queries."],
+        ["Answer key", "`demo/expected/manifest.json`, with 132 expected field values. The key is used only by the evaluation and is never read "
+                       "by the backend."],
+        ["Difficult cases", "Dense tables (Class 10 mark sheet, 25-row bank statement), account number versus IFSC, several dates on one bill, two "
+                            "forms with cryptic field names and a two-page certificate with a validity annexure."],
+        ["Generation", "`python -m demo.cli generate`, then `load` and `evaluate --browser`."],
+        ["Use", "Measurements of Chapter 5 only. No model was trained on the dataset."],
+        ["Limitation", "One applicant and synthetic layouts: results show behaviour on these cases, not accuracy on real documents."],
+    ], [1.45, 4.32], font=10.5, bold_first_col=True, keep=False,
+        intro=R.t("dataset") + " describes the dataset used for the measurements of Chapter 5, and " + R.t("documents") + " and "
+              + R.t("forms") + " list its documents and forms.")
+    docs = [("1", "Identity information sheet", "Other", "No", "16"), ("2", "Tax identification record", "PAN card", "No", "4"),
+            ("3", "Voter information record", "Voter ID", "Yes", "7"), ("4", "Driving licence record", "Driving licence", "No", "10"),
+            ("5", "Passport information record", "Passport", "No", "12"), ("6", "Class 10 mark sheet", "Class 10 mark sheet", "Yes", "14"),
+            ("7", "Class 12 mark sheet", "Class 12 mark sheet", "No", "10"), ("8", "Birth certificate record", "Birth certificate", "Yes", "9"),
+            ("9", "Bank passbook", "Bank passbook", "Yes", "8"), ("10", "Utility bill", "Electricity bill", "No", "10"),
+            ("11", "Household information record", "Ration card", "No", "5"), ("12", "Income certificate", "Income certificate", "No", "8"),
+            ("13", "Category certificate with validity annexure", "Caste certificate", "Yes", "7"),
+            ("14", "Domicile certificate", "Domicile certificate", "No", "6"), ("15", "Bank statement", "Bank statement", "No", "6")]
+    R.table("documents", [["No.", "Synthetic document", "Expected type", "Scanned", "Fields"]] + [list(d) for d in docs] +
+            [["", "Total", "", "5 of 15", "132"]], [0.5, 2.4, 1.65, 0.62, 0.6], font=10, align="cllcc", keep=False)
+    forms = [("1", "General applicant registration", "1", "9"), ("2", "Tax identification application", "2", "10"),
+             ("3", "Voter information application (cryptic field names)", "1", "8"), ("4", "Driving licence application", "1", "11"),
+             ("5", "Passport information application", "2", "17"), ("6", "Class 10 educational record", "1", "20"),
+             ("7", "Class 12 educational record", "2", "25"), ("8", "Birth information application (cryptic field names)", "1", "10"),
+             ("9", "Bank account information", "2", "10"), ("10", "Utility service application", "1", "11"),
+             ("11", "Household information", "1", "14"), ("12", "Income information", "1", "9"),
+             ("13", "Category certificate information", "1", "9"), ("14", "Domicile information", "1", "9"),
+             ("15", "Combined entrance examination application", "5", "62")]
+    R.table("forms", [["No.", "Synthetic form", "Source documents", "Fields"]] + [list(f) for f in forms] + [["", "Total", "", "234"]],
+            [0.5, 3.47, 1.2, 0.6], font=10, align="clcc", keep=False)
+
+    R.h3("B.2 Installing and running the system")
+    R.p("The steps below are taken from the project README. They start every service on one computer and load the extension into Chrome.")
+    R.bullets([
+        "Prerequisites:: Docker Desktop with Compose v2, Python 3.11 (for tests outside Docker), Node.js 22 with npm, and Google Chrome. "
+        "An LLM API key is optional; with `LLM_PROVIDER=mock` the system runs without any network call.",
+        "Configuration:: copy `.env.example` to `.env` and set `JWT_SECRET_KEY` to a random value of at least 32 characters; the backend "
+        "refuses to start with the placeholder value. API keys must never be committed to the repository.",
+        "Optional OCR:: scanned images need the OCR engine, enabled with `INSTALL_OCR=true` and a rebuild of the images.",
+    ])
+    R.p("The commands start the services, check their health and build the extension:", keep_next=True)
+    R.code("docker compose up -d             # start all services\n"
+           "docker compose ps                # wait until each shows \"healthy\"\n"
+           "npm ci                           # install dashboard and extension\n"
+           "cd extension && npm run build    # build into extension/dist")
+    R.p("The dashboard then opens at `http://localhost:5173` and the API at `http://localhost:8000/api/v1`, with interactive documentation at "
+        "`http://localhost:8000/docs`. To load the extension, open `chrome://extensions`, switch on Developer mode, choose **Load unpacked** "
+        "and select the `extension/dist` folder.", align=WD_ALIGN_PARAGRAPH.LEFT, indent=True)
+    R.table("commands", [
+        ["Test suite", "Command", "What it checks"],
+        ["Backend (pytest)", "cd backend && python -m pytest", "Unit, API and pipeline tests with a mock LLM"],
+        ["Dashboard (Vitest)", "cd frontend && npm test", "Pages and components with mocked requests"],
+        ["Extension (Vitest)", "cd extension && npm test", "Field detection, filling, sensitivity rules"],
+        ["Browser end-to-end (Playwright)", "cd extension && npm run test:e2e", "Built extension in Chromium against a test backend"],
+    ], [1.6, 2.2, 1.97], font=10, intro=R.t("commands") + " lists the commands that run each automated test suite of Chapter 6.")
+
+    R.h3("B.3 Main API endpoints")
+    R.table("endpoints", [
+        ["Method", "Path", "Purpose"],
+        ["POST", "/api/v1/documents", "Upload a document and queue it for processing"],
+        ["GET", "/api/v1/documents/{id}/facts", "Facts extracted from one document, with evidence"],
+        ["POST", "/api/v1/retrieval/rag/answer", "Answer a question from the user’s documents (Ask Documents)"],
+        ["POST", "/api/v1/forms/sessions/{id}/analyze", "Run the form-filling pipeline on the detected fields"],
+        ["POST", "/api/v1/forms/sessions/{id}/verify", "Record which values were filled and read back"],
+        ["GET", "/api/v1/health/services", "Health of MongoDB, ChromaDB and Redis"],
+    ], [0.8, 2.6, 2.37], font=10, intro="The backend exposes more than seventy routes; the complete list is generated by FastAPI at `/docs`. "
+                                        + R.t("endpoints") + " lists the endpoints used in the workflow of " + R.f("overview") + ".")
+
+    R.h1_plain("Appendix C: List of Components")
+    R.p("The software components used by the system are listed below, with the versions pinned or installed in the project repository at the time "
+        "of the final test run.")
+    R.table("components", [
+        ["Component", "Version (installed or pinned)", "Role in the system"],
+        ["Python / FastAPI / Pydantic", "3.11.9 / 0.141.1 / 2.13.5", "Backend server and request validation"],
+        ["MongoDB / Motor driver", "8.0 (Docker image) / 3.7.1", "Facts, documents and form sessions"],
+        ["ChromaDB", "1.5.9", "Vector index of document chunks"],
+        ["sentence-transformers", "5.7.0 with all-MiniLM-L6-v2 (384 dimensions)", "Text embeddings"],
+        ["RapidOCR on ONNX Runtime", "rapidocr_onnxruntime 1.4.4; PP-OCRv3 detection, PP-OCRv4 recognition", "OCR for scanned images"],
+        ["LangGraph", "1.2.11", "Form-filling state graph"],
+        ["Celery / Redis", "5.6.3 / 7 (Alpine image)", "Background document processing"],
+        ["Language model", "Google gemini-3.5-flash-lite; optional qwen2:7b through Ollama", "Unclear fields and answer wording"],
+        ["Dashboard", "React 19.2, React Router 7, TypeScript 6.0, Vite 8", "Web user interface"],
+        ["Extension", "React 18.3, TypeScript 5.5, Vite 5.4, Manifest V3", "Browser integration"],
+        ["Docker / Compose", "29.4.0 / v2", "Deployment of all services"],
+        ["pytest / Vitest / Playwright", "8.4.2 / 5.0 (dashboard), 2.0 (extension) / 1.63", "Automated testing"],
+    ], [2.0, 1.95, 1.82], font=10, intro=R.t("components") + " lists the components.")
+    R.table("host", [
+        ["Item", "Specification"],
+        ["Processor", "Intel Core i5-13450HX (10 cores)"],
+        ["Memory", "16 GB (15.7 GB usable)"],
+        ["Operating system", "Windows 11 Home"],
+        ["Runtimes", "Python 3.11.9, Node.js 22.14.0, Docker 29.4.0 with Compose v2"],
+        ["Graphics processor", "Not required; all models run on the CPU"],
+    ], [1.8, 3.97], font=10, bold_first_col=True, intro=R.t("host") + " lists the computer on which the system was developed and tested.")
+
+    R.h1_plain("Appendix D: List of Papers Presented and Published")
+    R.h3("D.1 Research paper")
+    R.p("[Authors], “[Title of the paper],” [accepted at / presented at / submitted to] [name and edition of the conference or journal], "
+        "[organiser or publisher], [venue], [dates].")
+    R.p("Status: [submitted / accepted / presented / published]. [One or two sentences on what the paper covers and which chapters of this "
+        "report it supports.]")
+    R.h3("D.2 Second paper (if any)")
+    R.p("[Authors], “[Title of the paper],” [conference or journal], [organiser or publisher], [venue], [dates]. Status: [status].")
+    R.p("[If no paper based on this project has been presented or published, replace this appendix with the single word “None”.]", italic=True)
+
+    R.h1_plain("Appendix E: Prints & Plagiarism Report")
+    R.p("The reports below are attached by the project team before printing.")
+    placeholder_box(R, "[Attach the similarity (plagiarism) report of this black book here]", 3.0)
+    R.p("Figure E.1: Similarity report", style="FigureCaption", italic=True)
+    placeholder_box(R, "[Attach the AI-writing report, and the paper acceptance e-mail if any, here]", 3.0)
+    R.p("Figure E.2: AI-writing report", style="FigureCaption", italic=True)
