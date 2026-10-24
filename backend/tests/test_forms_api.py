@@ -524,3 +524,41 @@ def test_field_payload_is_validated(harness: Harness) -> None:
     assert (
         harness.client.get("/api/v1/forms/sessions/not-an-id", headers=headers).status_code == 404
     )
+
+
+def test_saved_answer_to_an_unrecognised_field_is_reused_on_the_next_form(harness: Harness) -> None:
+    headers = harness.register()
+    field = {"field_id": "occ", "label": "Current occupation *", "input_type": "text"}
+    session_id, recs = _analyze(harness, headers, [field])
+    assert recs["occ"]["status"] == "missing_information"
+    saved = harness.client.post(
+        f"/api/v1/forms/sessions/{session_id}/decisions",
+        headers=headers,
+        json={
+            "decisions": [
+                {"field_id": "occ", "decision": "edit", "value": "Student", "save_for_future": True}
+            ]
+        },
+    )
+    assert saved.status_code == 200, saved.text
+
+    # A different form asks the same question with slightly different wording of the label.
+    other = {"field_id": "job", "label": "current occupation", "input_type": "text"}
+    _, recs = _analyze(harness, headers, [other])
+    assert recs["job"]["recommended_value"] == "Student"
+    assert recs["job"]["source"]["type"] == "memory"
+    assert recs["job"]["status"] == "ready"
+
+    # Saving the same question again replaces the answer instead of piling up duplicates.
+    session_id, _ = _analyze(harness, headers, [field])
+    harness.client.post(
+        f"/api/v1/forms/sessions/{session_id}/decisions",
+        headers=headers,
+        json={
+            "decisions": [
+                {"field_id": "occ", "decision": "edit", "value": "Engineer", "save_for_future": True}
+            ]
+        },
+    )
+    memories = harness.client.get("/api/v1/profile/memories", headers=headers).json()["data"]["memories"]
+    assert [m["value"] for m in memories] == ["Engineer"]

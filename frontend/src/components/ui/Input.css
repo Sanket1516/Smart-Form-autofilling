@@ -45,6 +45,13 @@
   border-color: var(--error);
 }
 
+/* 16px keeps iOS Safari from zooming the page when a field is focused. */
+@media (max-width: 720px) {
+  .input-field {
+    font-size: 16px;
+  }
+}
+
 .input-error:focus {
   border-color: var(--error);
   box-shadow: 0 0 0 3px var(--error-wash);
