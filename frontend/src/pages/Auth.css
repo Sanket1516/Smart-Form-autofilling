@@ -2,6 +2,7 @@
   display: grid;
   grid-template-columns: minmax(320px, 440px) 1fr;
   min-height: 100vh;
+  min-height: 100dvh;
   background-color: var(--bg);
 }
 
@@ -11,7 +12,7 @@
   justify-content: space-between;
   gap: var(--spacing-32);
   padding: 40px;
-  background: var(--sunk);
+  background: radial-gradient(520px 420px at 0 0, var(--accent-wash), transparent 70%), var(--sunk);
   border-right: 1px solid var(--line);
 }
 

@@ -154,6 +154,7 @@ async def lifespan(app: FastAPI):
         retrieval=state.retrieval_service,
         llm=llm,
         recommendations=state.recommendations_repo,
+        memories=state.user_memory_service,
     )
     state.form_fill_service = FormFillService(
         sessions=state.form_sessions_repo,
