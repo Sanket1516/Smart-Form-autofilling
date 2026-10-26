@@ -139,3 +139,10 @@
     display: block;
   }
 }
+
+.auth-home {
+  display: inline-flex;
+  color: inherit;
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+}

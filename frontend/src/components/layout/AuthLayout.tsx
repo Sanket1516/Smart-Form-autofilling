@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react';
+import { Link } from 'react-router-dom';
 import { FileCheck2, ListChecks, ShieldCheck } from 'lucide-react';
 import { Logo } from '../ui/Brand';
 import '../../pages/Auth.css';
@@ -14,7 +15,7 @@ export const AuthLayout = ({ title, subtitle, children, footer }: {
 }) => (
   <div className="auth-container">
     <aside className="auth-aside">
-      <Logo size={24} />
+      <Link to="/" className="auth-home" aria-label="Smart Form home"><Logo size={24} /></Link>
       <div className="auth-aside-body">
         <h1>Fill application forms from your own documents.</h1>
         <ul className="auth-principles">
@@ -27,7 +28,7 @@ export const AuthLayout = ({ title, subtitle, children, footer }: {
     </aside>
     <main className="auth-main">
       <div className="auth-card">
-        <div className="auth-mobile-logo"><Logo size={22} /></div>
+        <div className="auth-mobile-logo"><Link to="/" className="auth-home" aria-label="Smart Form home"><Logo size={22} /></Link></div>
         <div className="auth-header">
           <h2>{title}</h2>
           <p className="text-secondary">{subtitle}</p>

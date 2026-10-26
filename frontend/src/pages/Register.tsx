@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { authApi, ApiError } from '../services/api';
 import { useAuth } from '../contexts/AuthContext';
 import { Input } from '../components/ui/Input';
@@ -13,7 +13,7 @@ export const Register = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (event: FormEvent) => {
@@ -40,6 +40,8 @@ export const Register = () => {
       setIsLoading(false);
     }
   };
+
+  if (user && !isLoading) return <Navigate to="/dashboard" replace />;
 
   return (
     <AuthLayout title="Create your account" subtitle="Your documents and profile stay private to your account."

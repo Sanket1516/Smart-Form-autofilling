@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { ApiError } from '../services/api';
 import { Input } from '../components/ui/Input';
@@ -11,8 +11,11 @@ export const Login = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, user } = useAuth();
   const navigate = useNavigate();
+  const from = (useLocation().state as { from?: string } | null)?.from;
+  // Only same-app paths: never redirect to a full URL taken from navigation state.
+  const destination = from && from.startsWith('/') && !from.startsWith('//') ? from : '/dashboard';
 
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
@@ -28,7 +31,7 @@ export const Login = () => {
     setIsLoading(true);
     try {
       await login(email.trim(), password);
-      navigate('/dashboard');
+      navigate(destination, { replace: true });
     } catch (err) {
       const apiError = err as ApiError;
       if (apiError.status === 401) setError('Incorrect email or password.');
@@ -38,6 +41,8 @@ export const Login = () => {
       setIsLoading(false);
     }
   };
+
+  if (user && !isLoading) return <Navigate to={destination} replace />;
 
   return (
     <AuthLayout title="Sign in to Smart Form" subtitle="Manage your documents and the profile used to fill forms."
