@@ -1,3 +1,4 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { ProtectedRoute } from './components/layout/ProtectedRoute';
@@ -19,12 +20,17 @@ import { DemoData } from './pages/DemoData';
 
 const DEMO_ENABLED = import.meta.env.VITE_ENABLE_DEMO !== 'false';
 
+// The landing page carries three.js and its own fonts; keep it out of the dashboard bundle.
+const Landing = lazy(() => import('./landing/Landing'));
+const landingFallback = <div style={{ minHeight: '100vh', background: '#07080a' }} aria-busy="true" />;
+
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
         <Routes>
           {/* Public Routes */}
+          <Route path="/" element={<Suspense fallback={landingFallback}><Landing /></Suspense>} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
 
@@ -42,12 +48,11 @@ function App() {
               {DEMO_ENABLED && <Route path="/demo-data" element={<DemoData />} />}
               <Route path="/activity" element={<Activity />} />
               <Route path="/settings" element={<Settings />} />
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
             </Route>
           </Route>
 
           {/* Catch all */}
-          <Route path="*" element={<Navigate to="/login" replace />} />
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </BrowserRouter>
     </AuthProvider>
