@@ -4,8 +4,10 @@ Every setting can be supplied through an environment variable of the same name
 (upper-case) or through a ``.env`` file in the working directory or its parent.
 """
 
+import ipaddress
 from functools import lru_cache
 from typing import Literal
+from urllib.parse import urlsplit
 
 from pydantic import Field, field_validator, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -69,6 +71,8 @@ class Settings(BaseSettings):
     jwt_access_token_expire_minutes: int = Field(default=30, gt=0, le=24 * 60)
     auth_login_rate_limit_attempts: int = Field(default=5, gt=0)
     auth_login_rate_limit_window_seconds: int = Field(default=60, gt=0)
+    rate_limit_storage_uri: str = ""
+    app_domain: str = ""
 
     # CORS: dashboard origins only. The extension reaches the API through its
     # host permission and authenticates with a bearer token.
@@ -174,7 +178,54 @@ class Settings(BaseSettings):
             self.cloudinary_cloud_name and self.cloudinary_api_key and self.cloudinary_api_secret
         ):
             raise ValueError("Cloudinary storage requires CLOUDINARY_* credentials")
+        if self.app_env == "production":
+            self._validate_production_settings()
         return self
+
+    def _validate_production_settings(self) -> None:
+        """Refuse the development defaults that would make a public deploy unsafe."""
+        if self.llm_provider == "mock" or self.llm_fallback_provider == "mock":
+            raise ValueError("APP_ENV=production requires a real LLM provider")
+        if not self.rate_limit_storage_uri.startswith(("redis://", "rediss://")):
+            raise ValueError("APP_ENV=production requires RATE_LIMIT_STORAGE_URI using Redis")
+
+        domain = self.app_domain.strip().lower().rstrip(".")
+        parsed_domain = urlsplit(f"https://{domain}") if domain else None
+        try:
+            ipaddress.ip_address(domain)
+            is_ip_address = True
+        except ValueError:
+            is_ip_address = False
+        if (
+            not domain
+            or parsed_domain is None
+            or parsed_domain.hostname != domain
+            or is_ip_address
+            or domain in {"localhost", "127.0.0.1", "::1"}
+        ):
+            raise ValueError("APP_ENV=production requires APP_DOMAIN to be a public DNS name")
+        public_origin = f"https://{domain}"
+        origins = self.cors_origin_list
+        if public_origin not in origins or any(
+            not origin.startswith(("https://", "chrome-extension://")) for origin in origins
+        ):
+            raise ValueError(
+                "Production CORS_ORIGINS must include https://APP_DOMAIN and use HTTPS"
+            )
+
+        mongo = urlsplit(self.mongodb_url)
+        mongo_password = mongo.password or ""
+        if (
+            mongo.scheme not in {"mongodb", "mongodb+srv"}
+            or not mongo.hostname
+            or mongo.hostname in {"localhost", "127.0.0.1", "::1"}
+            or len(mongo_password) < 32
+            or mongo_password == "local_development_only"
+        ):
+            raise ValueError(
+                "Production MONGODB_URL must use a non-local MongoDB host and a unique "
+                "password of at least 32 characters"
+            )
 
     @property
     def cors_origin_list(self) -> list[str]:

@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from 'react';
-import { authApi, tokenStore, type User } from '../services/api';
+import { authApi, type User } from '../services/api';
 
 interface AuthContextType {
   user: User | null;
@@ -14,15 +14,13 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(() => Boolean(tokenStore.get()));
+  const [isLoading, setIsLoading] = useState(true);
 
   const clear = useCallback(() => {
-    tokenStore.clear();
     setUser(null);
   }, []);
 
   useEffect(() => {
-    if (!tokenStore.get()) return;
     authApi.me()
       .then(setUser)
       .catch(() => clear())
@@ -37,7 +35,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const login = async (email: string, password: string) => {
     const data = await authApi.login(email, password);
-    tokenStore.set(data.access_token);
     setUser(data.user);
   };
 

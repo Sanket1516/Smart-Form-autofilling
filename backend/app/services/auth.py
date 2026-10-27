@@ -1,12 +1,14 @@
 """Authentication service and login rate limiter."""
 
 import asyncio
+import hashlib
 import time
 from collections import defaultdict, deque
 from datetime import UTC, datetime
 from typing import Any, Protocol
 
 from pymongo.errors import DuplicateKeyError
+from redis.asyncio import Redis
 
 from app.core.config import Settings
 from app.core.security import (
@@ -44,15 +46,33 @@ class RevocationStore(Protocol):
 
 
 class LoginRateLimiter:
-    def __init__(self, attempts: int, window_seconds: int) -> None:
+    def __init__(self, attempts: int, window_seconds: int, storage_uri: str = "") -> None:
         self.attempts = attempts
         self.window_seconds = window_seconds
         self._events: defaultdict[str, deque[float]] = defaultdict(deque)
         self._lock = asyncio.Lock()
+        self._redis = Redis.from_url(storage_uri, decode_responses=True) if storage_uri else None
 
     async def allow(self, key: str) -> bool:
+        if self._redis is not None:
+            redis_key = self._redis_key(key)
+            count = await self._redis.eval(
+                "local n=redis.call('INCR',KEYS[1]); "
+                "if n==1 then redis.call('EXPIRE',KEYS[1],ARGV[1]); end; return n",
+                1,
+                redis_key,
+                self.window_seconds,
+            )
+            return int(count) <= self.attempts
+
         now = time.monotonic()
         async with self._lock:
+            if len(self._events) >= 10_000:
+                for stored_key, stored_events in list(self._events.items()):
+                    if not stored_events or now - stored_events[-1] >= self.window_seconds:
+                        self._events.pop(stored_key, None)
+                if len(self._events) >= 10_000:
+                    self._events.pop(next(iter(self._events)))
             events = self._events[key]
             while events and now - events[0] >= self.window_seconds:
                 events.popleft()
@@ -62,8 +82,19 @@ class LoginRateLimiter:
             return True
 
     async def clear(self, key: str) -> None:
+        if self._redis is not None:
+            await self._redis.delete(self._redis_key(key))
+            return
         async with self._lock:
             self._events.pop(key, None)
+
+    @staticmethod
+    def _redis_key(key: str) -> str:
+        return f"smart-form:login:{hashlib.sha256(key.encode()).hexdigest()}"
+
+    async def close(self) -> None:
+        if self._redis is not None:
+            await self._redis.aclose()
 
 
 class AuthService:
@@ -74,7 +105,11 @@ class AuthService:
         self.rate_limiter = LoginRateLimiter(
             settings.auth_login_rate_limit_attempts,
             settings.auth_login_rate_limit_window_seconds,
+            settings.rate_limit_storage_uri,
         )
+
+    async def close(self) -> None:
+        await self.rate_limiter.close()
 
     @staticmethod
     def _public_user(document: dict[str, Any]) -> PublicUser:

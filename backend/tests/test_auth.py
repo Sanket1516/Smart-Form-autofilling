@@ -47,6 +47,33 @@ def test_register_login_me_logout(harness: Harness) -> None:
     )  # token revoked
 
 
+def test_dashboard_cookie_session_requires_csrf_and_allowed_origin(harness: Harness) -> None:
+    email = f"cookie_{time.time_ns()}@example.com"
+    _register(harness, email)
+    login = harness.client.post("/api/v1/auth/login", json={"email": email, "password": PASSWORD})
+    assert login.status_code == 200
+    session = login.cookies.get("smart_form_session")
+    csrf = login.cookies.get("smart_form_csrf")
+    assert session and csrf
+    assert "httponly" in login.headers["set-cookie"].lower()
+    assert harness.client.get("/api/v1/auth/me").status_code == 200
+
+    assert harness.client.post("/api/v1/auth/logout").status_code == 403
+    assert (
+        harness.client.post(
+            "/api/v1/auth/logout",
+            headers={"Origin": "https://attacker.example", "X-CSRF-Token": csrf},
+        ).status_code
+        == 403
+    )
+    logout = harness.client.post(
+        "/api/v1/auth/logout",
+        headers={"Origin": "http://localhost:5173", "X-CSRF-Token": csrf},
+    )
+    assert logout.status_code == 200
+    assert harness.client.get("/api/v1/auth/me").status_code == 401
+
+
 def test_password_is_hashed_in_database(harness: Harness) -> None:
     email = f"hash_{time.time_ns()}@example.com"
     _register(harness, email)

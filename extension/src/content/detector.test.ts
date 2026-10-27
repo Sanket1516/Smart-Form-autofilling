@@ -82,9 +82,12 @@ describe('field detector', () => {
 
   it('skips zero-size and off-screen honeypot fields', () => {
     document.body.innerHTML = '<input name="trap"><input name="real">';
-    const [trap] = Array.from(document.querySelectorAll('input'));
-    vi.spyOn(trap, 'getBoundingClientRect').mockReturnValue({
+    const [trap, real] = Array.from(document.querySelectorAll('input'));
+    trap.getBoundingClientRect = () => ({
       x: -9999, y: -9999, width: 100, height: 20, top: -9999, left: -9999, right: -9899, bottom: -9979, toJSON: () => ({}),
+    } as DOMRect);
+    real.getBoundingClientRect = () => ({
+      x: 10, y: 10, width: 120, height: 24, top: 10, left: 10, right: 130, bottom: 34, toJSON: () => ({}),
     } as DOMRect);
     expect(extractFieldObjects(document).map((f) => f.name)).toEqual(['real']);
   });

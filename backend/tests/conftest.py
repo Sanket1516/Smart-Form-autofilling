@@ -248,7 +248,11 @@ class Harness:
         assert response.status_code == 201, response.text
         login = self.client.post("/api/v1/auth/login", json={"email": email, "password": password})
         assert login.status_code == 200, login.text
-        return {"Authorization": f"Bearer {login.json()['data']['access_token']}"}
+        headers = {"Authorization": f"Bearer {login.json()['data']['access_token']}"}
+        # Harness clients model the extension's bearer flow; dashboard cookies
+        # are covered separately by the cookie/CSRF authentication test.
+        self.client.cookies.clear()
+        return headers
 
     def upload(
         self, headers: dict[str, str], name: str, content: bytes, mime: str | None = None

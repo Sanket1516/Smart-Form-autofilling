@@ -7,7 +7,7 @@ import { mockApi, renderApp, USER } from './helpers';
 afterEach(() => vi.unstubAllGlobals());
 
 describe('login', () => {
-  it('signs in, stores the token and goes to the dashboard', async () => {
+  it('signs in without persisting a browser token and goes to the dashboard', async () => {
     const { calls } = mockApi({
       'POST /auth/login': () => ({ data: { access_token: 'new-token', user: USER } }),
     });
@@ -16,8 +16,8 @@ describe('login', () => {
     fireEvent.change(screen.getByLabelText(/Password/), { target: { value: 'Str0ng-Passw0rd!' } });
     fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
     expect(await screen.findByText('Dashboard page')).toBeInTheDocument();
-    expect(localStorage.getItem('token')).toBe('new-token');
-    expect(calls[0].body).toEqual({ email: 'avery@example.com', password: 'Str0ng-Passw0rd!' });
+    expect(localStorage.getItem('token')).toBeNull();
+    expect(calls.find((call) => call.key === 'POST /auth/login')?.body).toEqual({ email: 'avery@example.com', password: 'Str0ng-Passw0rd!' });
   });
 
   it('shows a clear message for wrong credentials and rate limiting', async () => {
@@ -39,13 +39,15 @@ describe('login', () => {
     fireEvent.change(screen.getByLabelText(/Email/), { target: { value: 'not-an-email' } });
     fireEvent.click(screen.getByRole('button', { name: 'Sign in' }));
     expect(await screen.findByRole('alert')).toHaveTextContent('valid email');
-    expect(fetchMock).not.toHaveBeenCalled();
+    expect(fetchMock).toHaveBeenCalledTimes(1);
+    expect(String(fetchMock.mock.calls[0][0])).toContain('/auth/me');
   });
 
-  it('a stored but expired token signs the user out', async () => {
-    mockApi({ 'GET /auth/me': () => ({ status: 401, error: { code: 'UNAUTHORIZED', message: 'x' } }) });
+  it('checks the cookie session on startup and signs out expired sessions', async () => {
+    const { calls } = mockApi({ 'GET /auth/me': () => ({ status: 401, error: { code: 'UNAUTHORIZED', message: 'x' } }) });
     renderApp(<Login />);
-    await waitFor(() => expect(localStorage.getItem('token')).toBeNull());
+    await waitFor(() => expect(calls.some((call) => call.key === 'GET /auth/me')).toBe(true));
+    expect(localStorage.getItem('token')).toBeNull();
   });
 });
 
@@ -66,7 +68,7 @@ describe('register', () => {
     renderApp(<Register />, { signedIn: false });
     fill('Str0ng-Passw0rd!');
     expect(await screen.findByText('Dashboard page')).toBeInTheDocument();
-    expect(calls.map((c) => c.key)).toEqual(['POST /auth/register', 'POST /auth/login']);
+    expect(calls.map((c) => c.key).filter((key) => key !== 'GET /auth/me')).toEqual(['POST /auth/register', 'POST /auth/login']);
   });
 
   it('rejects weak or mismatched passwords and shows duplicate-email errors', async () => {

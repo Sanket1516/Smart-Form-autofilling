@@ -10,7 +10,7 @@ type Handler = (body: unknown, init: RequestInit) => { status?: number; data?: u
 export function mockApi(routes: Record<string, Handler>) {
   const calls: Array<{ key: string; body: unknown }> = [];
   const fetchMock = vi.fn(async (input: RequestInfo | URL, init: RequestInit = {}) => {
-    const url = new URL(String(input));
+    const url = new URL(String(input), 'http://localhost');
     const key = `${init.method ?? 'GET'} ${url.pathname.replace(/^\/api\/v1/, '')}`;
     const body = typeof init.body === 'string' ? JSON.parse(init.body) : init.body;
     calls.push({ key, body });
@@ -28,7 +28,8 @@ export function mockApi(routes: Record<string, Handler>) {
 export const USER = { user_id: 'u1', full_name: 'Avery Example', email: 'avery@example.com' };
 
 export function renderApp(ui: ReactNode, { path = '/', route = '/', signedIn = true } = {}) {
-  if (signedIn) localStorage.setItem('token', 'test-token');
+  // Authentication state comes from the mocked /auth/me cookie session.
+  void signedIn;
   return render(
     <AuthProvider>
       <MemoryRouter initialEntries={[route]}>

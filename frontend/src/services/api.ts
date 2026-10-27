@@ -6,9 +6,8 @@
  * emits `auth:expired` so the app can sign the user out in one place.
  */
 
-export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000').replace(/\/+$/, '');
+export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/+$/, '');
 const API = `${API_BASE_URL}/api/v1`;
-const TOKEN_KEY = 'token';
 
 export class ApiError extends Error {
   constructor(message: string, readonly status: number, readonly code: string) {
@@ -16,11 +15,15 @@ export class ApiError extends Error {
   }
 }
 
-export const tokenStore = {
-  get: () => localStorage.getItem(TOKEN_KEY),
-  set: (token: string) => localStorage.setItem(TOKEN_KEY, token),
-  clear: () => localStorage.removeItem(TOKEN_KEY),
-};
+// Remove bearer tokens left by older app versions; web sessions now live in
+// HttpOnly cookies and are never persisted in browser-readable storage.
+if (typeof localStorage !== 'undefined') localStorage.removeItem('token');
+
+function csrfToken(): string | undefined {
+  if (typeof document === 'undefined') return undefined;
+  const cookie = document.cookie.split('; ').find((part) => part.startsWith('smart_form_csrf='));
+  return cookie ? decodeURIComponent(cookie.slice('smart_form_csrf='.length)) : undefined;
+}
 
 interface Options {
   method?: string;
@@ -31,14 +34,17 @@ interface Options {
 
 async function raw(path: string, { method = 'GET', body, form, auth = true }: Options = {}): Promise<Response> {
   const headers: Record<string, string> = {};
-  const token = tokenStore.get();
-  if (auth && token) headers.Authorization = `Bearer ${token}`;
+  if (!['GET', 'HEAD', 'OPTIONS'].includes(method.toUpperCase())) {
+    const csrf = csrfToken();
+    if (csrf) headers['X-CSRF-Token'] = csrf;
+  }
   if (body !== undefined) headers['Content-Type'] = 'application/json';
   let response: Response;
   try {
     response = await fetch(`${API}${path}`, {
       method,
       headers,
+      credentials: 'include',
       body: form ?? (body === undefined ? undefined : JSON.stringify(body)),
     });
   } catch {
@@ -59,7 +65,6 @@ async function raw(path: string, { method = 'GET', body, form, auth = true }: Op
       // keep the generic message
     }
     if (response.status === 401 && auth) {
-      tokenStore.clear();
       window.dispatchEvent(new Event('auth:expired'));
     }
     throw new ApiError(message, response.status, code);
@@ -381,7 +386,7 @@ export const documentApi = {
   reprocess: (id: string) => request(`/documents/${id}/reprocess`, { method: 'POST' }),
   remove: (id: string) => request(`/documents/${id}`, { method: 'DELETE' }),
   facts: (id: string) => request<{ facts: Fact[] }>(`/documents/${id}/facts`).then((d) => d.facts),
-  /** Fetch the file with the Authorization header and return an object URL (caller revokes it). */
+  /** Fetch the file through the same-origin session and return an object URL. */
   blobUrl: async (id: string, kind: 'preview' | 'download') => {
     const response = await raw(`/documents/${id}/${kind}`);
     return URL.createObjectURL(await response.blob());

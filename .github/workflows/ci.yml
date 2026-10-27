@@ -4,6 +4,9 @@ on:
   push:
   pull_request:
 
+permissions:
+  contents: read
+
 jobs:
   foundation-checks:
     # ubuntu-latest now uses Linux 6.19, which MongoDB 8.0 refuses to start on.
@@ -33,11 +36,11 @@ jobs:
       EMBEDDING_MODEL_NAME: all-MiniLM-L6-v2
       EMBEDDING_DIMENSION: 384
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
           cache: npm
@@ -75,8 +78,8 @@ jobs:
   browser-e2e:
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
         with:
           node-version: "22"
           cache: npm

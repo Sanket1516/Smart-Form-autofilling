@@ -7,7 +7,7 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${MONGODB_ROOT_USERNAME:-smart_form}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_ROOT_PASSWORD:-local_development_only}
     ports:
-      - "27017:27017"
+      - "127.0.0.1:27017:27017"
     volumes:
       - mongodb_data:/data/db
     healthcheck:
@@ -20,12 +20,12 @@ services:
       timeout: 5s
       retries: 10
       start_period: 10s
-    networks: [smart-form-internal]
+    networks: [data-internal]
 
   chromadb:
     image: chromadb/chroma
     ports:
-      - "${CHROMADB_PORT:-8001}:8000"
+      - "127.0.0.1:${CHROMADB_PORT:-8001}:8000"
     volumes:
       - chromadb_data:/data
     healthcheck:
@@ -34,7 +34,7 @@ services:
       timeout: 5s
       retries: 10
       start_period: 15s
-    networks: [smart-form-internal]
+    networks: [data-internal]
 
   redis:
     image: redis:7-alpine
@@ -45,7 +45,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    networks: [smart-form-internal]
+    networks: [processing-internal]
 
   backend:
     build:
@@ -88,6 +88,8 @@ services:
       JWT_ACCESS_TOKEN_EXPIRE_MINUTES: ${JWT_ACCESS_TOKEN_EXPIRE_MINUTES:-30}
       AUTH_LOGIN_RATE_LIMIT_ATTEMPTS: ${AUTH_LOGIN_RATE_LIMIT_ATTEMPTS:-5}
       AUTH_LOGIN_RATE_LIMIT_WINDOW_SECONDS: ${AUTH_LOGIN_RATE_LIMIT_WINDOW_SECONDS:-60}
+      RATE_LIMIT_STORAGE_URI: redis://redis:6379/1
+      APP_DOMAIN: ${APP_DOMAIN:-}
       CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:5173}
       MAX_UPLOAD_SIZE_MB: ${MAX_UPLOAD_SIZE_MB:-10}
       STORAGE_ROOT: /data/uploads
@@ -103,7 +105,7 @@ services:
       RAG_CHUNK_OVERLAP: ${RAG_CHUNK_OVERLAP:-50}
       SENSITIVE_FIELD_CONCEPTS: ${SENSITIVE_FIELD_CONCEPTS:-identity.passport_number,identity.pan_number,identity.aadhaar_number,identity.national_id,financial.account_number,financial.routing_number,financial.tax_id,financial.cif_number}
     ports:
-      - "${BACKEND_PORT:-8000}:8000"
+      - "127.0.0.1:${BACKEND_PORT:-8000}:8000"
     volumes:
       - document_data:/data/uploads
     depends_on:
@@ -129,7 +131,7 @@ services:
     # exhausting the Docker VM (which stops the whole engine).
     mem_limit: 2500m
     restart: unless-stopped
-    networks: [smart-form-internal]
+    networks: [app-internal, data-internal, processing-internal, egress]
 
   worker:
     build:
@@ -202,18 +204,17 @@ services:
     # exhausting the Docker VM (which stops the whole engine).
     mem_limit: 3500m
     restart: unless-stopped
-    networks: [smart-form-internal]
+    networks: [data-internal, processing-internal, egress]
 
   frontend:
     build:
       context: ./frontend
       args:
-        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
     environment:
-      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-http://localhost:8000}
-      API_ORIGIN: ${VITE_API_BASE_URL:-http://localhost:8000}
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-}
     ports:
-      - "${FRONTEND_PORT:-5173}:80"
+      - "127.0.0.1:${FRONTEND_PORT:-5173}:80"
     depends_on:
       backend:
         condition: service_healthy
@@ -222,7 +223,30 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    networks: [smart-form-internal]
+    networks: [app-internal]
+
+  caddy:
+    image: caddy:2-alpine
+    profiles: [production]
+    command:
+      ["/bin/sh", "-ec", "test -n \"$$APP_DOMAIN\" && test \"$$APP_DOMAIN\" != localhost && exec caddy run --config /etc/caddy/Caddyfile --adapter caddyfile"]
+    environment:
+      APP_DOMAIN: ${APP_DOMAIN:-}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./infra/Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    restart: unless-stopped
+    networks: [app-internal, egress]
 
   extension-builder:
     build:
@@ -231,7 +255,16 @@ services:
       - ./extension/dist:/app/dist
 
 networks:
-  smart-form-internal:
+  app-internal:
+    internal: true
+    driver: bridge
+  data-internal:
+    internal: true
+    driver: bridge
+  processing-internal:
+    internal: true
+    driver: bridge
+  egress:
     driver: bridge
 
 volumes:
@@ -239,3 +272,5 @@ volumes:
   chromadb_data:
   redis_data:
   document_data:
+  caddy_data:
+  caddy_config:

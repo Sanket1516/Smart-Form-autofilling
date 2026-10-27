@@ -199,11 +199,19 @@ async def lifespan(app: FastAPI):
     yield
     if background:
         await asyncio.wait(background, timeout=30)
+    await state.auth_service.close()
     state.mongodb.close()
 
 
 settings = get_settings()
-app = FastAPI(title=settings.app_name, version=settings.app_version, lifespan=lifespan)
+app = FastAPI(
+    title=settings.app_name,
+    version=settings.app_version,
+    lifespan=lifespan,
+    docs_url=None if settings.app_env == "production" else "/docs",
+    redoc_url=None if settings.app_env == "production" else "/redoc",
+    openapi_url=None if settings.app_env == "production" else "/openapi.json",
+)
 app.state.limiter = limiter
 app.middleware("http")(request_logging_middleware)
 app.add_exception_handler(RateLimitExceeded, rate_limit_handler)  # type: ignore[arg-type]
@@ -216,9 +224,9 @@ app.add_exception_handler(Exception, unhandled_exception_handler)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origin_list,
-    allow_credentials=False,
+    allow_credentials=True,
     allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allow_headers=["Authorization", "Content-Type", "X-Request-ID"],
+    allow_headers=["Authorization", "Content-Type", "X-CSRF-Token", "X-Request-ID"],
     expose_headers=["X-Request-ID", "Content-Disposition"],
 )
 for router in (
