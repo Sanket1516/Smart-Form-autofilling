@@ -1,0 +1,215 @@
+# Concepts for application forms that ask about the candidate themselves (graduate / internship
+# applications): technical background, open questions and job preferences.
+#
+# answer_only: true marks open questions. They are classified like any other field, but are never
+# stored as profile facts: the answer is written at fill time from retrieved document text and must
+# quote it (see agents/graph.py). Concepts that end in .summary / .objective are treated as prose.
+concepts:
+  personal.current_location:
+    canonical_name: personal.current_location
+    description: Current city, state and country where the candidate is based
+    aliases:
+    - current location
+    - present location
+    - current city
+    - where are you based
+    data_type: string
+    cardinality: single
+    is_structured: true
+  skills.tools:
+    canonical_name: skills.tools
+    description: Developer tools and platforms such as Git, GitHub, Docker or Postman
+    aliases:
+    - tools and platforms
+    - developer tools
+    - tools platforms
+    data_type: string
+    cardinality: single
+    is_structured: true
+  preferences.job_role:
+    canonical_name: preferences.job_role
+    description: Job role the candidate is applying for or prefers
+    aliases:
+    - preferred job role
+    - preferred role
+    - desired role
+    - role applied for
+    data_type: string
+    cardinality: single
+    is_structured: true
+  preferences.work_mode:
+    canonical_name: preferences.work_mode
+    description: Preferred work mode such as on-site, hybrid or remote
+    aliases:
+    - preferred work mode
+    - work mode
+    - work arrangement
+    data_type: string
+    cardinality: single
+    is_structured: true
+  preferences.availability:
+    canonical_name: preferences.availability
+    description: When the candidate can start (for example immediate)
+    aliases:
+    - availability
+    - availability to join
+    - when can you join
+    - joining availability
+    data_type: string
+    cardinality: single
+    is_structured: true
+  strengths.summary:
+    canonical_name: strengths.summary
+    description: The candidate's greatest strengths
+    aliases:
+    - greatest strengths
+    - biggest strengths
+    - key strengths
+    - core strengths
+    - strongest professional attributes
+    - strongest attributes
+    - strongest qualities
+    data_type: string
+    cardinality: single
+    is_structured: false
+    answer_only: true
+  weaknesses.summary:
+    canonical_name: weaknesses.summary
+    description: The candidate's biggest weakness and how they are working on it
+    aliases:
+    - biggest weakness
+    - greatest weakness
+    - weaknesses
+    - area of weakness
+    data_type: string
+    cardinality: single
+    is_structured: false
+    answer_only: true
+  improvement.summary:
+    canonical_name: improvement.summary
+    description: Areas the candidate is currently trying to improve
+    aliases:
+    - trying to improve
+    - areas for improvement
+    - areas to improve
+    - skills to improve
+    data_type: string
+    cardinality: single
+    is_structured: false
+    answer_only: true
+  suitability.summary:
+    canonical_name: suitability.summary
+    description: Why the candidate is a good fit and should be selected
+    aliases:
+    - why should we hire you
+    - why should we select you
+    - why are you a good fit
+    - what makes you a good candidate
+    - what makes you a strong candidate
+    - qualities that distinguish you
+    - qualities distinguish you
+    - distinguish you from other applicants
+    - what sets you apart
+    data_type: string
+    cardinality: single
+    is_structured: false
+    answer_only: true
+  motivation.summary:
+    canonical_name: motivation.summary
+    description: Why the candidate is interested in the role or organisation
+    aliases:
+    - interested in this role
+    - interested in this position
+    - why do you want this role
+    - why do you want this job
+    - why do you want to join
+    - motivation for applying
+    data_type: string
+    cardinality: single
+    is_structured: false
+    answer_only: true
+  problem_solving.summary:
+    canonical_name: problem_solving.summary
+    description: How the candidate approaches difficult problems
+    aliases:
+    - approach to solving difficult problems
+    - problem solving approach
+    - approach to problem solving
+    - how do you solve problems
+    data_type: string
+    cardinality: single
+    is_structured: false
+    answer_only: true
+  teamwork.summary:
+    canonical_name: teamwork.summary
+    description: How the candidate works in a team
+    aliases:
+    - work in a team
+    - work in teams
+    - working in a team
+    - team collaboration
+    data_type: string
+    cardinality: single
+    is_structured: false
+    answer_only: true
+  career.objective:
+    canonical_name: career.objective
+    description: Career goals and objective of the candidate
+    aliases:
+    - short term career goals
+    - long term career goals
+    - career goals
+    - career objective
+    - career aspirations
+    data_type: string
+    cardinality: single
+    is_structured: false
+    answer_only: true
+  achievements.summary:
+    canonical_name: achievements.summary
+    description: Achievements the candidate is most proud of
+    aliases:
+    - achievements are most proud
+    - achievements most proud
+    - most proud of
+    - key achievements
+    - notable achievements
+    data_type: string
+    cardinality: single
+    is_structured: false
+    answer_only: true
+  cloud.summary:
+    canonical_name: cloud.summary
+    description: Hands-on experience with cloud computing platforms and services
+    aliases:
+    - experience with cloud computing
+    - cloud computing experience
+    - cloud experience
+    - experience with cloud platforms
+    data_type: string
+    cardinality: single
+    is_structured: false
+    answer_only: true
+  challenge.summary:
+    canonical_name: challenge.summary
+    description: A technical challenge the candidate solved
+    aliases:
+    - technical challenge
+    - challenging problem you solved
+    - problem you solved
+    data_type: string
+    cardinality: single
+    is_structured: false
+    answer_only: true
+  contribution.summary:
+    canonical_name: contribution.summary
+    description: The candidate's own contribution to a project or role
+    aliases:
+    - your contribution
+    - contribution to the project
+    - most important contribution
+    - your role in the project
+    data_type: string
+    cardinality: single
+    is_structured: false
+    answer_only: true

@@ -5,6 +5,7 @@
     python -m demo.cli status
     python -m demo.cli evaluate [--browser]     # API suite (and the Chrome-extension suite)
     python -m demo.cli cleanup [--delete-account]
+    python -m demo.cli resume generate|load|status|check|cleanup   # fictional resume + application form demo
 
 The answer key (demo/expected/manifest.json) is read only by `evaluate`.
 """
@@ -71,6 +72,38 @@ def cmd_cleanup(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_resume(args: argparse.Namespace) -> int:
+    """Resume-and-form demo (own account demo.resume@example.com; see demo/resume_demo.py)."""
+    from demo import resume_demo, resume_gen
+    if args.action == "generate":
+        path = resume_gen.generate(resume_demo.PUBLIC)
+        print(f"resume: {path}\nform:   {resume_demo.FORM_FILE}")
+        return 0
+    c = resume_demo.client(args.api)
+    print(f"resume demo account: {c.email}")
+    if args.action == "load":
+        rows = resume_demo.load(c)
+        ok = all(r["status"] == "processed" for r in rows)
+        print("resume processed" if ok else "resume did not finish processing; see the lines above")
+        return 0 if ok else 1
+    if args.action == "status":
+        docs = [d for d in c.documents() if d["file_name"].startswith(resume_gen.PREFIX)]
+        print(f"{len(docs)} resume demo document(s)")
+        for d in docs:
+            print(f"  {d['status']:<10} {d['file_name']} facts={d['fact_count']} chunks={d['chunk_count']} index={d['index_status']}")
+        return 0
+    if args.action == "check":
+        recs = resume_demo.run_form(c)
+        print(resume_demo.render(recs))
+        return 0
+    removed = resume_demo.cleanup(c)
+    print(f"removed {removed} resume demo document(s); other documents were not touched")
+    if args.delete_account:
+        c._call("DELETE", "/auth/me")
+        print(f"deleted the resume demo account {c.email}")
+    return 0
+
+
 def cmd_evaluate(args: argparse.Namespace) -> int:
     manifest = json.loads((ROOT / "expected" / "manifest.json").read_text("utf-8"))
     RESULTS.mkdir(exist_ok=True)
@@ -123,6 +156,10 @@ def main() -> int:
     cl = sub.add_parser("cleanup")
     cl.add_argument("--delete-account", action="store_true", help="also delete the dedicated demo account")
     cl.set_defaults(fn=cmd_cleanup)
+    rs = sub.add_parser("resume", help="resume-and-form demo: generate | load | status | check | cleanup")
+    rs.add_argument("action", choices=["generate", "load", "status", "check", "cleanup"])
+    rs.add_argument("--delete-account", action="store_true", help="with cleanup: also delete the demo account")
+    rs.set_defaults(fn=cmd_resume)
     args = parser.parse_args()
     return args.fn(args)
 

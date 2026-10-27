@@ -20,6 +20,7 @@ export const FIXTURE_ORIGIN = 'http://127.0.0.1:8765';
 export default defineConfig({
   testDir: './tests',
   testMatch: /.*\.spec\.ts/,
+  testIgnore: /resume-demo\.spec\.ts/, // needs the loaded demo account and a live model: playwright.resume.config.ts
   timeout: 180_000,
   fullyParallel: false,
   workers: 1,

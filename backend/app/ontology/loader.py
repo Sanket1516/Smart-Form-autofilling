@@ -130,6 +130,10 @@ class FieldOntology:
     def is_user_only(self, concept: str | None) -> bool:
         return bool(concept) and bool(self.concepts.get(concept, {}).get("user_only", False))
 
+    def is_answer_only(self, concept: str | None) -> bool:
+        """Open questions: answered from retrieved text at fill time, never stored as a fact."""
+        return bool(concept) and bool(self.concepts.get(concept, {}).get("answer_only", False))
+
     def fallback(self, concept: str) -> str | None:
         return self.concepts.get(concept, {}).get("fallback")
 
@@ -203,7 +207,8 @@ class FieldOntology:
         """(concept, description) pairs for LLM prompts.
 
         Abstract and record concepts are never offered. Extraction also leaves out
-        user-only concepts: those come from the user, never from a document.
+        user-only concepts (those come from the user, never from a document) and
+        answer-only concepts (open questions answered from document text when a form is filled).
         """
         return [
             (key, str(entry.get("description", key)))
@@ -211,7 +216,10 @@ class FieldOntology:
             if entry.get("fillable", True)
             and not entry.get("abstract", False)
             and entry.get("data_type") != "record"
-            and not (purpose == "extraction" and entry.get("user_only", False))
+            and not (
+                purpose == "extraction"
+                and (entry.get("user_only", False) or entry.get("answer_only", False))
+            )
         ]
 
 

@@ -143,7 +143,9 @@ class LLMFactExtractor:
             if concept and self.ontology.is_abstract(concept):
                 concept = self.ontology.scoped(concept, self._scope)
             if concept and (
-                self.ontology.is_abstract(concept) or self.ontology.is_user_only(concept)
+                self.ontology.is_abstract(concept)
+                or self.ontology.is_user_only(concept)
+                or self.ontology.is_answer_only(concept)
             ):
                 concept = (
                     None  # user choices never come from documents; unscoped values stay generic

@@ -1036,3 +1036,4 @@ concepts:
     is_structured: true
 includes:
 - india_ontology.yaml
+- candidate_ontology.yaml

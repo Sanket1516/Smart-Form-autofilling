@@ -6,7 +6,9 @@ on:
 
 jobs:
   foundation-checks:
-    runs-on: ubuntu-latest
+    # ubuntu-latest now uses Linux 6.19, which MongoDB 8.0 refuses to start on.
+    # Ubuntu 24.04 remains compatible with the MongoDB 8.0 test service.
+    runs-on: ubuntu-24.04
     services:
       mongodb:
         image: mongo:8.0
@@ -71,7 +73,7 @@ jobs:
       - run: docker compose -f docker-compose.test.yml config --quiet
 
   browser-e2e:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

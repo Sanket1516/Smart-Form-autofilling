@@ -24,11 +24,12 @@ def demo_files() -> list[Path]:
     return sorted(DOC_DIR.glob(f"{PREFIX}*.pdf"))
 
 
-def load(client: DemoClient, *, wait: bool = True, timeout: float = 900, log=print) -> list[dict[str, Any]]:
+def load(client: DemoClient, *, wait: bool = True, timeout: float = 900, log=print,
+         files: list[Path] | None = None) -> list[dict[str, Any]]:
     existing = {d["file_name"]: d for d in client.documents()}
     results = []
     pending = []
-    for path in demo_files():
+    for path in (demo_files() if files is None else files):
         found = existing.get(path.name)
         if found and found["status"] != "failed":
             log(f"  skip   {path.name} (already {found['status']})")

@@ -416,8 +416,68 @@ export const reviewsApi = {
     request(`/reviews/${id}/decision`, { method: 'POST', body: { decision, value, save_for_future: saveForFuture } }),
 };
 
+/** A form control as the extension's detector reports it (the backend's FieldObject). */
+export interface FormFieldPayload {
+  field_id: string;
+  label: string;
+  question: string;
+  tag: string;
+  input_type: string;
+  name: string;
+  id: string;
+  placeholder: string;
+  section: string;
+  nearby_text: string;
+  required: boolean;
+  options: Array<{ value: string; label: string }>;
+}
+
+export interface FieldClassification {
+  field_id: string;
+  concept: string | null;
+  confidence: number;
+  method: string;
+  narrative: boolean;
+  error?: string | null;
+}
+
+export interface RecommendationSource {
+  type: string;
+  document_name?: string | null;
+  page?: number | null;
+  snippet?: string | null;
+}
+
+export interface FormRecommendation {
+  recommendation_id: string;
+  field_id: string;
+  field_label: string;
+  input_type: string;
+  required: boolean;
+  concept: string | null;
+  recommended_value: unknown;
+  confidence: number;
+  status: string;
+  reason: string;
+  requires_confirmation: boolean;
+  origin?: string | null;
+  retrieval_type: string;
+  source?: RecommendationSource | null;
+  candidates: Array<{ value: unknown; confidence: number; source?: RecommendationSource | null }>;
+  selected_option?: { value: string; label: string } | null;
+}
+
 export const formsApi = {
   sessions: () => request<{ sessions: FormSession[] }>('/forms/sessions').then((d) => d.sessions),
+  classify: (fields: FormFieldPayload[]) =>
+    request<FieldClassification[]>('/forms/classify-fields', { method: 'POST', body: { fields } }),
+  createSession: (website_origin: string, page_url: string, form_id: string) =>
+    request<{ session_id: string }>('/forms/sessions', { method: 'POST', body: { website_origin, page_url, form_id } }),
+  analyze: (sessionId: string, fields: FormFieldPayload[]) =>
+    request(`/forms/sessions/${sessionId}/analyze`, { method: 'POST', body: { fields } }),
+  session: (sessionId: string) => request<{ status: string; error?: string | null }>(`/forms/sessions/${sessionId}`),
+  recommendations: (sessionId: string) =>
+    request<{ status: string; recommendations: FormRecommendation[] }>(`/forms/sessions/${sessionId}/recommendations`),
 };
 
 export const ragApi = {

@@ -1,6 +1,6 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
-  Activity, AlertTriangle, Brain, FlaskConical, FileQuestion, FileText, LayoutDashboard, LogOut, MessageSquareText, Settings, User,
+  Activity, AlertTriangle, Brain, FlaskConical, FileQuestion, FileText, FileUser, LayoutDashboard, LogOut, MessageSquareText, Settings, User,
   type LucideIcon,
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
@@ -30,7 +30,10 @@ const SECTIONS: Array<{ title?: string; links: Array<{ to: string; label: string
       { to: '/ask', label: 'Ask your documents', icon: MessageSquareText },
       { to: '/activity', label: 'Activity', icon: Activity },
       { to: '/settings', label: 'Settings', icon: Settings },
-      ...(import.meta.env.VITE_ENABLE_DEMO !== 'false' ? [{ to: '/demo-data', label: 'Demo data', icon: FlaskConical }] : []),
+      ...(import.meta.env.VITE_ENABLE_DEMO !== 'false' ? [
+        { to: '/demo-data', label: 'Demo data', icon: FlaskConical },
+        { to: '/resume-demo', label: 'Resume demo', icon: FileUser },
+      ] : []),
     ],
   },
 ];

@@ -25,9 +25,9 @@ class InfrastructureError(RuntimeError):
 
 class DemoClient:
     def __init__(self, api: str = DEFAULT_API, email: str = DEMO_EMAIL, password: str = DEMO_PASSWORD,
-                 timeout: float = 180) -> None:
+                 timeout: float = 180, full_name: str = DEMO_NAME) -> None:
         self.http = httpx.Client(base_url=f"{api.rstrip('/')}/api/v1", timeout=timeout)
-        self.email, self.password = email, password
+        self.email, self.password, self.full_name = email, password, full_name
         self.headers: dict[str, str] = {}
 
     # ------------------------------------------------------------------ plumbing
@@ -60,7 +60,7 @@ class DemoClient:
             data = self._call("POST", "/auth/login", json={"email": self.email, "password": self.password})
         except RuntimeError:
             self._call("POST", "/auth/register", json={
-                "full_name": DEMO_NAME, "email": self.email, "password": self.password,
+                "full_name": self.full_name, "email": self.email, "password": self.password,
                 "confirm_password": self.password})
             data = self._call("POST", "/auth/login", json={"email": self.email, "password": self.password})
         token = data["data"].get("access_token") or data["data"].get("token")
