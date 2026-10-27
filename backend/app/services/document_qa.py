@@ -127,8 +127,12 @@ _DATE_TOKEN = (
     r"(?:<d>{1,2}[/-]<d>{1,2}[/-]<d>{4}|<d>{4}-<d>{2}-<d>{2}|<d>{1,2}(?:st|nd|rd|th)?\s+[A-Za-z]{3,9},?\s+<d>{4}"
     r"|[A-Za-z]{3,9}\s+<d>{1,2}(?:st|nd|rd|th)?,?\s+<d>{4})"
 ).replace("<d>", chr(92) + "d")
-_PERIOD = re.compile(rf"(?:between|from)\s+({_DATE_TOKEN})\s+(?:and|to|till|until)\s+({_DATE_TOKEN})", re.I)
-_MONTH_PERIOD = re.compile(r"\b(?:in|during|for|of)\s+([A-Za-z]{3,9})\s+(<d>{4})\b".replace("<d>", chr(92) + "d"), re.I)
+_PERIOD = re.compile(
+    rf"(?:between|from)\s+({_DATE_TOKEN})\s+(?:and|to|till|until)\s+({_DATE_TOKEN})", re.I
+)
+_MONTH_PERIOD = re.compile(
+    r"\b(?:in|during|for|of)\s+([A-Za-z]{3,9})\s+(<d>{4})\b".replace("<d>", chr(92) + "d"), re.I
+)
 
 
 def transaction_period(question: str) -> tuple[str, str] | None:
@@ -146,9 +150,14 @@ def transaction_period(question: str) -> tuple[str, str] | None:
             return first, (nxt - timedelta(days=1)).isoformat()
     return None
 
+
 _APPLICANT_ONLY = {
-    "personal.phone", "personal.email", "financial.annual_income", "identity.aadhaar_number",
-    "identity.pan_number", "personal.date_of_birth",
+    "personal.phone",
+    "personal.email",
+    "financial.annual_income",
+    "identity.aadhaar_number",
+    "identity.pan_number",
+    "personal.date_of_birth",
 }
 _EXAM_KINDS = {"eligibility", "requirements", "missing_info", "fillability"}
 _MARKSHEET_WORDS = re.compile(
@@ -700,7 +709,9 @@ class DocumentQAService:
         """Stored transaction rows (record tables), limited to the period the question asks about."""
         if self.discovered_facts is None:
             return
-        rows = await self.discovered_facts.list_filtered(user_id, None, None, "financial.transactions")
+        rows = await self.discovered_facts.list_filtered(
+            user_id, None, None, "financial.transactions"
+        )
         if document_ids is not None:
             rows = [r for r in rows if str(r.get("source_document_id")) in document_ids]
         period = transaction_period(question)
@@ -719,7 +730,11 @@ class DocumentQAService:
             selected.append((row, value))
         selected.sort(key=lambda item: (str(item[1]["date"]), item[0].get("source_page") or 0))
         for row, value in selected:
-            parts = [str(value["date"]), str(value.get("description", "")).strip(), str(value.get("reference", ""))]
+            parts = [
+                str(value["date"]),
+                str(value.get("description", "")).strip(),
+                str(value.get("reference", "")),
+            ]
             for key in ("debit", "credit", "balance"):
                 if value.get(key):
                     parts.append(f"{key} {value[key]}")
@@ -803,7 +818,9 @@ class DocumentQAService:
     def _derive(
         self, plan: QuestionPlan, views: dict[str, ConceptView], evidence: _Evidence
     ) -> None:
-        perm, corr = views.get("address.permanent_address"), views.get("address.correspondence_address")
+        perm, corr = views.get("address.permanent_address"), views.get(
+            "address.correspondence_address"
+        )
         if (
             {"address.permanent_address", "address.correspondence_address"} <= set(plan.concepts)
             and perm is not None
@@ -815,9 +832,11 @@ class DocumentQAService:
             evidence.derived.append(
                 AnswerDerived(
                     label="Are the permanent and correspondence addresses the same?",
-                    value="Yes, they are the same address."
-                    if same
-                    else "No, they are different addresses.",
+                    value=(
+                        "Yes, they are the same address."
+                        if same
+                        else "No, they are different addresses."
+                    ),
                     method="compared the stored addresses (same words and PIN code)",
                     inputs=["address.permanent_address", "address.correspondence_address"],
                 )

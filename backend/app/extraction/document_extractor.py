@@ -33,8 +33,30 @@ from app.extraction.tables import parse_marks, parse_members, parse_transactions
 from app.ontology.loader import FieldOntology
 from app.processing.schemas import NormalizedDocument
 
-_SENTENCE_WORDS = {"from", "for", "is", "are", "of", "as", "in", "on", "at", "to", "by", "and", "the",
-                   "that", "which", "was", "were", "has", "have", "with", "shall", "will"}
+_SENTENCE_WORDS = {
+    "from",
+    "for",
+    "is",
+    "are",
+    "of",
+    "as",
+    "in",
+    "on",
+    "at",
+    "to",
+    "by",
+    "and",
+    "the",
+    "that",
+    "which",
+    "was",
+    "were",
+    "has",
+    "have",
+    "with",
+    "shall",
+    "will",
+}
 _MAX_LABEL_CHARS = 80
 _MAX_LABEL_WORDS = 12
 _PAIR_SPLIT = re.compile(r"\s{3,}|\t+")

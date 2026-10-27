@@ -61,7 +61,11 @@ def test_marksheet_and_aadhaar_flow(harness) -> None:
 
     exams = harness.client.get("/api/v1/exams", headers=headers).json()["data"]
     # the fictional DemoScholar profile is added outside production (see exams/demo_requirements.yaml)
-    assert {e["exam_id"] for e in exams} - {"DEMOSCHOLAR_2026"} == {"NEET_UG", "JEE_MAIN", "MHT_CET"}
+    assert {e["exam_id"] for e in exams} - {"DEMOSCHOLAR_2026"} == {
+        "NEET_UG",
+        "JEE_MAIN",
+        "MHT_CET",
+    }
     types = harness.client.get("/api/v1/document-types", headers=headers).json()["data"]
     assert len(types) >= 15
 

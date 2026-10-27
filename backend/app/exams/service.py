@@ -43,7 +43,10 @@ def load_exam_profiles(path: Path = REQUIREMENTS_PATH) -> dict[str, Any]:
     with open(path, encoding="utf-8") as handle:
         profiles = yaml.safe_load(handle)["exams"]
     # The fictional demo profile (clearly labelled, invented rules) never ships to production.
-    if path == REQUIREMENTS_PATH and os.environ.get("APP_ENV", "development").lower() != "production":
+    if (
+        path == REQUIREMENTS_PATH
+        and os.environ.get("APP_ENV", "development").lower() != "production"
+    ):
         with open(DEMO_REQUIREMENTS_PATH, encoding="utf-8") as handle:
             profiles = {**profiles, **yaml.safe_load(handle)["exams"]}
     return profiles

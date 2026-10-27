@@ -556,9 +556,16 @@ def test_saved_answer_to_an_unrecognised_field_is_reused_on_the_next_form(harnes
         headers=headers,
         json={
             "decisions": [
-                {"field_id": "occ", "decision": "edit", "value": "Engineer", "save_for_future": True}
+                {
+                    "field_id": "occ",
+                    "decision": "edit",
+                    "value": "Engineer",
+                    "save_for_future": True,
+                }
             ]
         },
     )
-    memories = harness.client.get("/api/v1/profile/memories", headers=headers).json()["data"]["memories"]
+    memories = harness.client.get("/api/v1/profile/memories", headers=headers).json()["data"][
+        "memories"
+    ]
     assert [m["value"] for m in memories] == ["Engineer"]
