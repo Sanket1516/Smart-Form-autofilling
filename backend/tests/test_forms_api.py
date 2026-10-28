@@ -236,6 +236,8 @@ def test_rag_values_must_be_grounded_in_cited_evidence(harness: Harness) -> None
         )
 
     def answer(prompt: str) -> str:
+        if "FIELD employer" not in prompt or "FIELD about" not in prompt:
+            return json.dumps({"answers": []})  # the retry pass re-asks only the still-empty fields
         employer_chunk = re.search(r"FIELD employer.*?\[(F\d+C\d+)\]", prompt, re.S).group(1)
         about_chunk = re.search(r"FIELD about.*?\[(F\d+C\d+)\]", prompt, re.S).group(1)
         return json.dumps(

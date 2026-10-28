@@ -1,6 +1,6 @@
 """Resume demo: load the fictional resume into its own account and run the demo form against the real API.
 
-    python -m demo.cli resume generate     # profile -> frontend/public/demo/resume/DEMO_RESUME_aarav_sharma.pdf
+    python -m demo.cli resume generate     # profile -> frontend/public/demo/resume/DEMO_RESUME_kavya_deshpande.pdf
     python -m demo.cli resume load         # upload + process it (idempotent)
     python -m demo.cli resume check        # run the 34-field demo form through the real pipeline, print evidence
     python -m demo.cli resume status|cleanup [--delete-account]
@@ -22,7 +22,7 @@ from demo.resume_gen import FILE_NAME, PREFIX
 
 RESUME_EMAIL = "demo.resume@example.com"
 RESUME_PASSWORD = "Demo-Resume-2026!"
-RESUME_NAME = "Aarav Sharma"
+RESUME_NAME = "Kavya Suresh Deshpande"
 
 PUBLIC = Path(__file__).resolve().parent.parent / "frontend" / "public" / "demo" / "resume"
 FORM_FILE = PUBLIC / "graduate-software-engineer-application.html"

@@ -226,6 +226,12 @@ concepts:
     - graduation year
     - passing year
     - year of passing
+    - year of completion
+    - completion year
+    - year completed
+    - year finished
+    - year finish
+    - finish year
     data_type: string
     cardinality: multiple
     is_structured: true
@@ -697,6 +703,9 @@ concepts:
     - father s name
     - fathers name
     - name of father
+    - dad name
+    - daddy name
+    - papa name
     data_type: string
     cardinality: single
     is_structured: true
@@ -790,6 +799,10 @@ concepts:
     - mother full name
     - mother name
     - name of mother
+    - mum name
+    - mom name
+    - mummy name
+    - mommy name
     data_type: string
     cardinality: single
     is_structured: true

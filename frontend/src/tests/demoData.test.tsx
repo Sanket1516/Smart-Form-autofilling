@@ -20,7 +20,7 @@ const existing = (name: string, id: string) => ({
 });
 
 /** Static /demo files plus the normal API. */
-function stub(documents: unknown[]) {
+function stub(documents: unknown[], extraDocuments: unknown[] = []) {
   const uploads: string[] = [];
   const api = mockApi({
     'GET /auth/me': () => ({ data: USER }),
@@ -34,16 +34,26 @@ function stub(documents: unknown[]) {
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
     const url = String(input);
     const json = (data: unknown) => new Response(JSON.stringify(data), { status: 200, headers: { 'Content-Type': 'application/json' } });
-    if (url.endsWith('/demo/catalog.json')) return json(catalog);
+    if (url.endsWith('/demo/catalog.json')) return json({ ...catalog, documents: [...catalog.documents, ...extraDocuments] });
     if (url.endsWith('/demo/scenarios.json')) return json(scenarios);
     if (url.endsWith('/demo/summary.json')) return new Response('', { status: 404 });
-    if (url.includes('/demo/documents/')) return new Response('%PDF-1.4 demo', { status: 200 });
+    if (url.includes('/demo/documents/') || url.includes('/demo/resume/')) return new Response('%PDF-1.4 demo', { status: 200 });
     return apiFetch(input, init);
   }));
   return { uploads, api };
 }
 
 describe('Demo data page', () => {
+  it('lists the resume as a document and uploads it from its own folder', async () => {
+    const { uploads } = stub([], [
+      { number: 3, file: 'DEMO_RESUME_kavya_deshpande.pdf', path: 'resume/DEMO_RESUME_kavya_deshpande.pdf', title: 'Resume', pages: 2, scanned: false, challenge: '' },
+    ]);
+    renderApp(<DemoData />);
+    expect(await screen.findByText('Resume')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Load demo documents' }));
+    await waitFor(() => expect(uploads).toContain('DEMO_RESUME_kavya_deshpande.pdf'));
+  });
+
   it('lists the catalog, links questions into Ask and never shows expected answers', async () => {
     stub([]);
     renderApp(<DemoData />);

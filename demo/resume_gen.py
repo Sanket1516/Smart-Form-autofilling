@@ -20,7 +20,7 @@ from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, Tabl
 from demo import resume_profile as R
 
 PREFIX = "DEMO_RESUME_"
-FILE_NAME = f"{PREFIX}aarav_sharma.pdf"
+FILE_NAME = f"{PREFIX}kavya_deshpande.pdf"
 
 _SS = getSampleStyleSheet()
 
@@ -54,6 +54,17 @@ def _pairs(rows: list[tuple[str, str]]) -> Table:
     return table
 
 
+def _responses() -> Table:
+    """Open-question answers as a bordered table: the chunker keeps each row whole and repeats the header,
+    so every answer is retrieved together with its topic instead of being split mid-paragraph."""
+    rows = [[_p("Topic", LABEL), _p("Response", LABEL)]] + [[_p(k, LABEL), _p(v)] for k, v in R.RESPONSES]
+    table = Table(rows, colWidths=[40 * mm, 130 * mm], repeatRows=1)
+    table.setStyle(TableStyle([("GRID", (0, 0), (-1, -1), 0.6, colors.HexColor("#999999")),
+                               ("VALIGN", (0, 0), (-1, -1), "TOP"),
+                               ("BACKGROUND", (0, 0), (-1, 0), colors.HexColor("#eef3f6"))]))
+    return table
+
+
 def _banner(canvas, doc) -> None:  # noqa: ANN001
     width, height = doc.pagesize
     canvas.saveState()
@@ -76,6 +87,7 @@ def build_story() -> list:
         _p(f"{R.EMAIL}  ·  {R.PHONE}  ·  {R.LOCATION}", SUB),
         Spacer(1, 4),
         _p("Career Objective", H), _p(R.CAREER_OBJECTIVE),
+        _p("Career Goals", H), _p(R.CAREER_GOALS),
         _p("Education", H), _pairs(R.EDUCATION),
         _p("Technical Skills", H), _pairs(R.SKILLS),
         _p("Work Experience", H),
@@ -86,13 +98,14 @@ def build_story() -> list:
         _p("Achievements during the internship", LABEL), *_bullets(exp["achievements"]),
         _p("Projects", H),
     ]
-    for number, (title, description, technologies) in enumerate(R.PROJECTS, start=1):
-        story += [_p(f"Project {number}: {title}", LABEL), _p(f"Description: {description}"),
-                  _p(f"Technologies: {technologies}"), Spacer(1, 4)]
+    title, description, technologies = R.PROJECTS[0]
+    story += [_p(f"Project: {title}", LABEL), _p(f"Description: {description}"),
+              _p(f"Technologies: {technologies}"), Spacer(1, 4)]
     story += [
+        _p("Cloud Experience", H), _p(R.CLOUD_EXPERIENCE),
         _p("Strengths", H), *_bullets(R.STRENGTHS),
         _p("Weaknesses", H), _p(R.WEAKNESSES),
-        _p("Achievements", H), *_bullets(R.ACHIEVEMENTS),
+        _p("Selected Responses", H), _responses(),
         _p("All achievements and experience in this document are fictional demo content.", NOTE),
         _p("Additional Information", H), _pairs(R.ADDITIONAL),
     ]
@@ -103,7 +116,7 @@ def generate(out_dir: Path) -> Path:
     out_dir.mkdir(parents=True, exist_ok=True)
     path = out_dir / FILE_NAME
     doc = SimpleDocTemplate(str(path), pagesize=A4, leftMargin=20 * mm, rightMargin=20 * mm, topMargin=18 * mm,
-                            bottomMargin=16 * mm, title="DEMO resume — Aarav Sharma (fictional)",
+                            bottomMargin=16 * mm, title="DEMO resume — Kavya Suresh Deshpande (fictional)",
                             author="Smart Form demo data", subject=R.BANNER)
     doc.build(build_story(), onFirstPage=_banner, onLaterPages=_banner)
     return path

@@ -96,3 +96,18 @@ def test_provider_failure_marks_fields_as_errors() -> None:
 
     results = asyncio.run(classifier(boom).classify_with_llm([field(label="Favourite colour")], {}))
     assert results["f1"].error == "AI classification is unavailable"
+
+
+@pytest.mark.parametrize(
+    ("label", "concept"),
+    [
+        ("Residential Address (permanent)", "address.permanent_address"),
+        ("Address (correspondence)", "address.correspondence_address"),
+        ("Residential Address", "address.full_address"),
+        ("Candidate Name (as per Class 10th certificate)", "personal.full_name"),
+    ],
+)
+def test_a_bracketed_qualifier_makes_a_generic_address_specific(label: str, concept: str) -> None:
+    """The permanent address must never be filled with whichever address happens to be generic."""
+    result = classifier().classify_deterministic(field(label=label, question=label, input_type="text"))
+    assert result.concept == concept and not result.ambiguous

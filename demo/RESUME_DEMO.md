@@ -1,6 +1,6 @@
 # Resume-and-form demo
 
-A fictional graduate applicant (**Aarav Sharma**, all data invented and labelled `DEMO DATA`), a two-page resume PDF, and a
+A fictional graduate applicant (**Kavya Suresh Deshpande**, all data invented and labelled `DEMO DATA`), a three-page resume PDF, and a
 34-field "Graduate Software Engineer — Application Form". It shows, on the real pipeline, which answers come from **stored
 facts** (no text generation), which are **written from retrieved resume text**, and which are **left empty because the resume
 does not say**.
@@ -16,7 +16,7 @@ docker compose build backend worker; docker compose up -d backend worker   # onl
 python -m demo.cli resume generate                    # optional: rebuild the PDF (a copy is already committed)
 ```
 
-**In the dashboard** (http://localhost:5173, sign in with a *demo* account): sidebar → **Resume demo**.
+**In the dashboard** (http://localhost:5173, sign in with a *demo* account): sidebar → **Demo data**. The résumé is document 16 and its application form is form 16; load the documents, then open the form and use the Smart Form extension on it.
 
 1. **Load demo resume** — uploads the PDF through the normal documents API (text extraction, fact extraction, chunking, vector index).
 2. Wait for steps 1–3 to read *Done* (**Initialize knowledge repository** re-runs processing if needed).
@@ -62,7 +62,13 @@ Form field → classification:  ontology alias match on label / placeholder / na
 * **No percentages**: evidence labels follow the documented rules (see the "How the evidence labels are decided" panel).
 * **Conflicts**: two stored values for one field are never merged silently; the field goes to review with both candidates.
 * **Cloud-computing question**: classified to its own open-question concept (`cloud.summary`), not to the tool-list concept
-  that "Docker" would satisfy, so listing Docker never becomes a claim of cloud experience.
+  that "Docker" would satisfy, so listing Docker alone never becomes a claim of cloud experience. The demo resume states
+  its (fictional) cloud experience explicitly, so this question is answered too.
+* **Every field has support**: the resume covers all 34 form fields (the declaration checkbox stays a user decision). Open
+  answers sit in a bordered "Selected Responses" table because the chunker keeps table rows whole, so each answer is
+  retrieved with its topic instead of being split across chunks. Open questions are answered from retrieved text by a
+  language model, so a run can occasionally leave one empty; use *Analyze this form* again.
+* **Retrieval settings used by the demo**: `RAG_TOP_K=8` and `RAG_MIN_SIMILARITY=0.25` in `.env` (defaults 4 and 0.35).
 
 ## Tests
 

@@ -48,6 +48,9 @@ _STOPWORDS = frozenset(
     }
 )
 _CAMEL = re.compile(r"(?<=[a-z0-9])(?=[A-Z])")
+# Catch-all concepts that a more specific concept beats on an equal score:
+# "Residential Address (permanent)" is the permanent address, not "any address".
+GENERIC_CONCEPTS = frozenset({"address.full_address"})
 
 
 def normalize_tokens(text: str | None) -> tuple[str, ...]:
@@ -197,7 +200,11 @@ class FieldOntology:
             score = 0.98 if length == len(tokens) else round(0.80 + 0.15 * length / len(tokens), 3)
             if concept not in best or score > best[concept].score:
                 best[concept] = ConceptMatch(concept, score, alias)
-        return sorted(best.values(), key=lambda match: match.score, reverse=True)
+        return sorted(
+            best.values(),
+            key=lambda match: (match.score, match.concept not in GENERIC_CONCEPTS),
+            reverse=True,
+        )
 
     def find_matches(self, text: str | None) -> list[tuple[str, float]]:
         """Backward-compatible (concept, score) pairs."""

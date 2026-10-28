@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
+from pymongo.errors import ConnectionFailure
 from slowapi.errors import RateLimitExceeded
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
@@ -29,6 +30,7 @@ from app.core.api_errors import APIError
 from app.core.config import get_settings
 from app.core.exceptions import (
     application_error_handler,
+    database_unavailable_handler,
     http_exception_handler,
     rate_limit_handler,
     unhandled_exception_handler,
@@ -220,6 +222,7 @@ app.add_exception_handler(HTTPException, http_exception_handler)  # type: ignore
 app.add_exception_handler(StarletteHTTPException, http_exception_handler)  # type: ignore[arg-type]
 app.add_exception_handler(APIError, application_error_handler)  # type: ignore[arg-type]
 app.add_exception_handler(AuthError, application_error_handler)  # type: ignore[arg-type]
+app.add_exception_handler(ConnectionFailure, database_unavailable_handler)
 app.add_exception_handler(Exception, unhandled_exception_handler)
 app.add_middleware(
     CORSMiddleware,

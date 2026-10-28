@@ -17,7 +17,6 @@ import { Settings } from './pages/Settings';
 import { Reviews } from './pages/Reviews';
 import { Ask } from './pages/Ask';
 import { DemoData } from './pages/DemoData';
-import { ResumeDemo } from './pages/ResumeDemo';
 
 const DEMO_ENABLED = import.meta.env.VITE_ENABLE_DEMO !== 'false';
 
@@ -47,7 +46,6 @@ function App() {
               <Route path="/reviews" element={<Reviews />} />
               <Route path="/ask" element={<Ask />} />
               {DEMO_ENABLED && <Route path="/demo-data" element={<DemoData />} />}
-              {DEMO_ENABLED && <Route path="/resume-demo" element={<ResumeDemo />} />}
               <Route path="/activity" element={<Activity />} />
               <Route path="/settings" element={<Settings />} />
             </Route>

@@ -68,6 +68,7 @@ EXPECTED = {
     "job_role": "preferences.job_role",
     "work_mode": "preferences.work_mode",
     "availability": "preferences.availability",
+    "additional_info": "additional.summary",
 }
 
 
@@ -216,7 +217,7 @@ def test_existing_demo_forms_are_classified_exactly_as_before(tmp_path: Path) ->
 
 RESUME_TEXT = [
     "DEMO DATA - fictional profile",
-    "Aarav Sharma",
+    "Kavya Suresh Deshpande",
     "Strengths",
     "Analytical problem-solving. Quick learning and adaptability. Team collaboration.",
     "Weaknesses",
@@ -248,6 +249,8 @@ def _analyze(harness: Harness, headers: dict, fields: list[dict]) -> dict[str, d
 @pytest.mark.mongo
 def test_open_questions_are_grounded_and_unsupported_claims_are_dropped(harness: Harness) -> None:
     def answer(prompt: str) -> str:
+        if not all(f"FIELD {name}" in prompt for name in ("strengths", "cloud", "teamwork")):
+            return json.dumps({"answers": []})  # the retry pass re-asks only the still-empty fields
         chunk = {
             name: re.search(rf"FIELD {name}.*?\[(F\d+C\d+)\]", prompt, re.S).group(1)
             for name in ("strengths", "cloud", "teamwork")
@@ -320,3 +323,25 @@ def test_open_questions_are_grounded_and_unsupported_claims_are_dropped(harness:
     for field_id in ("cloud", "teamwork"):
         assert recs[field_id]["recommended_value"] is None
         assert recs[field_id]["status"] == "missing_information"
+
+
+def test_a_null_quote_for_an_unanswered_field_does_not_discard_the_batch() -> None:
+    from app.agents.graph import _AnswersOutput
+    from app.agents.json_output import parse_model
+
+    raw = (
+        '{"answers": [{"field_id": "a", "value": null, "chunk_id": null, "quote": null, "confidence": null},'
+        ' {"field_id": "b", "value": "x", "chunk_id": "F1C1", "quote": "x", "confidence": 0.9}]}'
+    )
+    answers = parse_model(raw, _AnswersOutput).answers
+    assert [a.quote for a in answers] == ["", "x"]
+    assert answers[0].confidence == 0.0
+
+
+def test_quote_matching_ignores_typographic_punctuation_but_not_invented_text() -> None:
+    from app.extraction.normalize import appears_in
+
+    chunk = "I led the team - and reviewed every pull request. It's what I enjoy."
+    assert appears_in("I led the team \u2014 and reviewed every pull request\u2026", chunk)
+    assert appears_in("\u201cIt\u2019s what I enjoy.\u201d", chunk)
+    assert not appears_in("I led the team and mentored three interns", chunk)

@@ -50,3 +50,22 @@ def test_cors_allows_dashboard_and_patch_but_not_other_origins(harness: Harness)
         headers={"Origin": "https://evil.example", "Access-Control-Request-Method": "GET"},
     )
     assert "access-control-allow-origin" not in denied.headers
+
+
+def test_database_outage_is_reported_as_503_not_a_generic_error() -> None:
+    from app.core.exceptions import database_unavailable_handler
+    from fastapi import FastAPI
+    from fastapi.testclient import TestClient
+    from pymongo.errors import ConnectionFailure, ServerSelectionTimeoutError
+
+    app = FastAPI()
+    app.add_exception_handler(ConnectionFailure, database_unavailable_handler)
+
+    @app.get("/boom")
+    async def boom() -> None:
+        raise ServerSelectionTimeoutError("mongodb:27017: connection refused")
+
+    response = TestClient(app).get("/boom")
+    assert response.status_code == 503
+    assert response.json()["error"]["code"] == "DATABASE_UNAVAILABLE"
+    assert "mongodb:27017" not in response.text  # infrastructure details stay in the logs

@@ -19,7 +19,7 @@ from pydantic import BaseModel, Field
 
 from app.agents.json_output import LLMOutputError, parse_model
 from app.agents.llm_provider import TASK_FIELD_CLASSIFICATION, LLMProvider, LLMProviderError
-from app.ontology.loader import FieldOntology, detect_scope
+from app.ontology.loader import GENERIC_CONCEPTS, FieldOntology, detect_scope
 from app.schemas.form_sessions import FieldObject
 from app.security.prompt_safety import sanitize_untrusted, wrap_untrusted
 
@@ -187,10 +187,20 @@ class FieldClassifier:
             matches = (
                 main and main != text and self.ontology.match_text(main)
             ) or self.ontology.match_text(text)
+            if matches and matches[0].concept in GENERIC_CONCEPTS and main != text:
+                # "Residential Address (permanent)": here the bracket is what makes it specific.
+                whole = self.ontology.match_text(text)
+                if whole and whole[0].concept not in GENERIC_CONCEPTS:
+                    matches = whole
             if not matches:
                 continue
             top = matches[0]
-            tied = [m.concept for m in matches[1:] if top.score - m.score <= _AMBIGUITY_MARGIN]
+            tied = [
+                m.concept
+                for m in matches[1:]
+                if top.score - m.score <= _AMBIGUITY_MARGIN
+                and not (m.concept in GENERIC_CONCEPTS and top.concept not in GENERIC_CONCEPTS)
+            ]
             if tied:
                 candidates = [top.concept, *tied]
                 # The page context can break the tie ("Result" in a Class 12 section).

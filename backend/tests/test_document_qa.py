@@ -84,6 +84,27 @@ def test_planner_never_maps_class12_question_to_class10() -> None:
     assert plan.concepts and all(c.startswith("academic.class12.") for c in plan.concepts)
 
 
+@pytest.mark.parametrize(
+    ("question", "concept"),
+    [
+        ("What is my mum's name?", "personal.mother_name"),
+        ("What is my mom's name?", "personal.mother_name"),
+        ("What is my dad's name?", "personal.father_name"),
+    ],
+)
+def test_planner_informal_parent_names_never_answer_with_the_applicant_name(
+    question: str, concept: str
+) -> None:
+    plan = PLANNER.plan(question, [])
+    assert concept in plan.concepts
+    assert "personal.full_name" not in plan.concepts
+
+
+def test_planner_year_question_about_a_degree_asks_for_the_completion_year() -> None:
+    assert PLANNER.plan("What year did I finish my degree?", []).concepts[0] == "education.end_year"
+    assert "education.end_year" not in PLANNER.plan("What is my degree?", []).concepts
+
+
 def test_planner_follow_up_reuses_previous_subject_with_new_scope() -> None:
     history = [ChatTurn(role="user", content="What was my Class 12 passing year and percentage?")]
     plan = PLANNER.plan("And what about Class 10?", history)

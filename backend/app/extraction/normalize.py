@@ -267,10 +267,22 @@ def same_address(a: Any, b: Any) -> bool:
     return tokens_a <= tokens_b or tokens_b <= tokens_a
 
 
+_PUNCTUATION = str.maketrans({"‘": "'", "’": "'", "“": '"', "”": '"', "–": "-", "—": "-"})
+
+
+def _squash(text: Any) -> str:
+    """Case, whitespace and typographic-punctuation insensitive form used to compare quotes."""
+    return " ".join(str(text or "").translate(_PUNCTUATION).split()).casefold()
+
+
 def appears_in(value: Any, text: str) -> bool:
-    """True when a value is literally present in text (case/whitespace-insensitive)."""
-    needle = " ".join(str(value or "").split()).casefold()
-    haystack = " ".join((text or "").split()).casefold()
+    """True when a value is literally present in text (case/whitespace/typographic-punctuation-insensitive).
+
+    A quote the model shortened with a leading or trailing ellipsis still has to be a verbatim excerpt.
+    """
+    needle = _squash(value).strip(" \"'").removeprefix("...").removeprefix("…").strip()
+    needle = needle.removesuffix("...").removesuffix("…").strip()
+    haystack = _squash(text)
     if not needle:
         return False
     if needle in haystack:

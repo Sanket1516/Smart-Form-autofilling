@@ -37,5 +37,12 @@ def parse_model(raw: str, model: type[ModelT]) -> ModelT:
         return model.model_validate(data)
     except ValidationError as error:
         raise LLMOutputError(
-            f"model output failed schema validation ({error.error_count()} errors)"
+            f"model output failed schema validation ({error.error_count()} errors: {_summarise(error)})"
         ) from error
+
+
+def _summarise(error: ValidationError) -> str:
+    """Where and why validation failed, without echoing any model-written value."""
+    return "; ".join(
+        f"{'.'.join(str(part) for part in item['loc'])}: {item['type']}" for item in error.errors()[:3]
+    )

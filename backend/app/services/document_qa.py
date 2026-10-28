@@ -246,6 +246,9 @@ def _concept_group(concept: str) -> str:
     return ".".join(parts[:2]) if parts[0] == "academic" else parts[0]
 
 
+_ASKS_YEAR = re.compile(r"\b(?:what|which)\s+year\b|\bwhen\s+did\b|\byear\s+did\b", re.I)
+
+
 class QuestionPlanner:
     def __init__(self, ontology: FieldOntology, exam_profiles: dict[str, Any]) -> None:
         self.ontology = ontology
@@ -325,6 +328,9 @@ class QuestionPlanner:
             # "Which required information for NEET is missing?": the exam profile
             # defines the fields; stray word matches ("required", "information") do not.
             generic = []
+        if _ASKS_YEAR.search(text) and "education.degree" in generic and "education.end_year" not in generic:
+            # "What year did I finish my degree?" asks for the completion year, not the degree's name.
+            generic.insert(generic.index("education.degree"), "education.end_year")
         plan.generic = list(dict.fromkeys(generic))
         plan.subject = subject_qualifier(text)
         if "comparison" in plan.kinds and _MARKSHEET_WORDS.search(text) and not plan.generic:

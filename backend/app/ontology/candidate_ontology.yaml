@@ -152,6 +152,17 @@ concepts:
     cardinality: single
     is_structured: false
     answer_only: true
+  additional.summary:
+    canonical_name: additional.summary
+    description: Additional information the candidate wants the employer to know
+    aliases:
+    - additional information
+    - additional details
+    - anything else
+    data_type: string
+    cardinality: single
+    is_structured: false
+    answer_only: true
   career.objective:
     canonical_name: career.objective
     description: Career goals and objective of the candidate

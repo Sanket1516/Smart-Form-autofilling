@@ -23,7 +23,7 @@ import re
 from typing import Any, TypedDict
 
 from langgraph.graph import END, START, StateGraph
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationInfo, field_validator
 
 from app.agents.field_classifier import SUBJECTS, Classification, FieldClassifier
 from app.agents.json_output import LLMOutputError, parse_model
@@ -78,6 +78,14 @@ class _Answer(BaseModel):
     chunk_id: str | None = None
     quote: str = Field(default="", max_length=1000)
     confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+
+    @field_validator("quote", "confidence", mode="before")
+    @classmethod
+    def _null_means_default(cls, value: Any, info: ValidationInfo) -> Any:
+        """Models send null for "no quote" on unanswered fields; one null must not discard the batch."""
+        if value is None:
+            return "" if info.field_name == "quote" else 0.0
+        return value
 
 
 class _AnswersOutput(BaseModel):
@@ -558,7 +566,7 @@ class FormFillGraph:
         work = state["work"]
         fields = self._rag_candidates(state)
         evidence: dict[str, dict[str, Any]] = {}
-        blocks = []
+        blocks: dict[str, str] = {}
         for index, field_obj in enumerate(fields, start=1):
             item = work[field_obj.field_id]
             concept = item.get("concept")
@@ -585,13 +593,34 @@ class FormFillGraph:
                 f"[{cid}] {sanitize_untrusted(chunk.text, 1200)}" for cid, chunk in labelled.items()
             )
             kind = "open question" if self._is_prose(item) else "factual field"
-            blocks.append(
+            blocks[field_obj.field_id] = (
                 f"FIELD {field_obj.field_id} ({kind}): {sanitize_untrusted(field_obj.question or field_obj.label, 200)}"
                 f"\n{chunk_text}"
             )
         if not blocks:
             return {"work": work}
-        prompt = f"{wrap_untrusted('UNTRUSTED_FIELDS_AND_EVIDENCE', chr(10).join(blocks))}\n\nReturn the JSON object."
+        await self._answer_from_evidence(work, evidence, blocks, list(evidence))
+        # Models sometimes answer "no value" for a long batch even though the evidence is there:
+        # ask once more, with only the fields still empty, before leaving them for the user.
+        unanswered = [
+            field_id
+            for field_id in evidence
+            if work[field_id]["recommended_value"] is None and work[field_id]["status"] != "error"
+        ]
+        if unanswered:
+            await self._answer_from_evidence(work, evidence, blocks, unanswered)
+        return {"work": work}
+
+    async def _answer_from_evidence(
+        self,
+        work: dict[str, dict[str, Any]],
+        evidence: dict[str, dict[str, Any]],
+        blocks: dict[str, str],
+        field_ids: list[str],
+    ) -> None:
+        asked = {field_id: evidence[field_id] for field_id in field_ids}
+        text = chr(10).join(blocks[field_id] for field_id in field_ids)
+        prompt = f"{wrap_untrusted('UNTRUSTED_FIELDS_AND_EVIDENCE', text)}\n\nReturn the JSON object."
         try:
             raw = await self.llm.acomplete(
                 prompt, system=VALUES_SYSTEM_PROMPT, task=TASK_FIELD_VALUES
@@ -599,20 +628,28 @@ class FormFillGraph:
             output = parse_model(raw, _AnswersOutput)
         except (LLMProviderError, LLMOutputError) as error:
             logger.warning("rag_value_extraction_failed", extra={"error": str(error)})
-            for field_id in evidence:
+            for field_id in asked:
                 work[field_id]["status"] = "error"
                 work[field_id][
                     "reason"
                 ] = "The AI provider is unavailable; fill this field yourself."
-            return {"work": work}
+            return
         for answer in output.answers:
-            chunks = evidence.get(answer.field_id)
+            chunks = asked.get(answer.field_id)
             if not chunks or not answer.value or answer.chunk_id not in chunks:
+                logger.info(
+                    "rag_answer_discarded",
+                    extra={"field_id": answer.field_id, "reason": "no value or unknown chunk"},
+                )
                 continue
             chunk = chunks[answer.chunk_id]
             item = work[answer.field_id]
             if self._is_prose(item):
                 if not answer.quote or not appears_in(answer.quote, chunk.text):
+                    logger.info(
+                        "rag_answer_discarded",
+                        extra={"field_id": answer.field_id, "reason": "quote not in chunk"},
+                    )
                     continue  # ungrounded prose is discarded
                 confidence, origin = min(answer.confidence, _RAG_NARRATIVE_CAP), "inferred"
             else:
@@ -638,7 +675,6 @@ class FormFillGraph:
                     "fact_ids": [],
                 },
             )
-        return {"work": work}
 
     async def _search(self, user_id: str, query: str, concept: str | None) -> list[Any]:
         """Search the document types that state this concept first, then everything."""

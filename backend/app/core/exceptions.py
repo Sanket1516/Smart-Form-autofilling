@@ -65,6 +65,20 @@ async def rate_limit_handler(request: Request, exc: RateLimitExceeded) -> JSONRe
     )
 
 
+async def database_unavailable_handler(request: Request, exc: Exception) -> JSONResponse:
+    """MongoDB unreachable: say so (503) instead of a generic internal error."""
+    logger.error(
+        "database_unavailable", extra={"path": request.url.path, "error": type(exc).__name__}
+    )
+    return _error_response(
+        request,
+        "DATABASE_UNAVAILABLE",
+        "The database is unavailable right now; nothing was saved. Try again shortly.",
+        None,
+        status.HTTP_503_SERVICE_UNAVAILABLE,
+    )
+
+
 async def unhandled_exception_handler(request: Request, exc: Exception) -> JSONResponse:
     logger.exception("unhandled_exception", extra={"path": request.url.path})
     return _error_response(request, "INTERNAL_SERVER_ERROR", "Internal server error")

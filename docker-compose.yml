@@ -7,7 +7,7 @@ services:
       MONGO_INITDB_ROOT_USERNAME: ${MONGODB_ROOT_USERNAME:-smart_form}
       MONGO_INITDB_ROOT_PASSWORD: ${MONGODB_ROOT_PASSWORD:-local_development_only}
     ports:
-      - "127.0.0.1:27017:27017"
+      - "127.0.0.1:${MONGODB_PORT:-27017}:27017"
     volumes:
       - mongodb_data:/data/db
     healthcheck:
@@ -20,7 +20,7 @@ services:
       timeout: 5s
       retries: 10
       start_period: 10s
-    networks: [data-internal]
+    networks: [data-internal, loopback-ports]
 
   chromadb:
     image: chromadb/chroma
@@ -34,7 +34,7 @@ services:
       timeout: 5s
       retries: 10
       start_period: 15s
-    networks: [data-internal]
+    networks: [data-internal, loopback-ports]
 
   redis:
     image: redis:7-alpine
@@ -103,6 +103,7 @@ services:
       EMBEDDING_DIMENSION: ${EMBEDDING_DIMENSION:-384}
       RAG_CHUNK_SIZE: ${RAG_CHUNK_SIZE:-500}
       RAG_CHUNK_OVERLAP: ${RAG_CHUNK_OVERLAP:-50}
+      RAG_TOP_K: ${RAG_TOP_K:-4}
       SENSITIVE_FIELD_CONCEPTS: ${SENSITIVE_FIELD_CONCEPTS:-identity.passport_number,identity.pan_number,identity.aadhaar_number,identity.national_id,financial.account_number,financial.routing_number,financial.tax_id,financial.cif_number}
     ports:
       - "127.0.0.1:${BACKEND_PORT:-8000}:8000"
@@ -173,6 +174,7 @@ services:
       EMBEDDING_DIMENSION: ${EMBEDDING_DIMENSION:-384}
       RAG_CHUNK_SIZE: ${RAG_CHUNK_SIZE:-500}
       RAG_CHUNK_OVERLAP: ${RAG_CHUNK_OVERLAP:-50}
+      RAG_TOP_K: ${RAG_TOP_K:-4}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:?Set a unique 32+ character JWT_SECRET_KEY in .env}
       LLM_PROVIDER: ${LLM_PROVIDER:-mock}
       LLM_MODEL: ${LLM_MODEL:-}
@@ -223,7 +225,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
-    networks: [app-internal]
+    networks: [app-internal, loopback-ports]
 
   caddy:
     image: caddy:2-alpine
@@ -265,6 +267,10 @@ networks:
     internal: true
     driver: bridge
   egress:
+    driver: bridge
+  # Docker does not publish ports for a container attached only to internal
+  # networks, so services with 127.0.0.1 port bindings also join this one.
+  loopback-ports:
     driver: bridge
 
 volumes:

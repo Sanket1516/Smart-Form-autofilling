@@ -100,7 +100,7 @@
    "number": 13,
    "file": "DEMO_13_category_certificate.pdf",
    "title": "Synthetic caste/category certificate (+ validity annexure)",
-   "pages": 2,
+   "pages": 3,
    "scanned": true,
    "challenge": ""
   },
@@ -119,6 +119,15 @@
    "pages": 1,
    "scanned": false,
    "challenge": "dense 25-row transaction table"
+  },
+  {
+   "number": 16,
+   "file": "DEMO_RESUME_kavya_deshpande.pdf",
+   "path": "resume/DEMO_RESUME_kavya_deshpande.pdf",
+   "title": "Synthetic resume (Kavya Suresh Deshpande)",
+   "pages": 3,
+   "scanned": false,
+   "challenge": "free-text resume: answers come from retrieved passages"
   }
  ],
  "forms": [
@@ -196,6 +205,12 @@
    "number": 15,
    "file": "form-15-combined-entrance-application.html",
    "title": "Demo Entrance Examination Application"
+  },
+  {
+   "number": 16,
+   "file": "graduate-software-engineer-application.html",
+   "path": "resume/graduate-software-engineer-application.html",
+   "title": "Graduate Software Engineer Application"
   }
  ],
  "banner": "SYNTHETIC DEMO DATA — NOT A VALID GOVERNMENT DOCUMENT"

@@ -297,15 +297,27 @@ def public_scenarios() -> list[dict]:
             ({"follow_up_of": q["follow_up_of"]} if "follow_up_of" in q else {}) for q in questions()]
 
 
+# The fictional resume and its application form ride along as one more document and one more form.
+# `path` is relative to /demo (the other entries live in documents/ and forms/).
+_RESUME_DOCUMENT = {"file": "DEMO_RESUME_kavya_deshpande.pdf", "path": "resume/DEMO_RESUME_kavya_deshpande.pdf",
+                    "title": "Synthetic resume (Kavya Suresh Deshpande)", "pages": 3, "scanned": False,
+                    "challenge": "free-text resume: answers come from retrieved passages"}
+_RESUME_FORM = {"file": "graduate-software-engineer-application.html",
+                "path": "resume/graduate-software-engineer-application.html",
+                "title": "Graduate Software Engineer Application"}
+
+
 def write() -> dict:
     manifest = build()
     (ROOT / "expected").mkdir(exist_ok=True)
     (ROOT / "expected" / "manifest.json").write_text(json.dumps(manifest, indent=1, ensure_ascii=False, default=str), "utf-8")
     PUBLIC.mkdir(parents=True, exist_ok=True)
     (PUBLIC / "scenarios.json").write_text(json.dumps(public_scenarios(), indent=1, ensure_ascii=False), "utf-8")
+    documents = [{"number": d["number"], "file": d["file"], "title": d["document_type"], "pages": d.get("pages"),
+                  "scanned": d.get("scanned", False), "challenge": d.get("challenge", "")} for d in manifest["documents"]]
+    forms = [{"number": f["number"], "file": f["file"], "title": f["title"]} for f in manifest["forms"]]
     (PUBLIC / "catalog.json").write_text(json.dumps({
-        "documents": [{"number": d["number"], "file": d["file"], "title": d["document_type"], "pages": d.get("pages"),
-                       "scanned": d.get("scanned", False), "challenge": d.get("challenge", "")} for d in manifest["documents"]],
-        "forms": [{"number": f["number"], "file": f["file"], "title": f["title"]} for f in manifest["forms"]],
+        "documents": documents + [_RESUME_DOCUMENT | {"number": len(documents) + 1}],
+        "forms": forms + [_RESUME_FORM | {"number": len(forms) + 1}],
         "banner": P.BANNER}, indent=1, ensure_ascii=False), "utf-8")
     return manifest

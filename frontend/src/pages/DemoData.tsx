@@ -15,8 +15,8 @@ const DEMO_PREFIX = 'DEMO_';
 
 interface Catalog {
   banner: string;
-  documents: Array<{ number: number; file: string; title: string; pages?: number; scanned: boolean; challenge: string }>;
-  forms: Array<{ number: number; file: string; title: string }>;
+  documents: Array<{ number: number; file: string; path?: string; title: string; pages?: number; scanned: boolean; challenge: string }>;
+  forms: Array<{ number: number; file: string; path?: string; title: string }>;
 }
 interface Scenario { id: string; category: string; question: string; exam_id?: string; follow_up_of?: string }
 interface Summary {
@@ -62,7 +62,7 @@ export const DemoData = () => {
       for (const item of catalog.data.documents) {
         if (byName.has(item.file)) continue; // already present: never create a duplicate
         setProgress(`Uploading ${item.file} (${uploaded + 1})…`);
-        const response = await fetch(`${BASE}/documents/${item.file}`);
+        const response = await fetch(`${BASE}/${item.path ?? `documents/${item.file}`}`);
         if (!response.ok) throw new Error(`Could not read ${item.file}`);
         const file = new File([await response.blob()], item.file, { type: 'application/pdf' });
         await documentApi.upload(file);
@@ -102,7 +102,7 @@ export const DemoData = () => {
         <div>
           <h1>Demo data</h1>
           <p className="muted">
-            A synthetic applicant, 15 documents and 15 forms for demonstrating extraction, Ask Documents and autofill.
+            A synthetic applicant, 16 documents and 16 forms (including a fictional résumé and its application form) for demonstrating extraction, Ask Documents and autofill.
             {' '}{catalog.data?.banner ?? 'SYNTHETIC DEMO DATA — NOT A VALID GOVERNMENT DOCUMENT'}
           </p>
         </div>
@@ -120,7 +120,7 @@ export const DemoData = () => {
       {notice && <div className="alert alert-success" role="status"><p>{notice}</p></div>}
 
       <div className="card stack">
-        <h2>1. Documents ({loaded}/{catalog.data?.documents.length ?? 15} in your account)</h2>
+        <h2>1. Documents ({loaded}/{catalog.data?.documents.length ?? 16} in your account)</h2>
         <div className="row">
           <Button onClick={() => void loadAll()} isLoading={busy} disabled={!catalog.data || busy}>
             Load demo documents
@@ -161,7 +161,7 @@ export const DemoData = () => {
                       <td>{doc?.status === 'processed' ? doc.fact_count : '—'}</td>
                       <td>{doc?.status === 'processed' ? <IndexStatusPill status={doc.index_status} /> : '—'}</td>
                       <td>
-                        <a href={`${BASE}/documents/${item.file}`} target="_blank" rel="noreferrer" aria-label={`View ${item.title}`}>
+                        <a href={`${BASE}/${item.path ?? `documents/${item.file}`}`} target="_blank" rel="noreferrer" aria-label={`View ${item.title}`}>
                           <FileText size={15} aria-hidden="true" /> View
                         </a>
                       </td>
@@ -195,7 +195,7 @@ export const DemoData = () => {
       </div>
 
       <div className="card stack">
-        <h2>3. Forms ({catalog.data?.forms.length ?? 15})</h2>
+        <h2>3. Forms ({catalog.data?.forms.length ?? 16})</h2>
         <p className="muted small">
           Open a form in a new tab, click the Smart Form extension, choose <em>Analyze this form</em>, review the proposed
           values and fill. The page marks each field as missing, filled, verified or needing review from what is actually in
@@ -203,7 +203,7 @@ export const DemoData = () => {
         </p>
         <div className="row">
           {(catalog.data?.forms ?? []).map((f) => (
-            <a key={f.file} className="link-button small" href={`${BASE}/forms/${f.file}`} target="_blank" rel="noreferrer">
+            <a key={f.file} className="link-button small" href={`${BASE}/${f.path ?? `forms/${f.file}`}`} target="_blank" rel="noreferrer">
               {f.number}. {f.title} <ExternalLink size={12} aria-hidden="true" />
             </a>
           ))}

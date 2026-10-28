@@ -94,8 +94,8 @@ test('the extension fills the resume application form from the demo resume, and 
 
   // factual fields come from stored facts and are pre-selected
   for (const [label, value] of [
-    ['Full Name', 'Aarav Sharma'], ['Email Address', 'aarav.sharma.demo@example.com'], ['University Name', 'Example Institute of Technology'],
-    ['Graduation Year', '2027'], ['Preferred Job Role', 'Software Development Engineer'], ['Preferred Work Mode', 'Hybrid'], ['Availability', 'Immediate'],
+    ['Full Name', 'Kavya Suresh Deshpande'], ['Email Address', 'kavya.deshpande.demo@example.com'], ['University Name', 'Demo Institute of Technology'],
+    ['Graduation Year', '2029'], ['Preferred Job Role', 'Software Development Engineer'], ['Preferred Work Mode', 'Hybrid'], ['Availability', 'Immediate'],
   ] as const) {
     expect(row(label)?.value, label).toBe(value);
     expect(row(label)?.selected, `${label} pre-selected`).toBe(true);
@@ -106,8 +106,11 @@ test('the extension fills the resume application form from the demo resume, and 
   expect(row('What are your greatest strengths')?.selected).toBe(false);
   expect(row('What is your biggest weakness')?.value.toLowerCase()).toMatch(/refin|reliab|prioriti/);
 
-  // nothing in the resume supports a cloud answer, so none is proposed
-  expect(row('Describe your experience with cloud computing')?.value ?? '').toBe('');
+  // the resume states its cloud experience, so an answer is proposed; every other open question has support too
+  expect(row('Describe your experience with cloud computing')?.value.toLowerCase()).toContain('aws');
+  for (const question of ['Why should we hire you', 'How do you work in a team', 'Describe your approach to solving difficult problems']) {
+    expect(row(question)?.value, question).not.toBe('');
+  }
 
   // fill what the extension pre-selected, plus the strengths answer the user reviewed and ticked
   await popup.locator('.review-row', { hasText: 'greatest strengths' }).locator('input[type="checkbox"][aria-label^="Fill"]').check();
@@ -116,12 +119,12 @@ test('the extension fills the resume application form from the demo resume, and 
   await fill.click();
   await popup.getByText(/fields? filled/).first().waitFor({ timeout: 60_000 });
 
-  await expect(page.locator('#full_name')).toHaveValue('Aarav Sharma');
-  await expect(page.locator('#email')).toHaveValue('aarav.sharma.demo@example.com');
-  await expect(page.locator('#graduation_year')).toHaveValue('2027');
+  await expect(page.locator('#full_name')).toHaveValue('Kavya Suresh Deshpande');
+  await expect(page.locator('#email')).toHaveValue('kavya.deshpande.demo@example.com');
+  await expect(page.locator('#graduation_year')).toHaveValue('2029');
   await expect(page.locator('#work_mode')).toHaveValue('Hybrid');
   expect((await page.locator('#strengths').inputValue()).toLowerCase()).toContain('problem-solving');
-  await expect(page.locator('#cloud_experience')).toHaveValue('');
+  expect((await page.locator('#cloud_experience').inputValue()).toLowerCase()).toContain('aws');
   await expect(page.locator('#confirm_accurate')).not.toBeChecked();
   expect(await page.evaluate(() => (window as unknown as { demoSubmitAttempts: number }).demoSubmitAttempts)).toBe(0);
   await expect(page.locator('#success-screen')).toBeHidden();
