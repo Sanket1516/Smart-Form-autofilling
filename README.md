@@ -1,9 +1,39 @@
+<div align="center">
+
 # Smart Form Auto-Filling System
+
+![Python](https://img.shields.io/badge/Python_3.11-3776AB?logo=python&logoColor=white)
+![FastAPI](https://img.shields.io/badge/FastAPI-009688?logo=fastapi&logoColor=white)
+![LangGraph](https://img.shields.io/badge/LangGraph-1C3C3C)
+![React](https://img.shields.io/badge/React-20232A?logo=react&logoColor=61DAFB)
+![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white)
+![MongoDB](https://img.shields.io/badge/MongoDB-47A248?logo=mongodb&logoColor=white)
+![ChromaDB](https://img.shields.io/badge/ChromaDB-FF6F61)
+![Chrome Extension](https://img.shields.io/badge/Chrome_Extension-MV3-4285F4?logo=googlechrome&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker_Compose-2496ED?logo=docker&logoColor=white)
+
+<img src="report/figures/screens/fig5_2_dashboard.png" alt="Smart Form AI dashboard: documents, profile values, conflicts and field reviews" width="900" />
+
+</div>
 
 A privacy-first assistant that reads a user's own documents (Aadhaar/PAN-style identity records, marksheets, certificates, bank passbooks, bills…), turns them into verified profile facts, and fills web forms from those facts — only after the user reviews and explicitly approves every value. It never auto-submits a form.
 
 > Legend used throughout this document and the [Judge Demonstration Guide](docs/JUDGE_DEMONSTRATION_GUIDE.md):
 > ✅ **Implemented and verified** (read from source, exercised by a passing test, or run locally during this review) · 🟡 **Implemented, not independently re-verified in this pass** · ⚠️ **Partially implemented / known gap** · ⛔ **Planned, not implemented**
+
+## Screenshots
+
+> Real captures of the running dashboard and Chrome extension (from `report/figures/screens/`).
+
+| Documents (upload + OCR status) | Profile facts with sources |
+|:---:|:---:|
+| <img src="report/figures/screens/fig5_3_upload.png" alt="Documents page" width="430" /> | <img src="report/figures/screens/fig5_4_profile.png" alt="Profile facts with confirm, edit and source page" width="430" /> |
+| **Conflict resolution** | **Ask your documents (RAG with sources)** |
+| <img src="report/figures/screens/fig5_5_conflicts.png" alt="Conflicts page: date of birth and name disagree between documents" width="430" /> | <img src="report/figures/screens/fig5_8_ask.png" alt="Ask Documents answer with cited source" width="430" /> |
+
+| Extension: scan a form | Extension: review before filling | Settings and data controls |
+|:---:|:---:|:---:|
+| <img src="report/figures/screens/fig5_6_ext_scan.png" alt="Extension found 6 fields, ignored sensitive ones" width="220" /> | <img src="report/figures/screens/fig5_7_ext_review.png" alt="Extension review: tick fields, choose between conflicting values" width="220" /> | <img src="report/figures/screens/fig5_9_settings.png" alt="Settings with system status and delete-your-data" width="380" /> |
 
 ## 1. Problem statement
 
